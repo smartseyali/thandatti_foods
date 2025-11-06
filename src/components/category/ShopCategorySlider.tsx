@@ -25,7 +25,7 @@ const ShopCategorySlider = ({
     autoplay: {delay: 3000, disableOnInteraction: false},
     speed: 500,
     breakpoints: {
-      0: { slidesPerView: 'auto' },
+      0: { slidesPerView: 1 },
       421: { slidesPerView: 2 },
       768: { slidesPerView: 3 },
       992: { slidesPerView: 4 },

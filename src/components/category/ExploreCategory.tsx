@@ -26,7 +26,7 @@ const ExploreCategory = ({
     },
     breakpoints: {
       0: {
-        slidesPerView: 'auto',
+        slidesPerView: 1,
       },
       421: {
         slidesPerView: 2,

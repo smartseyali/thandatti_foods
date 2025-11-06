@@ -1,0 +1,1 @@
+import '../styles/responsive-scroll.css'

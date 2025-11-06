@@ -40,7 +40,7 @@ function ShopSidebar({
             "/product-accordion-right-sidebar",
         ]
 
-        setShowButton(hiddenPaths.includes(pathname));
+        setShowButton(hiddenPaths.includes(pathname ?? ""));
     }, [pathname]);
 
     const { data, error } = useSWR("/api/category", fetcher, { onSuccess, onError });

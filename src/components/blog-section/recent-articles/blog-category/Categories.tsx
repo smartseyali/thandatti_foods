@@ -26,7 +26,7 @@ const Categories = ({
             "/blog-detail-right-sidebar",
         ]
 
-        //setShowButton(hiddenPaths.includes(pathname));
+        setShowButton(hiddenPaths.includes(pathname ?? ""));
     }, [pathname]);
 
     if (error) return <div>Failed to load products</div>;

@@ -29,6 +29,7 @@ app.use('/api/reviews', require('./src/routes/reviews'));
 app.use('/api/blogs', require('./src/routes/blogs'));
 app.use('/api/coupons', require('./src/routes/coupons'));
 app.use('/api/addresses', require('./src/routes/addresses'));
+app.use('/api/attribution', require('./src/routes/attribution'));
 
 // Error handling middleware
 const errorHandler = require('./src/middleware/errorHandler');

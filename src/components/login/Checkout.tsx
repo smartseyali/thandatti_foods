@@ -12,6 +12,7 @@ import * as yup from "yup";
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 import { addOrder, clearCart, setOrders } from '@/store/reducer/cartSlice';
 import { login } from '@/store/reducer/loginSlice';
+import { getAttributionForConversion } from '@/utils/attribution';
 
 interface FormValues {
     id: string;
@@ -133,6 +134,49 @@ const Checkout = () => {
         setRegistrations(storedRegistration)
     }, [])
 
+    // Track begin_checkout when user lands on checkout page
+    useEffect(() => {
+        if (cartSlice.length > 0 && typeof window !== 'undefined') {
+            const attribution = getAttributionForConversion();
+            const subtotal = cartSlice.reduce(
+                (acc, item) => acc + item.newPrice * item.quantity,
+                0
+            );
+
+            const items = cartSlice.map((item: any) => ({
+                item_id: item.id?.toString() || '',
+                item_name: item.title || '',
+                item_category: item.category || '',
+                price: item.newPrice || 0,
+                quantity: item.quantity || 1,
+            }));
+
+            // Track begin_checkout in Google Analytics
+            if ((window as any).gtag) {
+                (window as any).gtag('event', 'begin_checkout', {
+                    currency: 'INR',
+                    value: subtotal,
+                    items: items,
+                    source: attribution?.source || 'direct',
+                    medium: attribution?.medium || 'none',
+                    campaign: attribution?.campaign || '',
+                });
+            }
+
+            // Track InitiateCheckout in Meta Pixel
+            if ((window as any).fbq) {
+                (window as any).fbq('track', 'InitiateCheckout', {
+                    value: subtotal,
+                    currency: 'INR',
+                    contents: items,
+                    num_items: cartSlice.length,
+                    source: attribution?.source || 'direct',
+                    medium: attribution?.medium || 'none',
+                });
+            }
+        }
+    }, [cartSlice])
+
     //login end
     const generateRandomId: any = () => {
         const randomNum = Math.floor(Math.random() * 100000);
@@ -148,6 +192,9 @@ const Checkout = () => {
             return;
         }
 
+        // Get attribution data for conversion tracking
+        const attribution = getAttributionForConversion();
+
         const newOrder = {
             orderId: randomId,
             date: new Date().getTime(),
@@ -157,6 +204,13 @@ const Checkout = () => {
             status: "Pending",
             products: cartSlice,
             address: selectedAddress,
+            // Store attribution data with order
+            attribution: attribution ? {
+                source: attribution.source,
+                medium: attribution.medium,
+                campaign: attribution.campaign,
+                channel: attribution.channel,
+            } : null,
         };
 
         const orderExists = orders.some(
@@ -170,6 +224,68 @@ const Checkout = () => {
                 `Order with ID ${newOrder.orderId} already exists and won't be added again.`
             );
         }
+
+        // Track conversion events with attribution
+        if (typeof window !== 'undefined') {
+            // Prepare items array for e-commerce tracking
+            const items = cartSlice.map((item: any) => ({
+                item_id: item.id?.toString() || '',
+                item_name: item.title || '',
+                item_category: item.category || '',
+                price: item.newPrice || 0,
+                quantity: item.quantity || 1,
+            }));
+
+            // Track purchase in Google Analytics
+            if ((window as any).gtag) {
+                (window as any).gtag('event', 'purchase', {
+                    transaction_id: randomId,
+                    value: total,
+                    currency: 'INR',
+                    items: items,
+                    // Attribution data
+                    source: attribution?.source || 'direct',
+                    medium: attribution?.medium || 'none',
+                    campaign: attribution?.campaign || '',
+                    channel: attribution?.channel || 'Direct',
+                });
+
+                // Also track begin_checkout if not already tracked
+                (window as any).gtag('event', 'begin_checkout', {
+                    currency: 'INR',
+                    value: total,
+                    items: items,
+                    source: attribution?.source || 'direct',
+                    medium: attribution?.medium || 'none',
+                });
+            }
+
+            // Track purchase in Meta Pixel
+            if ((window as any).fbq) {
+                (window as any).fbq('track', 'Purchase', {
+                    value: total,
+                    currency: 'INR',
+                    contents: items,
+                    content_ids: cartSlice.map((item: any) => item.id?.toString() || ''),
+                    content_type: 'product',
+                    num_items: cartSlice.length,
+                    // Attribution data
+                    source: attribution?.source || 'direct',
+                    medium: attribution?.medium || 'none',
+                    campaign: attribution?.campaign || '',
+                });
+
+                // Track InitiateCheckout
+                (window as any).fbq('track', 'InitiateCheckout', {
+                    value: total,
+                    currency: 'INR',
+                    contents: items,
+                    num_items: cartSlice.length,
+                    source: attribution?.source || 'direct',
+                });
+            }
+        }
+
         dispatch(clearCart());
 
         const loginUser = JSON.parse(localStorage.getItem("login_user") || "{}");

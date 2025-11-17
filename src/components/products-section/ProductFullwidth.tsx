@@ -4,11 +4,19 @@ import ProductsDetails from './Products-Detail/ProductsDetails'
 import ProductsTabs from './Products-Tabs/ProductsTabs'
 import { Col } from 'react-bootstrap'
 
-const ProductFullwidth = () => {
+const ProductFullwidth = ({ productId }: { productId?: string }) => {
+    const handleReviewCreated = () => {
+        // Trigger refresh of product data in ProductsDetails
+        // The ProductsDetails component will listen for the custom event
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('reviewCreated', { detail: { productId } }));
+        }
+    };
+
     return (
         <Col sm={12}>
-            <ProductsDetails />
-            <ProductsTabs />
+            <ProductsDetails productId={productId} />
+            <ProductsTabs productId={productId} onReviewCreated={handleReviewCreated} />
         </Col>
     )
 }

@@ -109,11 +109,6 @@ const ProductCard = ({ data }: any) => {
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a onClick={() => handleCompareItem(data)} title="Compare">
-                                <i className="ri-repeat-line"></i>
-                            </a>
-                        </li>
-                        <li className="bb-btn-group">
                             <a onClick={() => handleCart(data)} title="Add To Cart">
                                 <i className="ri-shopping-bag-4-line"></i>
                             </a>
@@ -128,11 +123,13 @@ const ProductCard = ({ data }: any) => {
                             <StarRating rating={data.rating} />
                         </span>
                     </div>
-                    <h4 className="bb-pro-title"><Link href="/product-left-sidebar">{data.title}</Link></h4>
+                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link></h4>
                     <div className="bb-price">
                         <div className="inner-price">
-                        <span className="new-price">₹{data.newPrice}.00</span>
-                        <span className={`${data.oldPrice ? "old-price" : "item-left"}`}>{data.oldPrice ? `₹${data.oldPrice}` : data.itemLeft}</span>
+                        <span className="new-price">₹{data.newPrice.toFixed(2)}</span>
+                        <span className={`${data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}`}>
+                            {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : data.itemLeft}
+                        </span>
                         </div>
                         <span className="last-items">{data.weight}</span>
                     </div>

@@ -1,22 +1,25 @@
 import SidebarCart from '@/components/cart/SidebarCart';
 import MobileMenu from '@/components/menu/MobileMenu';
 import { RootState } from '@/store';
-import { login, logout } from '@/store/reducer/loginSlice';
+import { login, logout, setUserData } from '@/store/reducer/loginSlice';
 import Tools from '@/tools/Tools';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { setSearchTerm } from "../../../store/reducer/filterReducer"
+import { setSearchTerm, setSelectedCategory } from "../../../store/reducer/filterReducer"
 import { Row } from 'react-bootstrap';
 import CategoryPopup from '@/components/category-popup/CategoryPopup';
 import Link from 'next/link';
 import Dropdown from 'rc-dropdown';
 import Menu, { Item as MenuItem } from 'rc-menu';
 import 'rc-dropdown/assets/index.css';
+import useSWR from 'swr';
+import fetcher from '@/components/fetcher/Fetcher';
+import { authStorage } from '@/utils/authStorage';
 
 const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const { searchTerm } = useSelector((state: RootState) => state.filter)
+    const { searchTerm, selectedCategory } = useSelector((state: RootState) => state.filter)
     const [searchInput, setSearchInput] = useState(searchTerm || "");
     const dispatch = useDispatch()
     const router = useRouter()
@@ -25,20 +28,40 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [visible, setVisible] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<any>('vegetables');
+    const [selectedItem, setSelectedItem] = useState<any>('All Categories');
+    
+    // Fetch categories from API
+    const { data: categoriesData, error: categoriesError } = useSWR("/api/category", fetcher);
+    const categories = categoriesData || [];
 
 
 
+    // Load user data from sessionStorage on mount
     useEffect(() => {
-        const loginUser = JSON.parse(localStorage.getItem("login_user") || "null");
-        if (loginUser) {
-            dispatch(login(loginUser));
+        const userData = authStorage.getUserData();
+        const token = authStorage.getToken();
+        if (userData && token) {
+            dispatch(setUserData({
+                isAuthenticated: true,
+                user: { ...userData, token },
+            }));
         }
     }, [dispatch]);
 
     const handleMenuClick = (info: any) => {
-        setSelectedItem(`${info.key}`);
-        setVisible(false); 
+        const categoryName = info.key;
+        setSelectedItem(categoryName === 'all' ? 'All Categories' : categoryName);
+        setVisible(false);
+        
+        // Update selected category in Redux
+        if (categoryName === 'all') {
+            dispatch(setSelectedCategory([]));
+        } else {
+            dispatch(setSelectedCategory([categoryName]));
+        }
+        
+        // Navigate to shop page to show filtered results
+        router.push("/shop-full-width-col-4");
     };
 
     const handleVisibleChange = (flag: boolean) => {
@@ -46,14 +69,31 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     };
 
     const handleSearch = (event: any) => {
-        setSearchInput(event.target.value);
+        const value = event.target.value;
+        setSearchInput(value);
+        // Update search term in Redux as user types (optional - can be removed if you only want to search on submit)
+        // dispatch(setSearchTerm(value));
     };
 
     const handleSubmit = (event: any) => {
         event.preventDefault();
-        dispatch(setSearchTerm(searchInput))
-        router.push("/shop-full-width-col-4")
-    }
+        dispatch(setSearchTerm(searchInput));
+        router.push("/shop-full-width-col-4");
+    };
+    
+    // Sync search input with Redux state when it changes externally
+    useEffect(() => {
+        setSearchInput(searchTerm || "");
+    }, [searchTerm]);
+    
+    // Update selected item display when category changes
+    useEffect(() => {
+        if (selectedCategory && selectedCategory.length > 0) {
+            setSelectedItem(selectedCategory[0]);
+        } else {
+            setSelectedItem('All Categories');
+        }
+    }, [selectedCategory]);
 
     const openCart = () => {
         setIsCartOpen(true);
@@ -72,7 +112,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     }
 
     const handleLogout = () => {
-        localStorage.removeItem("login_user");
+        authStorage.clear();
         dispatch(logout());
         router.push("/");
     };
@@ -102,11 +142,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     };
 
     const menu = (
-        <Menu className='select-options' style={{display: "block", top: "-5px", borderRadius: "10px"}} onClick={handleMenuClick}>
-            <MenuItem key="vegetables">vegetables</MenuItem>
-            <MenuItem key="Bakery">Bakery</MenuItem>
-            <MenuItem key="Cold Drinks">Cold Drinks</MenuItem>
-            <MenuItem key="Fruits">Fruits</MenuItem>
+        <Menu className='select-options' style={{display: "block", top: "-5px", borderRadius: "10px", maxHeight: "300px", overflowY: "auto"}} onClick={handleMenuClick}>
+            <MenuItem key="all">All Categories</MenuItem>
+            {categories.map((cat: any) => (
+                <MenuItem key={cat.category || cat.name} style={{padding: "8px 16px"}}>
+                    {cat.category || cat.name} {cat.count ? `(${cat.count})` : ''}
+                </MenuItem>
+            ))}
         </Menu>
     );
 
@@ -159,8 +201,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                                     <div className="custom-select">{selectedItem}<i style={{fontSize: "30px"}} className="ri-arrow-drop-down-line"></i></div>
                                                 </div>
                                             </Dropdown>
-                                            <input onChange={handleSearch} className="form-control bb-search-bar" placeholder="Search products..."
-                                                type="text" />
+                                            <input 
+                                                value={searchInput}
+                                                onChange={handleSearch} 
+                                                className="form-control bb-search-bar" 
+                                                placeholder="Search products..."
+                                                type="text" 
+                                            />
                                             <button className="submit" type="submit"><i className="ri-search-line"></i></button>
                                         </form>
                                     </div>

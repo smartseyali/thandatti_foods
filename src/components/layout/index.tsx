@@ -6,10 +6,10 @@ import Footer from "./Footer";
 import Loader from "../loader/Loader";
 import Toastify from "../toast-popup/Toastify";
 import { useDispatch } from "react-redux";
-import { setItems } from "@/store/reducer/cartSlice";
 import { setWishlistItems } from "@/store/reducer/wishlistSlice";
 import { usePathname } from "next/navigation";
 import { trackAttribution, getAttributionForConversion } from "@/utils/attribution";
+import { useLoadCart } from "@/hooks/useCart";
 
 const Layout = ({ children }: any) => {
   const [loading, setLoading] = useState(true);
@@ -57,72 +57,86 @@ const Layout = ({ children }: any) => {
   }, []); // Only run on mount
 
   useEffect(() => {
-    // Start loading animation when the pathname changes
-    setLoading(true);
+    // Immediately hide loading - no artificial delay
+    setLoading(false);
 
-    // Track page view on route change
+    // Defer analytics tracking to not block navigation
+    // Use requestIdleCallback or setTimeout to run after page is visible
     if (typeof window !== 'undefined') {
-      const attribution = getAttributionForConversion();
+      const trackAnalytics = () => {
+        const attribution = getAttributionForConversion();
 
-      // Update Google Analytics page view
-      if ((window as any).gtag) {
-        (window as any).gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
-          page_path: pathname,
-          page_title: document.title,
-        });
+        // Update Google Analytics page view
+        if ((window as any).gtag) {
+          (window as any).gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
+            page_path: pathname,
+            page_title: document.title,
+          });
 
-        (window as any).gtag('event', 'page_view', {
-          page_path: pathname,
-          page_title: document.title,
-          source: attribution?.source || 'direct',
-          medium: attribution?.medium || 'none',
-        });
-      }
+          (window as any).gtag('event', 'page_view', {
+            page_path: pathname,
+            page_title: document.title,
+            source: attribution?.source || 'direct',
+            medium: attribution?.medium || 'none',
+          });
+        }
 
-      // Update Meta Pixel page view
-      if ((window as any).fbq) {
-        (window as any).fbq('track', 'PageView', {
-          content_name: document.title,
-          source: attribution?.source || 'direct',
-        });
+        // Update Meta Pixel page view
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'PageView', {
+            content_name: document.title,
+            source: attribution?.source || 'direct',
+          });
+        }
+      };
+
+      // Use requestIdleCallback if available, otherwise setTimeout with 0 delay
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(trackAnalytics, { timeout: 2000 });
+      } else {
+        setTimeout(trackAnalytics, 0);
       }
     }
-
-    // End loading animation after a delay to simulate page load time
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 500); // Adjust timeout as needed
-
-    // Clear timeout if the component is unmounted or pathname changes again quickly
-    return () => clearTimeout(timeout);
   }, [pathname]);
 
-  useEffect(() => {
-    const itemsFromLocalStorage =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("products") || "[]")
-        : [];
-    if (itemsFromLocalStorage.length) {
-      dispatch(setItems(itemsFromLocalStorage));
-    }
-  }, [dispatch]);
+  // Load cart from API or localStorage (only on mount, not on every navigation)
+  // This prevents unnecessary API calls on every page change
+  useLoadCart();
 
+  // Load wishlist from API (database) instead of localStorage
   useEffect(() => {
-    const itemsFromLocalStorage =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("wishlist") || "[]")
-        : [];
-    if (itemsFromLocalStorage.length) {
-      dispatch(setWishlistItems(itemsFromLocalStorage));
-    }
+    const loadWishlist = async () => {
+      try {
+        // Check if user is authenticated
+        if (typeof window !== 'undefined') {
+          const token = sessionStorage.getItem('auth_token');
+          if (token) {
+            // User is authenticated, load wishlist from API
+            const { wishlistApi, mapWishlistItemToFrontend } = await import('@/utils/api');
+            const wishlistItems = await wishlistApi.getAll();
+            const mappedItems = wishlistItems.map((item: any) => mapWishlistItemToFrontend(item));
+            dispatch(setWishlistItems(mappedItems));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading wishlist:', error);
+        // If error, set empty wishlist
+        dispatch(setWishlistItems([]));
+      }
+    };
+
+    loadWishlist();
   }, [dispatch]);
+  // Check if current route is admin route
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   return (
     <>
       <Toastify />
-      <Header />
+      {!isAdminRoute && <Header />}
       {loading && <Loader />}
       {children}
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </>
   );
 };

@@ -49,10 +49,10 @@ const Shop = ({
 
   const { data, error } = useSWR(["/api/all-arrivals", postData], ([url, postData]) => fetcher(url, postData));
 
+  // Reset to page 1 when filters change
   useEffect(() => {
-    dispatch(setSearchTerm(""));
     setCurrentPage(1);
-  }, [dispatch]);
+  }, [selectedCategory, searchTerm, sortOption, range, selectedWeight, selectedColor, selectedTags]);
 
   const handleSortChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {

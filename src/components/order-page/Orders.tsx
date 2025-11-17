@@ -3,7 +3,7 @@ import { RootState } from '@/store';
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { useSelector } from 'react-redux';
-import { useLoadOrders } from '../login/Checkout';
+import { useLoadOrders } from '@/hooks/useOrders';
 import { useRouter } from 'next/navigation';
 import { Row } from 'react-bootstrap';
 

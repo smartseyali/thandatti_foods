@@ -89,6 +89,96 @@ class Order {
     const result = await pool.query(query, [paymentStatus, id]);
     return result.rows[0];
   }
+
+  static async updatePaymentInfo(id, paymentInfo) {
+    const { payment_gateway, payment_transaction_id, payment_signature } = paymentInfo;
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (payment_gateway !== undefined) {
+      updates.push(`payment_gateway = $${paramCount++}`);
+      values.push(payment_gateway);
+    }
+    if (payment_transaction_id !== undefined) {
+      updates.push(`payment_transaction_id = $${paramCount++}`);
+      values.push(payment_transaction_id);
+    }
+    if (payment_signature !== undefined) {
+      updates.push(`payment_signature = $${paramCount++}`);
+      values.push(payment_signature);
+    }
+
+    if (updates.length === 0) {
+      return await this.findById(id);
+    }
+
+    values.push(id);
+    const query = `
+      UPDATE orders 
+      SET ${updates.join(', ')}, updated_at = current_timestamp
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  static async findByPaymentTransactionId(transactionId) {
+    const query = 'SELECT * FROM orders WHERE payment_transaction_id = $1';
+    const result = await pool.query(query, [transactionId]);
+    return result.rows;
+  }
+
+  static async findAll(options = {}) {
+    const { page = 1, limit = 50, status } = options;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const values = [];
+    let paramCount = 1;
+    let whereClause = '';
+
+    if (status) {
+      whereClause = `WHERE o.status = $${paramCount++}`;
+      values.push(status);
+    }
+
+    const query = `
+      SELECT o.*, 
+             sa.first_name as shipping_first_name, sa.last_name as shipping_last_name,
+             sa.address_line as shipping_address, sa.city as shipping_city,
+             sa.postal_code as shipping_postal_code, sa.country as shipping_country,
+             ba.first_name as billing_first_name, ba.last_name as billing_last_name,
+             ba.address_line as billing_address, ba.city as billing_city,
+             ba.postal_code as billing_postal_code, ba.country as billing_country,
+             u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name
+      FROM orders o
+      LEFT JOIN addresses sa ON o.shipping_address_id = sa.id
+      LEFT JOIN addresses ba ON o.billing_address_id = ba.id
+      LEFT JOIN users u ON o.user_id = u.id
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT $${paramCount++} OFFSET $${paramCount}
+    `;
+    values.push(parseInt(limit), offset);
+    const result = await pool.query(query, values);
+    return result.rows;
+  }
+
+  static async count(options = {}) {
+    const { status } = options;
+    const values = [];
+    let paramCount = 1;
+    let whereClause = '';
+
+    if (status) {
+      whereClause = `WHERE status = $${paramCount++}`;
+      values.push(status);
+    }
+
+    const query = `SELECT COUNT(*) as total FROM orders ${whereClause}`;
+    const result = await pool.query(query, values);
+    return parseInt(result.rows[0].total);
+  }
 }
 
 module.exports = Order;

@@ -3,6 +3,8 @@ import { RootState } from '@/store';
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal';
 import { useSelector } from 'react-redux';
+import { useLoadOrders } from '@/hooks/useOrders';
+import { orderApi, mapOrderToFrontend } from '@/utils/api';
 
 interface Product {
     id: number;
@@ -28,13 +30,46 @@ interface Order {
 
 const OrderPage = ({ id }: any) => {
     const orders = useSelector((state: RootState) => state.cart.orders);
-    const order = orders.find((order: any) => (order as any).orderId === id);
+    const [order, setOrder] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState<string>(
         new Date().toLocaleDateString("en-GB")
     );
+    
+    useLoadOrders();
+
     useEffect(() => {
         setCurrentDate(new Date().toLocaleDateString("en-GB"));
     }, []);
+
+    useEffect(() => {
+        const loadOrder = async () => {
+            try {
+                // First check Redux store
+                let foundOrder = orders.find((order: any) => (order as any).orderId === id);
+                
+                if (!foundOrder) {
+                    // If not found, try to fetch from API
+                    try {
+                        const orderData = await orderApi.getById(id);
+                        foundOrder = mapOrderToFrontend(orderData, orderData.items);
+                    } catch (error) {
+                        console.error('Error fetching order:', error);
+                    }
+                }
+                
+                setOrder(foundOrder || null);
+            } catch (error) {
+                console.error('Error loading order:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (id) {
+            loadOrder();
+        }
+    }, [id, orders]);
 
     function isOrderWithData(obj: any): obj is Order {
         return (
@@ -60,7 +95,13 @@ const OrderPage = ({ id }: any) => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {isOrderWithData(order) ? (order.products.map((product: Product, productIndex: number) => (
+                                        {loading ? (
+                                            <tr>
+                                                <td colSpan={5} style={{ textAlign: "center" }}>
+                                                    <span style={{ color: "#777" }}>Loading...</span>
+                                                </td>
+                                            </tr>
+                                        ) : isOrderWithData(order) ? (order.products.map((product: Product, productIndex: number) => (
                                             <tr style={{ textAlign: "center" }} key={productIndex}>
                                                 <td>
                                                     <span>{productIndex + 1}</span>

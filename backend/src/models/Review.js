@@ -3,19 +3,32 @@ const pool = require('../config/database');
 class Review {
   static async create(reviewData) {
     const { productId, userId, rating, comment, avatarUrl } = reviewData;
+    // Auto-approve reviews on creation (set is_approved = true)
     const query = `
-      INSERT INTO product_reviews (product_id, user_id, rating, comment, avatar_url)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO product_reviews (product_id, user_id, rating, comment, avatar_url, is_approved)
+      VALUES ($1, $2, $3, $4, $5, true)
       RETURNING *
     `;
     const values = [productId, userId, rating, comment, avatarUrl];
     const result = await pool.query(query, values);
     
+    console.log('Review created with ID:', result.rows[0].id, 'is_approved:', result.rows[0].is_approved);
+    
     // Update product rating
     const Product = require('./Product');
     await Product.updateRating(productId);
     
-    return result.rows[0];
+    // Fetch the created review with user information
+    const reviewWithUser = await this.findById(result.rows[0].id);
+    if (reviewWithUser) {
+      console.log('Review with user data:', {
+        id: reviewWithUser.id,
+        is_approved: reviewWithUser.is_approved,
+        first_name: reviewWithUser.first_name,
+        last_name: reviewWithUser.last_name,
+      });
+    }
+    return reviewWithUser || result.rows[0];
   }
 
   static async findByProductId(productId, options = {}) {
@@ -37,6 +50,10 @@ class Review {
     values.push(limit, offset);
 
     const result = await pool.query(query, values);
+    console.log(`Found ${result.rows.length} approved reviews for product ${productId}`);
+    if (result.rows.length > 0) {
+      console.log('Review IDs:', result.rows.map(r => ({ id: r.id, is_approved: r.is_approved, name: `${r.first_name} ${r.last_name}` })));
+    }
     return result.rows;
   }
 

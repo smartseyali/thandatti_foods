@@ -30,6 +30,11 @@ class Wishlist {
     await pool.query(query, [userId, productId]);
   }
 
+  static async removeItemById(userId, wishlistItemId) {
+    const query = 'DELETE FROM wishlist_items WHERE user_id = $1 AND id = $2';
+    await pool.query(query, [userId, wishlistItemId]);
+  }
+
   static async isInWishlist(userId, productId) {
     const query = 'SELECT * FROM wishlist_items WHERE user_id = $1 AND product_id = $2';
     const result = await pool.query(query, [userId, productId]);

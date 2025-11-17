@@ -1,10 +1,13 @@
-import { getRegistrationData, setRegistrationData } from '@/components/login/Register';
+import { getUserData, setRegistrationData, RegistrationData } from '@/utils/userData';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { Col, Form, Row } from 'react-bootstrap';
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import * as yup from "yup";
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { authStorage } from '@/utils/authStorage';
 
 // export interface RegistrationData {
 //     firstName: string;
@@ -68,24 +71,46 @@ const ProfileEdit = () => {
         description: "",
     });
 
+    const user = useSelector((state: RootState) => state.login.user);
+    const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
+
     useEffect(() => {
-        const loginUserString = localStorage.getItem("login_user");
-        const loginUser = !!loginUserString ? JSON.parse(loginUserString) : {};
-        if (loginUser) {
-            setPreviewImage(loginUser?.profilePhoto ?? "");
-            setInitialValues({
-                uid: loginUser?.uid ?? "",
-                firstName: loginUser?.firstName ?? "",
-                lastName: loginUser?.lastName ?? "",
-                email: loginUser?.email ?? "",
-                phoneNumber: loginUser?.phoneNumber ?? "",
-                address: loginUser?.address ?? "",
-                shippingAddress: loginUser?.shippingAddress ?? "",
-                profilePhoto: loginUser?.profilePhoto ?? "",
-                description: loginUser?.description ?? "",
-            });
+        if (isAuthenticated) {
+            // Get user data from Redux store or authStorage
+            const userData = user || authStorage.getUserData();
+            if (userData) {
+                setPreviewImage(userData?.profilePhoto ?? "");
+                setInitialValues({
+                    uid: userData.id || userData.uid || "",
+                    firstName: userData.firstName || "",
+                    lastName: userData.lastName || "",
+                    email: userData.email || "",
+                    phoneNumber: userData.phoneNumber || "",
+                    address: userData.address || "",
+                    shippingAddress: userData.shippingAddress || "",
+                    profilePhoto: userData.profilePhoto || "",
+                    description: userData.description || "",
+                });
+            } else {
+                // Fallback to getUserData utility
+                const data = getUserData();
+                if (data) {
+                    setPreviewImage(data.profilePhoto ?? "");
+                    setInitialValues({
+                        uid: data.uid || "",
+                        firstName: data.firstName || "",
+                        lastName: data.lastName || "",
+                        email: data.email || "",
+                        phoneNumber: data.phoneNumber || "",
+                        address: data.address || "",
+                        shippingAddress: data.shippingAddress || "",
+                        profilePhoto: data.profilePhoto || "",
+                        description: data.description || "",
+                    });
+                }
+            }
         }
-    }, []);
+    }, [isAuthenticated, user]);
 
     const handleFileChange = (e: any, setFieldValue: any) => {
         const file = e.target.files?.[0];
@@ -101,18 +126,39 @@ const ProfileEdit = () => {
         }
     };
 
-    const onSubmit = (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
-        formikHelpers.setSubmitting(false);
-        const loginUserString = localStorage.getItem("login_user");
-        const loginUser = !!loginUserString ? JSON.parse(loginUserString) : {};
-        if(loginUser) {
-            const updatedData = [...getRegistrationData()];
-            const index = updatedData.findIndex((user:any) => user.uid === loginUser.uid);
-            updatedData[index] = {...values};
-            setRegistrationData(updatedData);
-            localStorage.setItem("login_user", JSON.stringify(values));    
+    const onSubmit = async (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
+        formikHelpers.setSubmitting(true);
+        
+        try {
+            // Update authStorage
+            const currentUserData = authStorage.getUserData() || {};
+            const updatedUserData = {
+                ...currentUserData,
+                ...values,
+                id: values.uid || currentUserData.id,
+            };
+            authStorage.setUserData(updatedUserData);
+            
+            // Also update using setRegistrationData for compatibility
+            setRegistrationData([values as RegistrationData]);
+            
+            // TODO: Update user profile via API when backend endpoint is available
+            // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+            // await fetch(`${API_BASE_URL}/api/auth/profile`, {
+            //     method: 'PUT',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${authStorage.getToken()}`,
+            //     },
+            //     body: JSON.stringify(values),
+            // });
+            
+            formikHelpers.setSubmitting(false);
+            router.push("/user-profile");
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            formikHelpers.setSubmitting(false);
         }
-        router.push("/user-profile");
     }
 
     return (

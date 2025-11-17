@@ -34,7 +34,8 @@ async function addToWishlist(req, res, next) {
 async function removeFromWishlist(req, res, next) {
   try {
     const { id } = req.params;
-    await Wishlist.removeItem(req.userId, id);
+    // id is the wishlist_item.id (UUID), not productId
+    await Wishlist.removeItemById(req.userId, id);
     res.json({ message: 'Item removed from wishlist' });
   } catch (error) {
     next(error);

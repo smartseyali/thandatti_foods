@@ -2,12 +2,13 @@
 import DiscountCoupon from '@/components/discount-coupon/DiscountCoupon';
 import QuantitySelector from '@/components/quantity-selector/QuantitySelector';
 import { RootState } from '@/store';
-import { removeItem } from '@/store/reducer/cartSlice';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { Col, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { removeItemFromCart } from '@/utils/cartOperations';
+import { showErrorToast, showSuccessToast } from '@/components/toast-popup/Toastify';
 
 const Cart = () => {
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
@@ -16,8 +17,16 @@ const Cart = () => {
     const [discount, setDiscount] = useState(0);
     const dispatch = useDispatch()
 
-    const handleRemoveItem = (data: any) => {
-        dispatch(removeItem(data.id));
+    const handleRemoveItem = async (data: any) => {
+        try {
+            // Use cartItemId if available, otherwise use id
+            const cartItemId = data.cartItemId || data.id;
+            await removeItemFromCart(dispatch, cartItemId);
+            showSuccessToast("Item removed from cart");
+        } catch (error: any) {
+            console.error('Error removing item:', error);
+            showErrorToast(error.message || "Failed to remove item from cart");
+        }
     }
     useEffect(() => {
         if (cartSlice.length === 0) {
@@ -88,8 +97,8 @@ const Cart = () => {
                                         <div className="bb-cart-summary">
                                             <div className="inner-summary">
                                                 <ul>
-                                                    <li><span className="text-left">Sub-Total</span><span className="text-right">${subTotal.toFixed(2)}</span></li>
-                                                    <li><span className="text-left">Delivery Charges</span><span className="text-right">${vat.toFixed(2)}</span></li>
+                                                    <li><span className="text-left">Sub-Total</span><span className="text-right">₹{subTotal.toFixed(2)}</span></li>
+                                                    <li><span className="text-left">Delivery Charges</span><span className="text-right">₹{vat.toFixed(2)}</span></li>
                                                     <li>
                                                         <span className="text-left">Coupon Discount</span>
                                                         <span className="text-right"><a className="bb-coupon drop-coupon">Apply Coupon</a></span>
@@ -99,7 +108,7 @@ const Cart = () => {
                                             </div>
                                             <div className="summary-total">
                                                 <ul>
-                                                    <li><span className="text-left">Total Amount</span><span className="text-right">${total.toFixed(2)}</span></li>
+                                                    <li><span className="text-left">Total Amount</span><span className="text-right">₹{total.toFixed(2)}</span></li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -138,15 +147,15 @@ const Cart = () => {
                                                             </a>
                                                         </td>
                                                         <td>
-                                                            <span className="price">${data.newPrice}</span>
+                                                            <span className="price">₹{data.newPrice.toFixed(2)}</span>
                                                         </td>
+                                                          <td>
+                                                              <div className="qty-plus-minus">
+                                                                  <QuantitySelector id={data.id} quantity={data.quantity} cartItemId={data.cartItemId} />
+                                                              </div>
+                                                          </td>
                                                         <td>
-                                                            <div className="qty-plus-minus">
-                                                                <QuantitySelector id={data.id} quantity={data.quantity} />
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <span className="price">${data.newPrice * data.quantity}</span>
+                                                            <span className="price">₹{(data.newPrice * data.quantity).toFixed(2)}</span>
                                                         </td>
                                                         <td>
                                                             <div className="pro-remove">

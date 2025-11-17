@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const ProductImage = require('../models/ProductImage');
 const ProductTag = require('../models/ProductTag');
+const ProductAttribute = require('../models/ProductAttribute');
+const Review = require('../models/Review');
 
 async function getAllProducts(req, res, next) {
   try {
@@ -18,10 +20,29 @@ async function getAllProducts(req, res, next) {
     const products = await Product.findAll(options);
     const total = await Product.count(options);
 
-    // Get images and tags for each product
+    // Get images, tags, and attributes for each product
     for (let product of products) {
-      product.images = await ProductImage.findByProductId(product.id);
-      product.tags = await ProductTag.findByProductId(product.id);
+      try {
+        product.images = await ProductImage.findByProductId(product.id);
+      } catch (error) {
+        console.error(`Error fetching images for product ${product.id}:`, error.message);
+        product.images = [];
+      }
+      
+      try {
+        product.tags = await ProductTag.findByProductId(product.id);
+      } catch (error) {
+        console.error(`Error fetching tags for product ${product.id}:`, error.message);
+        product.tags = [];
+      }
+      
+      try {
+        product.attributes = await ProductAttribute.findByProductId(product.id);
+      } catch (error) {
+        // Table might not exist if migrations haven't been run yet
+        console.warn(`Error fetching attributes for product ${product.id}:`, error.message);
+        product.attributes = [];
+      }
     }
 
     res.json({
@@ -47,9 +68,36 @@ async function getProductById(req, res, next) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Get images and tags
-    product.images = await ProductImage.findByProductId(product.id);
-    product.tags = await ProductTag.findByProductId(product.id);
+    // Get images, tags, attributes, and reviews
+    try {
+      product.images = await ProductImage.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching images for product ${product.id}:`, error.message);
+      product.images = [];
+    }
+    
+    try {
+      product.tags = await ProductTag.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching tags for product ${product.id}:`, error.message);
+      product.tags = [];
+    }
+    
+    try {
+      product.attributes = await ProductAttribute.findByProductId(product.id);
+    } catch (error) {
+      // Table might not exist if migrations haven't been run yet
+      console.warn(`Error fetching attributes for product ${product.id}:`, error.message);
+      product.attributes = [];
+    }
+    
+    try {
+      // Get approved reviews for the product
+      product.reviews = await Review.findByProductId(product.id, { approvedOnly: true, limit: 50 });
+    } catch (error) {
+      console.error(`Error fetching reviews for product ${product.id}:`, error.message);
+      product.reviews = [];
+    }
 
     res.json({ product });
   } catch (error) {
@@ -60,16 +108,52 @@ async function getProductById(req, res, next) {
 async function createProduct(req, res, next) {
   try {
     const productData = req.body;
+    
+    // Determine primary image from images array if provided
+    let primaryImage = productData.primaryImage || '';
+    if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
+      // Find primary image or use first image
+      const primaryImg = req.body.images.find(img => img.isPrimary) || req.body.images[0];
+      primaryImage = primaryImg.url || primaryImage;
+    }
+    
+    // Set primary image in product data
+    productData.primaryImage = primaryImage;
     const product = await Product.create(productData);
 
     // Add images if provided
-    if (req.body.images && Array.isArray(req.body.images)) {
-      for (const image of req.body.images) {
+    if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
+      for (let i = 0; i < req.body.images.length; i++) {
+        const image = req.body.images[i];
         await ProductImage.create({
           productId: product.id,
-          imageUrl: image.url,
-          isPrimary: image.isPrimary || false,
-          displayOrder: image.displayOrder || 0,
+          imageUrl: image.imagePath || image.url || image.imageUrl,
+          isPrimary: image.isPrimary || (i === 0 && !primaryImage), // First image is primary if no primary specified
+          displayOrder: image.displayOrder !== undefined ? image.displayOrder : i,
+        });
+      }
+      
+      // Update primary_image in products table if not already set
+      if (!product.primary_image && primaryImage) {
+        await Product.update(product.id, { primaryImage: primaryImage });
+        product.primary_image = primaryImage;
+      }
+    }
+
+    // Add attributes if provided (e.g., weights with prices)
+    if (req.body.attributes && Array.isArray(req.body.attributes) && req.body.attributes.length > 0) {
+      for (let i = 0; i < req.body.attributes.length; i++) {
+        const attr = req.body.attributes[i];
+        await ProductAttribute.create({
+          productId: product.id,
+          attributeType: attr.attributeType || 'weight',
+          attributeValue: attr.attributeValue || attr.value,
+          price: attr.price,
+          oldPrice: attr.oldPrice || attr.old_price,
+          stockQuantity: attr.stockQuantity || attr.stock_quantity || 0,
+          skuSuffix: attr.skuSuffix || attr.sku_suffix,
+          isDefault: attr.isDefault || attr.is_default || (i === 0),
+          displayOrder: attr.displayOrder !== undefined ? attr.displayOrder : i,
         });
       }
     }
@@ -82,6 +166,28 @@ async function createProduct(req, res, next) {
           tag,
         });
       }
+    }
+
+    // Get images, tags, and attributes for response
+    try {
+      product.images = await ProductImage.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching images for product ${product.id}:`, error.message);
+      product.images = [];
+    }
+    
+    try {
+      product.tags = await ProductTag.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching tags for product ${product.id}:`, error.message);
+      product.tags = [];
+    }
+    
+    try {
+      product.attributes = await ProductAttribute.findByProductId(product.id);
+    } catch (error) {
+      console.warn(`Error fetching attributes for product ${product.id}:`, error.message);
+      product.attributes = [];
     }
 
     res.status(201).json({
@@ -98,21 +204,86 @@ async function updateProduct(req, res, next) {
     const { id } = req.params;
     const productData = req.body;
 
+    // Determine primary image from images array if provided
+    let primaryImage = productData.primaryImage;
+    if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
+      // Find primary image or use first image
+      const primaryImg = req.body.images.find(img => img.isPrimary) || req.body.images[0];
+      primaryImage = primaryImg.imagePath || primaryImg.url || primaryImage;
+    }
+    
+    // Set primary image in product data if we have one
+    if (primaryImage) {
+      productData.primaryImage = primaryImage;
+    }
+
     const product = await Product.update(id, productData);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Update images if provided
-    if (req.body.images && Array.isArray(req.body.images)) {
+    // Update images if provided (only update if images array is explicitly provided)
+    if (req.body.images !== undefined && Array.isArray(req.body.images)) {
+      // Delete existing images
       await ProductImage.deleteByProductId(id);
-      for (const image of req.body.images) {
-        await ProductImage.create({
-          productId: id,
-          imageUrl: image.url,
-          isPrimary: image.isPrimary || false,
-          displayOrder: image.displayOrder || 0,
-        });
+      
+      // Add new images if any
+      if (req.body.images.length > 0) {
+        for (let i = 0; i < req.body.images.length; i++) {
+          const image = req.body.images[i];
+          await ProductImage.create({
+            productId: id,
+            imageUrl: image.imagePath || image.url || image.imageUrl,
+            isPrimary: image.isPrimary || (i === 0 && !primaryImage), // First image is primary if no primary specified
+            displayOrder: image.displayOrder !== undefined ? image.displayOrder : i,
+          });
+        }
+        
+        // Update primary_image in products table if we determined a new one
+        if (primaryImage && product.primary_image !== primaryImage) {
+          await Product.update(id, { primaryImage: primaryImage });
+          product.primary_image = primaryImage;
+        }
+      } else {
+        // If images array is empty, clear primary_image as well
+        if (product.primary_image) {
+          await Product.update(id, { primaryImage: null });
+          product.primary_image = null;
+        }
+      }
+    } else if (primaryImage && product.primary_image !== primaryImage) {
+      // If only primaryImage is provided (but no images array), just update primary_image field
+      await Product.update(id, { primaryImage: primaryImage });
+      product.primary_image = primaryImage;
+    }
+
+    // Update attributes if provided (only update if attributes array is explicitly provided)
+    if (req.body.attributes !== undefined && Array.isArray(req.body.attributes)) {
+      try {
+        // Delete existing attributes
+        await ProductAttribute.deleteByProductId(id);
+        
+        // Add new attributes if any
+        if (req.body.attributes.length > 0) {
+          for (let i = 0; i < req.body.attributes.length; i++) {
+            const attr = req.body.attributes[i];
+            await ProductAttribute.create({
+              productId: id,
+              attributeType: attr.attributeType || 'weight',
+              attributeValue: attr.attributeValue || attr.value,
+              price: attr.price,
+              oldPrice: attr.oldPrice || attr.old_price,
+              stockQuantity: attr.stockQuantity || attr.stock_quantity || 0,
+              skuSuffix: attr.skuSuffix || attr.sku_suffix,
+              isDefault: attr.isDefault || attr.is_default || (i === 0),
+              displayOrder: attr.displayOrder !== undefined ? attr.displayOrder : i,
+            });
+          }
+        }
+      } catch (error) {
+        // Table might not exist if migrations haven't been run yet
+        console.warn('Error updating product attributes (table might not exist):', error.message);
+        // Don't fail the entire request, just log the warning
       }
     }
 
@@ -125,6 +296,28 @@ async function updateProduct(req, res, next) {
           tag,
         });
       }
+    }
+
+    // Get updated images, tags, and attributes for response
+    try {
+      product.images = await ProductImage.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching images for product ${product.id}:`, error.message);
+      product.images = [];
+    }
+    
+    try {
+      product.tags = await ProductTag.findByProductId(product.id);
+    } catch (error) {
+      console.error(`Error fetching tags for product ${product.id}:`, error.message);
+      product.tags = [];
+    }
+    
+    try {
+      product.attributes = await ProductAttribute.findByProductId(product.id);
+    } catch (error) {
+      console.warn(`Error fetching attributes for product ${product.id}:`, error.message);
+      product.attributes = [];
     }
 
     res.json({

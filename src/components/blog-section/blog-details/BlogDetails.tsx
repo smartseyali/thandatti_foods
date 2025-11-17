@@ -1,5 +1,5 @@
 "use client"
-import { getRegistrationData } from '@/components/login/Register'
+import { getUserData } from '@/utils/userData'
 import { RootState } from '@/store'
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 
 const BlogDetails = () => {
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
+    const user = useSelector((state: RootState) => state.login.user);
     const [validated, setValidated] = useState(false)
     const [userData, setUserData] = useState<any | null>(null);
     const [comment, setComment] = useState([
@@ -31,12 +32,17 @@ const BlogDetails = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const data = getRegistrationData();
-            if (data?.length > 0) {
-                setUserData(data[data.length - 1]);
+            // Use Redux user data first, then fallback to getUserData
+            if (user) {
+                setUserData(user);
+            } else {
+                const data = getUserData();
+                if (data) {
+                    setUserData(data);
+                }
             }
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user]);
 
     const handleCommentChange = (e: any) => {
         const { name, value } = e.target

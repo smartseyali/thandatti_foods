@@ -3,36 +3,45 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { useSelector } from 'react-redux'
-import { getRegistrationData } from '../login/Register'
+import { getUserData, RegistrationData } from '@/utils/userData'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link'
-export interface RegistrationData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    address: string;
-    city: string;
-    postCode: string;
-    country: string;
-    state: string;
-    profilePhoto?: string;
-    description: string;
-    shippingAddress: string;
-}
+
 const UserProfile = () => {
     const router = useRouter()
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
+    const user = useSelector((state: RootState) => state.login.user);
     const [userData, setUserData] = useState<RegistrationData | null>(null);
 
     useEffect(() => {
         if (isAuthenticated) {
-            const data = getRegistrationData();
-            if (data.length > 0) {
-                setUserData(data[data.length - 1]);
+            // First try to get from Redux store
+            if (user) {
+                const data: RegistrationData = {
+                    uid: user.id || user.uid,
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                    email: user.email || '',
+                    phoneNumber: user.phoneNumber || '',
+                    address: user.address || '',
+                    city: user.city || '',
+                    postCode: user.postCode || '',
+                    country: user.country || '',
+                    state: user.state || '',
+                    profilePhoto: user.profilePhoto || '',
+                    description: user.description || '',
+                    shippingAddress: user.shippingAddress || '',
+                };
+                setUserData(data);
+            } else {
+                // Fallback to authStorage
+                const data = getUserData();
+                if (data) {
+                    setUserData(data);
+                }
             }
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, user, router]);
 
     const handleSubmit = (e: any) => {
         e.preventDefault();

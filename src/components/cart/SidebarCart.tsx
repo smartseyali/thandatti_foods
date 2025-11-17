@@ -1,6 +1,5 @@
 
 import { RootState } from '@/store';
-import { removeItem, } from '@/store/reducer/cartSlice';
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import QuantitySelector from '../quantity-selector/QuantitySelector';
@@ -9,6 +8,8 @@ import useSWR from 'swr';
 import ProductItemCard from '../item/ProductItemCard';
 import { Col, Row } from 'react-bootstrap';
 import Link from 'next/link';
+import { removeItemFromCart } from '@/utils/cartOperations';
+import { showErrorToast, showSuccessToast } from '../toast-popup/Toastify';
 
 const SidebarCart = ({
     onSuccess = () => { },
@@ -22,7 +23,8 @@ const SidebarCart = ({
     const [vat, setVat] = useState(0);
     const dispatch = useDispatch();
 
-    const { data, error } = useSWR("/api/related-item", fetcher, { onSuccess, onError });
+    // Fetch related products (multiple products for the sidebar)
+    const { data, error } = useSWR("/api/related-products", fetcher, { onSuccess, onError });
 
     useEffect(() => {
         if (cartSlice.length === 0) {
@@ -47,12 +49,31 @@ const SidebarCart = ({
     if (!data) return <div></div>;
 
     const getData = () => {
-        if (hasPaginate) return data.data;
-        else return data;
+        // Ensure we always return an array
+        if (hasPaginate) {
+            return Array.isArray(data.data) ? data.data : [];
+        } else {
+            // If data is an array, return it; if it's a single object, wrap it in an array
+            if (Array.isArray(data)) {
+                return data;
+            } else if (data && typeof data === 'object') {
+                // Single product object - wrap in array
+                return [data];
+            }
+            return [];
+        }
     };
 
-    const handleRemoveItem = (data: any) => {
-        dispatch(removeItem(data.id));
+    const handleRemoveItem = async (data: any) => {
+        try {
+            // Use cartItemId if available, otherwise use id
+            const cartItemId = data.cartItemId || data.id;
+            await removeItemFromCart(dispatch, cartItemId);
+            showSuccessToast("Item removed from cart");
+        } catch (error: any) {
+            console.error('Error removing item:', error);
+            showErrorToast(error.message || "Failed to remove item from cart");
+        }
     }
     return (
         <>
@@ -101,11 +122,11 @@ const SidebarCart = ({
                                                     <img src={data.image} alt="product-img-1" />
                                                 </a>
                                                 <div className="bb-cart-contact">
-                                                    <Link href="/product-left-sidebar" className="bb-cart-sub-title">{data.title}</Link>
-                                                    <span className="cart-price"><span className="new-price">${data.newPrice * data.quantity}.00</span>{' '} x {data.weight}</span>
-                                                    <div className="qty-plus-minus">
-                                                        <QuantitySelector id={data.id} quantity={data.quantity} />
-                                                    </div>
+                                                    <Link href={`/product/${data.id}`} className="bb-cart-sub-title">{data.title}</Link>
+                                                    <span className="cart-price"><span className="new-price">₹{(data.newPrice * data.quantity).toFixed(2)}</span>{' '} x {data.weight}</span>
+                                                      <div className="qty-plus-minus">
+                                                          <QuantitySelector id={data.id} quantity={data.quantity} cartItemId={data.cartItemId} />
+                                                      </div>
                                                 </div>
                                             </li>
                                         ))}
@@ -119,15 +140,15 @@ const SidebarCart = ({
                                             <tbody>
                                                 <tr>
                                                     <td className="title">Sub-Total :</td>
-                                                    <td className="price">${subTotal.toFixed(2)}</td>
+                                                    <td className="price">₹{subTotal.toFixed(2)}</td>
                                                 </tr>
                                                 <tr>
                                                     <td className="title">VAT (20%) :</td>
-                                                    <td className="price">${vat.toFixed(2)}</td>
+                                                    <td className="price">₹{vat.toFixed(2)}</td>
                                                 </tr>
                                                 <tr>
                                                     <td className="title">Total :</td>
-                                                    <td className="price">${total.toFixed(2)}</td>
+                                                    <td className="price">₹{total.toFixed(2)}</td>
                                                 </tr>
                                             </tbody>
                                         </table>

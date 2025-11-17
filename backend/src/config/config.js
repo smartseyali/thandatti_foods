@@ -19,5 +19,21 @@ module.exports = {
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
+  payment: {
+    razorpay: {
+      keyId: process.env.RAZORPAY_KEY_ID || '',
+      keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    },
+    phonepe: {
+      merchantId: process.env.PHONEPE_MERCHANT_ID || '',
+      saltKey: process.env.PHONEPE_SALT_KEY || '',
+      saltIndex: process.env.PHONEPE_SALT_INDEX || '1',
+      environment: process.env.PHONEPE_ENVIRONMENT || 'test',
+      baseUrl: process.env.PHONEPE_ENVIRONMENT === 'production' 
+        ? 'https://api.phonepe.com/apis/hermes'
+        : 'https://api-preprod.phonepe.com/apis/pg-sandbox',
+    },
+    webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || '',
+  },
 };
 

@@ -94,10 +94,24 @@ const ShopProductItemCard = ({ data }: any) => {
                         <span>{data.sale}</span>
                     </span>
                     <div className="inner-img">
-                        <img className="main-img" src={data.image}
-                            alt="product-1" />
-                        <img className="hover-img" src={data.imageTwo}
-                            alt="product-1" />
+                        <img 
+                            className="main-img" 
+                            src={data.image || '/assets/img/product/default.jpg'}
+                            alt={data.title || 'product'}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                            }}
+                        />
+                        <img 
+                            className="hover-img" 
+                            src={data.imageTwo || data.image || '/assets/img/product/default.jpg'}
+                            alt={data.title || 'product'}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                            }}
+                        />
                     </div>
                     <ul className="bb-pro-actions">
                         <li className="bb-btn-group">
@@ -113,11 +127,6 @@ const ShopProductItemCard = ({ data }: any) => {
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a onClick={() => handleCompareItem(data)} title="Compare">
-                                <i className="ri-repeat-line"></i>
-                            </a>
-                        </li>
-                        <li className="bb-btn-group">
                             <a onClick={() => handleCart(data)} title="Add To Cart">
                                 <i className="ri-shopping-bag-4-line"></i>
                             </a>
@@ -129,15 +138,14 @@ const ShopProductItemCard = ({ data }: any) => {
                         <Link href="/shop-full-width-col-4">{data.category}</Link>
                         <StarRating rating={data.rating} />
                     </div>
-                    <h4 className="bb-pro-title"><Link href="/product-left-sidebar">{data.title}</Link></h4>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Cumque consectetur
-                        sit mollitia nihil magnam
-                        perspiciatis eos atque qui cupiditate delectus. Provident totam optio
-                        sapiente nam.</p>
+                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link></h4>
+                    {data.description && <p>{data.description}</p>}
                     <div className="bb-price">
                         <div className="inner-price">
                             <span className="new-price">₹{data.newPrice}</span>
-                            <span className={`${data.oldPrice ? "old-price" : "item-left"}`}>{data.oldPrice ? `₹${data.oldPrice}` : data.itemLeft}</span>
+                            <span className={`${data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}`}>
+                                {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : (typeof data.oldPrice === 'string' && data.oldPrice.startsWith('₹') ? data.oldPrice : `₹${data.oldPrice}`)) : data.itemLeft}
+                            </span>
                         </div>
                         <span className="last-items">{data.weight}</span>
                     </div>

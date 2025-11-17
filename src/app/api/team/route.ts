@@ -4,3 +4,7 @@ import Team from "../../../utility/data/team";
 export async function POST(req: NextRequest) {
   return NextResponse.json(Team);
 }
+
+export async function GET(req: NextRequest) {
+  return NextResponse.json(Team);
+}

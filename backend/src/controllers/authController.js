@@ -4,20 +4,35 @@ const { generateToken } = require('../utils/jwt');
 
 async function register(req, res, next) {
   try {
-    const { email, password, firstName, lastName, phoneNumber, profilePhoto, description } = req.body;
+    const { phoneNumber, password, firstName, lastName, address, city, postCode, country, state, email, profilePhoto, description } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findByEmail(email);
+    if (!phoneNumber) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    // Check if user already exists by phone number
+    const existingUser = await User.findByPhoneNumber(phoneNumber);
     if (existingUser) {
-      return res.status(409).json({ message: 'User with this email already exists' });
+      return res.status(409).json({ message: 'User with this phone number already exists' });
+    }
+
+    // Check if email is provided and user exists
+    if (email) {
+      const existingEmailUser = await User.findByEmail(email);
+      if (existingEmailUser) {
+        return res.status(409).json({ message: 'User with this email already exists' });
+      }
     }
 
     // Hash password
     const passwordHash = await hashPassword(password);
 
+    // Generate email from phoneNumber if not provided
+    const userEmail = email || `${phoneNumber}@thandattifoods.com`;
+
     // Create user
     const userData = {
-      email,
+      email: userEmail,
       passwordHash,
       firstName,
       lastName,
@@ -29,8 +44,32 @@ async function register(req, res, next) {
 
     const user = await User.create(userData);
 
+    // Create address if provided
+    const Address = require('../models/Address');
+    if (address && city && postCode && country && state) {
+      try {
+        await Address.create({
+          userId: user.id,
+          firstName,
+          lastName,
+          addressLine: address,
+          city,
+          postalCode: postCode,
+          country,
+          countryName: country,
+          state,
+          stateName: state,
+          isDefault: true,
+          addressType: 'both', // both shipping and billing
+        });
+      } catch (addressError) {
+        console.error('Error creating address during registration:', addressError);
+        // Continue even if address creation fails
+      }
+    }
+
     // Generate token
-    const token = generateToken({ userId: user.id, email: user.email });
+    const token = generateToken({ userId: user.id, email: user.email, phoneNumber: user.phone_number });
 
     // Remove password hash from response
     delete user.password_hash;
@@ -47,12 +86,24 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { phoneNumber, password, email } = req.body;
 
-    // Find user
-    const user = await User.findByEmail(email);
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
+    }
+
+    // Find user by phoneNumber (priority) or email
+    let user = null;
+    if (phoneNumber) {
+      user = await User.findByPhoneNumber(phoneNumber);
+    } else if (email) {
+      user = await User.findByEmail(email);
+    } else {
+      return res.status(400).json({ message: 'Phone number or email is required' });
+    }
+
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid phone number/email or password' });
     }
 
     // Check if user is active
@@ -63,11 +114,11 @@ async function login(req, res, next) {
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password_hash);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid phone number/email or password' });
     }
 
     // Generate token
-    const token = generateToken({ userId: user.id, email: user.email });
+    const token = generateToken({ userId: user.id, email: user.email, phoneNumber: user.phone_number });
 
     // Remove password hash from response
     delete user.password_hash;

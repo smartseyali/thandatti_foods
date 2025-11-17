@@ -59,6 +59,18 @@ class Category {
     const result = await pool.query(query, [id]);
     return parseInt(result.rows[0].count);
   }
+
+  static async findByParentId(parentId) {
+    const query = 'SELECT * FROM categories WHERE parent_id = $1';
+    const result = await pool.query(query, [parentId]);
+    return result.rows;
+  }
+
+  static async count() {
+    const query = 'SELECT COUNT(*) as count FROM categories';
+    const result = await pool.query(query);
+    return parseInt(result.rows[0].count);
+  }
 }
 
 module.exports = Category;

@@ -84,19 +84,16 @@ export const wishlistSlice = createSlice({
   reducers: {
     setWishlistItems(state, action: PayloadAction<Item[]>) {
       state.wishlist = action.payload;
+      // No localStorage - wishlist is stored in database via API
     },
     addWishlist(state, action: PayloadAction<Item>) {
       state.wishlist.push(action.payload);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("wishlist", JSON.stringify(state.wishlist));
-      }
+      // No localStorage - wishlist is stored in database via API
     },
-    removeWishlist(state, action: PayloadAction<number>) {
+    removeWishlist(state, action: PayloadAction<number | string>) {
       state.wishlist = state.wishlist.filter(
         (item) => item.id !== action.payload);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("wishlist", JSON.stringify(state.wishlist));
-      }
+      // No localStorage - wishlist is stored in database via API
     },
   },
 });

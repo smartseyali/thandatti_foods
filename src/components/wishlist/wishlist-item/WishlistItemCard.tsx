@@ -2,12 +2,11 @@ import ItemModal from '@/components/modal/ItemModal';
 import StarRating from '@/components/stars/StarRating';
 import { showErrorToast, showSuccessToast } from '@/components/toast-popup/Toastify';
 import { RootState } from '@/store';
-import { addItem, updateItemQuantity } from '@/store/reducer/cartSlice';
 import { addCompare } from '@/store/reducer/compareSlice';
-import { addWishlist, removeWishlist } from '@/store/reducer/wishlistSlice';
 import Link from 'next/link';
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
+import { removeItemFromWishlist, addItemToWishlist } from '@/utils/wishlistOperations';
 
 interface Item {
     id: number;
@@ -36,8 +35,16 @@ const WishlistItemCard = ({
     const compareItems = useSelector((state: RootState) => state.compare?.compare)
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleRemoveWishlist = (id: any) => {
-        dispatch(removeWishlist(id))
+    const handleRemoveWishlist = async (data: any) => {
+        try {
+            // Use wishlistItemId if available, otherwise use id
+            const wishlistItemId = data.wishlistItemId || data.id;
+            await removeItemFromWishlist(dispatch, wishlistItemId);
+            showSuccessToast("Item removed from wishlist");
+        } catch (error: any) {
+            console.error('Error removing from wishlist:', error);
+            showErrorToast(error.message || "Failed to remove item from wishlist");
+        }
     }
     const openItemModal = () => {
         setIsModalOpen(true)
@@ -45,32 +52,38 @@ const WishlistItemCard = ({
     const closeItemModal = () => {
         setIsModalOpen(false)
     }
-    const handleCart = (data: Item) => {
-        const isItemInCart = cartSlice?.some((item: Item) => item.id === data.id);
+    const handleCart = async (data: Item) => {
+        try {
+            const { addItemToCart, incrementCartItem } = await import('@/utils/cartOperations');
+            const isItemInCart = cartSlice?.some((item: any) => item.productId === data.id || item.id === data.id);
 
-        if (!isItemInCart) {
-            dispatch(addItem({ ...data, quantity: 1 }));
-            showSuccessToast("Item added to cart item");
-        } else {
-            const updatedCartItems = cartSlice.map((item: Item) =>
-                item.id === data.id
-                    ? { ...item, quantity: item.quantity + 1, price: item.newPrice + data.newPrice } // Increment quantity and update price
-                    : item
-            );
-            dispatch(updateItemQuantity(updatedCartItems));
-            showSuccessToast("Item quantity increased in cart");
+            if (!isItemInCart) {
+                await addItemToCart(dispatch, data, 1);
+                showSuccessToast("Item added to cart");
+            } else {
+                await incrementCartItem(dispatch, data, cartSlice || []);
+                showSuccessToast("Item quantity increased in cart");
+            }
+        } catch (error: any) {
+            console.error('Error adding to cart:', error);
+            showErrorToast(error.message || "Failed to add item to cart. Please login.");
         }
     };
 
-    const handleWishlist = (data: Item) => {
-        const isItemInWishlist = wishlistItem.some(
-            (item: Item) => item.id === data.id
-        );
-        if (!isItemInWishlist) {
-            dispatch(addWishlist(data));
-            showSuccessToast("Item added to wishlist");
-        } else {
-            showErrorToast("Item already have to wishlist");
+    const handleWishlist = async (data: Item) => {
+        try {
+            const isItemInWishlist = wishlistItem.some(
+                (item: any) => item.productId === data.id || item.id === data.id
+            );
+            if (!isItemInWishlist) {
+                await addItemToWishlist(dispatch, data.id);
+                showSuccessToast("Item added to wishlist");
+            } else {
+                showErrorToast("Item already in wishlist");
+            }
+        } catch (error: any) {
+            console.error('Error adding to wishlist:', error);
+            showErrorToast(error.message || "Failed to add item to wishlist. Please login.");
         }
     };
 
@@ -92,7 +105,7 @@ const WishlistItemCard = ({
             <div className="bb-pro-box">
                 <div className="bb-pro-img">
                     <span className="bb-remove-wish">
-                        <a onClick={() => handleRemoveWishlist(data.id)}>
+                        <a onClick={() => handleRemoveWishlist(data)}>
                             <i className="ri-close-circle-fill"></i>
                         </a>
                     </span>
@@ -117,11 +130,6 @@ const WishlistItemCard = ({
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a onClick={() => handleCompareItem(data)}>
-                                <i className="ri-repeat-line"></i>
-                            </a>
-                        </li>
-                        <li className="bb-btn-group">
                             <a onClick={() => handleCart(data)}>
                                 <i className="ri-shopping-bag-4-line"></i>
                             </a>
@@ -133,12 +141,14 @@ const WishlistItemCard = ({
                         <Link href="/shop-full-width-col-4">{data.category}</Link>
                         <StarRating rating={data.rating} />
                     </div>
-                    <h4 className="bb-pro-title"><Link href="/product-left-sidebar">{data.title}</Link>
+                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link>
                     </h4>
                     <div className="bb-price">
                         <div className="inner-price">
-                        <span className="new-price">₹{data.newPrice}.00</span>
-                        <span className={`${data.oldPrice ? "old-price" : "item-left"}`}>{data.oldPrice ? `₹${data.oldPrice}` : data.itemLeft}</span>
+                        <span className="new-price">₹{data.newPrice.toFixed(2)}</span>
+                        <span className={`${data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}`}>
+                            {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : data.itemLeft}
+                        </span>
                         </div>
                         <span className="last-items">{data.weight}</span>
                     </div>

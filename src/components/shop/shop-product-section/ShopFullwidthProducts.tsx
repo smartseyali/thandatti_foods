@@ -114,7 +114,16 @@ const ShopFullwidthProducts = ({
         setIsSidebarOpen(false);
     };
 
-    if (error) return <div>Failed to load products</div>;
+    // Handle loading and error states
+    if (error) {
+        console.error("Error loading products:", error);
+        return <div style={{ textAlign: "center", padding: "20px" }}>Failed to load products. Please try again later.</div>;
+    }
+
+    // Ensure data has the correct structure
+    const productsData = data?.data || [];
+    const totalItems = data?.totalItems || 0;
+    const totalPages = data?.totalPages || 0;
 
     return (
         <>
@@ -152,28 +161,40 @@ const ShopFullwidthProducts = ({
                             </Row>
                         </div>
                     </Col>
-                    {!data ? (<><Spinner /></>) : (
+                    {!data ? (
+                        <Spinner />
+                    ) : (
                         <>
                             {/* Mobile: horizontal scroll with 2 columns visible */}
                             <div className="bb-scrollable-row d-flex d-md-none">
-                                {data?.data.map((items: any, index: number) => (
-                                    <ShopProductItemCard data={items} key={index} />
-                                ))}
+                                {Array.isArray(productsData) && productsData.length > 0 ? (
+                                    productsData.map((items: any, index: number) => (
+                                        <ShopProductItemCard data={items} key={index} />
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: "center", padding: "20px", width: "100%" }}>No products found.</div>
+                                )}
                             </div>
 
                             {/* Desktop/Tablet: keep existing grid */}
                             <Fade triggerOnce direction='up' duration={1000} delay={200} className={`d-none d-md-block col-lg-${col} ${colfive} ${width} ${lg} col-md-4 col-6 mb-24 bb-product-box pro-bb-content ${isGridView ? "width-100" : ""}`} data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
-                                {data?.data.map((items: any, index: number) => (
-                                    <ShopProductItemCard data={items} key={index} />
-                                ))}
+                                {Array.isArray(productsData) && productsData.length > 0 ? (
+                                    productsData.map((items: any, index: number) => (
+                                        <ShopProductItemCard data={items} key={index} />
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: "center", padding: "20px" }}>No products found.</div>
+                                )}
                             </Fade>
                         </>
                     )}
                     <Col sm={12}>
-                        {!data?.data.length ? (<div style={{ textAlign: "center" }}>Products is not found.</div>) : (
+                        {!Array.isArray(productsData) || productsData.length === 0 ? (
+                            <div style={{ textAlign: "center" }}>Products not found.</div>
+                        ) : (
                             <div className="bb-pro-pagination">
-                                <p>Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, data?.totalItems)} of {data?.totalItems} item(s)</p>
-                                <Paginantion currentPage={currentPage} totalPages={data?.totalPages} onPageChange={handlePageChange} />
+                                <p>Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} item(s)</p>
+                                <Paginantion currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                             </div>
                         )}
                     </Col>

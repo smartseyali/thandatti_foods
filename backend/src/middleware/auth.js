@@ -57,8 +57,20 @@ function requireRole(...roles) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
+    // Log role check for debugging
+    console.log('Role check:', {
+      userId: req.user.id,
+      userRole: req.user.role,
+      requiredRoles: roles,
+      roleMatch: roles.includes(req.user.role),
+    });
+
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+      return res.status(403).json({ 
+        message: 'Insufficient permissions',
+        userRole: req.user.role,
+        requiredRoles: roles
+      });
     }
 
     next();

@@ -1,99 +1,296 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import SingleProductSlider from './single-product-slider/SingleProductSlider'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link';
+import { productApi, mapProductToFrontend, reviewApi } from '@/utils/api';
 
-const ProductsDetails = () => {
+const ProductsDetails = ({ productId }: { productId?: string }) => {
     const [activeIndex, setActiveIndex] = useState<number>(0);
     const [quantity, setQuantity] = useState(1);
+    const [product, setProduct] = useState<any>(null);
+    const [selectedAttribute, setSelectedAttribute] = useState<any>(null);
+    const [selectedPrice, setSelectedPrice] = useState<number>(0);
+    const [selectedOldPrice, setSelectedOldPrice] = useState<number | null>(null);
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [reviewCount, setReviewCount] = useState<number>(0);
 
-    const options = [
-        { value: "250g" }, { value: "500g" }, { value: "1kg" }, { value: "2kg" },
-    ]
+    const fetchProductAndReviews = async () => {
+        if (productId) {
+            try {
+                // Fetch product data
+                const productData = await productApi.getById(productId);
+                if (productData) {
+                    const mappedProduct = mapProductToFrontend(productData, productData.images || []);
+                    
+                    // Debug: Log product data to check if details/information are present
+                    console.log('Product Data:', {
+                        rating: mappedProduct?.rating,
+                        detailedDescription: mappedProduct?.detailedDescription || (mappedProduct as any)?.detailed_description,
+                        description: mappedProduct?.description,
+                        reviews: mappedProduct?.reviews?.length || 0,
+                        productDetails: mappedProduct?.productDetails,
+                        productInformation: mappedProduct?.productInformation,
+                        hasProductDetails: !!(mappedProduct?.productDetails || (mappedProduct as any)?.product_details),
+                        hasProductInformation: !!(mappedProduct?.productInformation || (mappedProduct as any)?.product_information),
+                    });
+                    
+                    setProduct(mappedProduct);
+                    
+                    // Set default attribute if available
+                    if (mappedProduct?.attributes && mappedProduct.attributes.length > 0) {
+                        const defaultIndex = mappedProduct.attributes.findIndex((attr: any) => attr.isDefault);
+                        const selectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
+                        setActiveIndex(selectedIndex);
+                        const defaultAttr = mappedProduct.attributes[selectedIndex];
+                        setSelectedAttribute(defaultAttr);
+                        setSelectedPrice(defaultAttr.price);
+                        setSelectedOldPrice(defaultAttr.oldPrice);
+                    } else {
+                        // Use product price if no attributes
+                        setSelectedPrice(mappedProduct?.newPrice || 0);
+                        setSelectedOldPrice(mappedProduct?.oldPrice || null);
+                        setActiveIndex(0);
+                    }
+                }
+                
+                // Fetch reviews from database
+                try {
+                    const reviewsData = await reviewApi.getByProductId(productId);
+                    if (reviewsData && Array.isArray(reviewsData)) {
+                        setReviews(reviewsData);
+                        setReviewCount(reviewsData.length);
+                    } else {
+                        setReviews([]);
+                        setReviewCount(0);
+                    }
+                } catch (reviewError) {
+                    console.error('Error fetching reviews:', reviewError);
+                    setReviews([]);
+                    setReviewCount(0);
+                }
+            } catch (err) {
+                console.error("Error fetching product:", err);
+            }
+        }
+    };
+
+    useEffect(() => {
+        fetchProductAndReviews();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productId]);
+
+    // Listen for review creation events to refresh product data
+    useEffect(() => {
+        const handleReviewCreated = (event: CustomEvent) => {
+            if (event.detail?.productId === productId) {
+                console.log('Review created event received, refreshing product data...');
+                // Refresh product data and reviews after a short delay to ensure backend has updated
+                setTimeout(() => {
+                    fetchProductAndReviews();
+                }, 500);
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('reviewCreated', handleReviewCreated as EventListener);
+            return () => {
+                window.removeEventListener('reviewCreated', handleReviewCreated as EventListener);
+            };
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productId]);
 
     const handleActiveTab = (index: any) => {
-        setActiveIndex(index)
+        setActiveIndex(index);
+        // Update selected attribute and price when user selects a weight
+        if (product?.attributes && product.attributes[index]) {
+            const attr = product.attributes[index];
+            setSelectedAttribute(attr);
+            setSelectedPrice(attr.price);
+            setSelectedOldPrice(attr.oldPrice);
+        }
     }
 
     const handleIncrement = () => {
         setQuantity(prevQty => prevQty + 1);
-      };
-    
-      const handleDecrement = () => {
+    };
+
+    const handleDecrement = () => {
         setQuantity(prevQty => (prevQty > 1 ? prevQty - 1 : 1));
-      };
+    };
+
+    // Calculate discount and format price based on selected attribute
+    const getPriceDisplay = () => {
+        if (!product) return { price: "₹0.00", discount: "", mrp: "" };
+        
+        const newPrice = selectedPrice > 0 ? `₹${selectedPrice.toFixed(2)}` : (product.newPrice ? `₹${product.newPrice.toFixed(2)}` : "₹0.00");
+        let discount = "";
+        let mrp = "";
+        
+        const oldPriceNum = selectedOldPrice || product.oldPrice;
+        const newPriceNum = selectedPrice || product.newPrice || 0;
+        
+        if (oldPriceNum && oldPriceNum > 0 && newPriceNum > 0 && oldPriceNum > newPriceNum) {
+            const discountPercent = ((oldPriceNum - newPriceNum) / oldPriceNum) * 100;
+            discount = `-${Math.round(discountPercent)}%`;
+            mrp = `₹${oldPriceNum.toFixed(2)}`;
+        }
+        
+        return { price: newPrice, discount, mrp };
+    };
+
+    const priceDisplay = getPriceDisplay();
+    const displayTitle = product?.title || "Ground Nuts Oil Pack 52g";
+    const displaySKU = product?.sku || "WH12";
+    const displayStatus = product?.status || "In stock";
+    // Use detailed description from database, fallback to regular description
+    const displayDescription = product?.detailedDescription || product?.detailed_description || product?.description || '';
+    
+    // Calculate rating from database (average of reviews or product rating field)
+    // Rating is calculated from approved reviews and stored in product.rating field
+    const calculateRating = () => {
+        // First, try to get rating from product.rating field (calculated from reviews)
+        if (product?.rating !== undefined && product?.rating !== null && product.rating > 0) {
+            return parseFloat(product.rating) || 0;
+        }
+        
+        // Calculate from fetched reviews (approved reviews from database)
+        if (reviews && Array.isArray(reviews) && reviews.length > 0) {
+            const validReviews = reviews.filter((r: any) => {
+                const rating = parseInt(r.rating) || 0;
+                return rating > 0 && rating <= 5;
+            });
+            if (validReviews.length > 0) {
+                const sum = validReviews.reduce((acc: number, review: any) => {
+                    return acc + (parseInt(review.rating) || 0);
+                }, 0);
+                const avgRating = sum / validReviews.length;
+                return Math.round(avgRating * 10) / 10; // Round to 1 decimal place
+            }
+        }
+        
+        // Fallback to product.reviews if available
+        if (product?.reviews && Array.isArray(product.reviews) && product.reviews.length > 0) {
+            const approvedReviews = product.reviews.filter((r: any) => r.is_approved !== false);
+            if (approvedReviews.length > 0) {
+                const sum = approvedReviews.reduce((acc: number, review: any) => acc + (parseInt(review.rating) || 0), 0);
+                const avgRating = sum / approvedReviews.length;
+                return Math.round(avgRating * 10) / 10; // Round to 1 decimal place
+            }
+        }
+        
+        // Return 0 if no rating available
+        return 0;
+    };
+    
+    const productRating = calculateRating();
+    
+    // Calculate rating stars (0-5 rating) from database
+    const renderStars = () => {
+        const rating = productRating;
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        // If no rating, show empty stars
+        if (rating === 0) {
+            return (
+                <>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <i key={`empty-${i}`} className="ri-star-line"></i>
+                    ))}
+                </>
+            );
+        }
+        
+        return (
+            <>
+                {Array.from({ length: fullStars }).map((_, i) => (
+                    <i key={`full-${i}`} className="ri-star-fill"></i>
+                ))}
+                {hasHalfStar && <i className="ri-star-half-fill"></i>}
+                {Array.from({ length: emptyStars }).map((_, i) => (
+                    <i key={`empty-${i}`} className="ri-star-line"></i>
+                ))}
+            </>
+        );
+    };
+
     return (
         <>
             <div className="bb-single-pro">
                 <Row>
                     <Col sm={12} lg={5} className="col-12 mb-24">
-                        <SingleProductSlider />
+                        <SingleProductSlider productId={productId} />
                     </Col>
                     <Col lg={7} className="col-12 mb-24">
                         <div className="bb-single-pro-contact">
                             <div className="bb-sub-title">
-                                <h4>Ground Nuts Oil Pack 52g</h4>
+                                <h4>{displayTitle}</h4>
                             </div>
                             <div className="bb-single-rating">
                                 <span className="bb-pro-rating">
-                                    <i className="ri-star-fill"></i>
-                                    <i className="ri-star-fill"></i>
-                                    <i className="ri-star-fill"></i>
-                                    <i className="ri-star-fill"></i>
-                                    <i className="ri-star-line"></i>
+                                    {renderStars()}
                                 </span>
-                                <span className="bb-read-review">
-                                    |&nbsp;&nbsp;<Link href="#bb-spt-nav-review">992 Ratings</Link>
-                                </span>
+                                {(reviewCount > 0 || (product?.reviews && product.reviews.length > 0)) && (
+                                    <span className="bb-read-review">
+                                        |&nbsp;&nbsp;<Link href="#reviews">{(reviewCount || product?.reviews?.length || 0)} {(reviewCount || product?.reviews?.length || 0) === 1 ? 'Review' : 'Reviews'}</Link>
+                                    </span>
+                                )}
                             </div>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quas nihil laboriosam
-                                voluptatem
-                                ab consectetur dolorum id, soluta sunt at culpa commodi totam quod natus qui!
-                            </p>
+                            {/* Detailed Description below rating (from database) */}
+                            {displayDescription && (
+                                <p style={{ marginTop: '10px', marginBottom: '15px' }}>{displayDescription}</p>
+                            )}
                             <div className="bb-single-price-wrap">
                                 <div className="bb-single-price">
                                     <div className="price">
-                                        <h5>₹923.00 <span>-78%</span></h5>
+                                        <h5>{priceDisplay.price} {priceDisplay.discount && <span>{priceDisplay.discount}</span>}</h5>
                                     </div>
-                                    <div className="mrp">
-                                        <p>M.R.P. : <span>₹1,999.00</span></p>
-                                    </div>
+                                    {priceDisplay.mrp && (
+                                        <div className="mrp">
+                                            <p>M.R.P. : <span>{priceDisplay.mrp}</span></p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="bb-single-price">
                                     <div className="sku">
-                                        <h5>SKU#: WH12</h5>
+                                        <h5>SKU#: {displaySKU}</h5>
                                     </div>
                                     <div className="stock">
-                                        <span>In stock</span>
+                                        <span>{displayStatus}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="bb-single-list">
-                                <ul>
-                                    <li><span>Closure :</span> Hook & Loop</li>
-                                    <li><span>Sole :</span> Polyvinyl Chloride</li>
-                                    <li><span>Width :</span> Medium</li>
-                                    <li><span>Outer Material :</span> A-Grade Standard Quality</li>
-                                </ul>
-                            </div>
-                            <div className="bb-single-pro-weight">
-                                <div className="pro-title">
-                                    <h4>Weight</h4>
+                            {product?.attributes && product.attributes.length > 0 && (
+                                <div className="bb-single-pro-weight">
+                                    <div className="pro-title">
+                                        <h4>Weight / Size</h4>
+                                    </div>
+                                    <div className="bb-pro-variation-contant">
+                                        <ul>
+                                            {product.attributes.map((attr: any, index: number) => (
+                                                <li 
+                                                    key={attr.id || index} 
+                                                    onClick={() => handleActiveTab(index)} 
+                                                    className={activeIndex === index ? "active-variation" : ""}
+                                                >
+                                                    <span>{attr.attributeValue}</span>
+                                                    {attr.oldPrice && attr.price && attr.oldPrice > attr.price && (
+                                                        <span className="attribute-discount" style={{ fontSize: '0.8em', color: '#dc3545', marginLeft: '5px' }}>
+                                                            {Math.round(((attr.oldPrice - attr.price) / attr.oldPrice) * 100)}% off
+                                                        </span>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
-                                <div className="bb-pro-variation-contant">
-                                    <ul>
-                                        {options.map((data, index) => (
-                                            <li key={index} onClick={() => handleActiveTab(index)} className={activeIndex === index ? "active-variation" : ""}>
-                                                <span>{data.value}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
+                            )}
                             <div className="bb-single-qty">
                                 <div className="qty-plus-minus">
                                     <div
-                                    onClick={handleDecrement}
+                                        onClick={handleDecrement}
                                         className='bb-qtybtn'
                                         style={{ margin: " 0 0 0 10px" }}
                                     >

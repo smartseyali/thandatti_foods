@@ -44,8 +44,15 @@ const ExploreCategory = ({
     AOS.init();
   }, []);
 
-  if (error) return <div>Failed to load products</div>;
+  if (error) {
+    console.error("Error loading categories:", error);
+    // Return empty section to maintain layout
+    return <div></div>;
+  }
   if (!data) return <div></div>
+  
+  // Ensure data is an array
+  const categories = Array.isArray(data) ? data : [];
 
   return (
     <>
@@ -55,9 +62,9 @@ const ExploreCategory = ({
             <Col lg={5} className="col-12 mb-24">
               <div className="bb-category-img">
                 <img src="/assets/img/category/category.jpg" alt="category" />
-                <div className="bb-offers">
+                {/* <div className="bb-offers">
                   <span>50% Off</span>
-                </div>
+                </div> */}
               </div>
             </Col>
             <Col lg={7} className="col-12 mb-24">
@@ -66,15 +73,15 @@ const ExploreCategory = ({
                   <h2>Explore Categories</h2>
                 </div>
                 <Swiper {...settings} className="bb-category-block owl-carousel">
-                  {data && data.length > 0 ? data.map((data: any, index: any) => (
+                  {categories && categories.length > 0 ? categories.map((data: any, index: any) => (
                     <SwiperSlide key={index}>
-                      <div className={`bb-category-box category-items-${data.num}`} data-aos="flip-left" data-aos-duration="1000" data-aos-delay="200">
+                      <div className={`bb-category-box category-items-${data.num || index + 1}`} data-aos="flip-left" data-aos-duration="1000" data-aos-delay="200">
                         <div className="category-image">
                           <img src={data.image} alt="category" />
                         </div>
                         <div className="category-sub-contact">
                           <h5><Link href="/shop-full-width-col-4">{data.name}</Link></h5>
-                          <p>{data.item} items</p>
+                          <p>{data.item || 0} items</p>
                         </div>
                       </div>
                     </SwiperSlide>

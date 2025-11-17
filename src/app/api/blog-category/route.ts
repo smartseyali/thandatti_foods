@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Blog from "../../../utility/data/blogcontent";
 import _ from "lodash";
 
-export async function POST(req: NextRequest) {
-
+async function getBlogCategoryData() {
   const BlogCategory = Blog;
 
   const groupedByCategory = _.groupBy(BlogCategory, "category")
@@ -13,5 +12,15 @@ export async function POST(req: NextRequest) {
     count: items.length
   }))
 
+  return result;
+}
+
+export async function POST(req: NextRequest) {
+  const result = await getBlogCategoryData();
+  return NextResponse.json(result);
+}
+
+export async function GET(req: NextRequest) {
+  const result = await getBlogCategoryData();
   return NextResponse.json(result);
 }

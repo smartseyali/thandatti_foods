@@ -112,13 +112,13 @@ const CategoryPopup = ({
                                                     <img src={data.image} alt="new-product-1" />
                                                 </a>
                                                 <div className="side-contact">
-                                                    <h4 className="bb-pro-title"><Link href="/product-left-sidebar">{data.title}</Link></h4>
+                                                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link></h4>
                                                     <span className="bb-pro-rating">
                                                         <StarRating rating={data.rating} />
                                                     </span>
                                                     <div className="inner-price">
-                                                        <span className="new-price">${data.newPrice}</span>{' '}
-                                                        <span className="old-price">${data.oldPrice}</span>
+                                                        <span className="new-price">₹{data.newPrice.toFixed(2)}</span>{' '}
+                                                        {data.oldPrice && <span className="old-price">₹{typeof data.oldPrice === 'number' ? data.oldPrice.toFixed(2) : data.oldPrice}</span>}
                                                     </div>
                                                 </div>
                                             </div>

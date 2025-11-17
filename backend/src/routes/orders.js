@@ -4,7 +4,9 @@ const orderController = require('../controllers/orderController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateOrder, validateUUID } = require('../middleware/validation');
 
+router.get('/all', authenticate, requireRole('admin'), orderController.getAllOrders);
 router.get('/', authenticate, orderController.getUserOrders);
+router.get('/by-transaction/:transactionId', authenticate, orderController.getOrderByTransactionId);
 router.get('/:id', authenticate, validateUUID, orderController.getOrderById);
 router.post('/', authenticate, validateOrder, orderController.createOrder);
 router.put('/:id/status', authenticate, requireRole('admin'), validateUUID, orderController.updateOrderStatus);

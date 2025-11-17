@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Tag from "../../../utility/data/allarrivals";
 import _ from "lodash"
 
-export async function POST(req: NextRequest) {
-
+async function getTagData() {
   const TagItems = Tag;
   const groupedByTag = _.groupBy(TagItems, "tag");
 
@@ -11,5 +10,15 @@ export async function POST(req: NextRequest) {
     Tag: key,
     count: items.length 
   }));
+  return result;
+}
+
+export async function POST(req: NextRequest) {
+  const result = await getTagData();
+  return NextResponse.json(result);
+}
+
+export async function GET(req: NextRequest) {
+  const result = await getTagData();
   return NextResponse.json(result);
 }

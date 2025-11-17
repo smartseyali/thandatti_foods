@@ -36,6 +36,7 @@ async function updateCartItem(req, res, next) {
       return res.status(400).json({ message: 'Valid quantity is required' });
     }
 
+    // id is the cart_item id (UUID)
     const cartItem = await Cart.updateQuantity(req.userId, id, quantity);
     if (!cartItem) {
       return res.status(404).json({ message: 'Cart item not found' });
@@ -53,6 +54,7 @@ async function updateCartItem(req, res, next) {
 async function removeFromCart(req, res, next) {
   try {
     const { id } = req.params;
+    // id is the cart_item id (UUID)
     await Cart.removeItem(req.userId, id);
     res.json({ message: 'Item removed from cart' });
   } catch (error) {

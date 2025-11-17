@@ -44,24 +44,46 @@ const NewArrivals = ({
     const handleProductClick = (index: number) => {
         setSelectedIndex(index);
     };
-    if (error) return <div>Failed to load products</div>;
+    
+    if (error) {
+        console.error("Error loading products:", error);
+        // Show empty state instead of error message
+        return (
+            <section className="section-product-tabs padding-tb-50">
+                <div className="container">
+                    <Row>
+                        <div className='col-12'>
+                            <div style={{ padding: '40px', textAlign: 'center' }}>
+                                <p>No products available at the moment.</p>
+                            </div>
+                        </div>
+                    </Row>
+                </div>
+            </section>
+        );
+    }
     if (!data) return <div></div>
+    
+    // Ensure data is an array
+    const products = Array.isArray(data) ? data : [];
 
     const filterByAll = () => {
-        return data && data.length > 0 ? data
+        if (!products || products.length === 0) return [];
+        return products
         .map((item:any) => ({ item, sort: Math.random() }))
         .sort((a:any, b:any) => a.sort - b.sort)
         .map(({ item }: any) => item)
-        .slice(0, 12): [];
+        .slice(0, 12);
     };
 
     const filterByCategory = (category: string) => {
-        return data && data.length > 0 ? data
+        if (!products || products.length === 0) return [];
+        return products
         .filter((product: any) =>
             Categories.find((cat: any) =>
                 cat.groupname === category && cat.categoryName.includes(product.category)
             )
-        ): [];
+        );
     };
 
     return (

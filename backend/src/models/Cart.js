@@ -26,20 +26,20 @@ class Cart {
     return result.rows[0];
   }
 
-  static async updateQuantity(userId, productId, quantity) {
+  static async updateQuantity(userId, cartItemId, quantity) {
     const query = `
       UPDATE cart_items 
       SET quantity = $1, updated_at = current_timestamp
-      WHERE user_id = $2 AND product_id = $3
+      WHERE user_id = $2 AND id = $3
       RETURNING *
     `;
-    const result = await pool.query(query, [quantity, userId, productId]);
+    const result = await pool.query(query, [quantity, userId, cartItemId]);
     return result.rows[0];
   }
 
-  static async removeItem(userId, productId) {
-    const query = 'DELETE FROM cart_items WHERE user_id = $1 AND product_id = $2';
-    await pool.query(query, [userId, productId]);
+  static async removeItem(userId, cartItemId) {
+    const query = 'DELETE FROM cart_items WHERE user_id = $1 AND id = $2';
+    await pool.query(query, [userId, cartItemId]);
   }
 
   static async clear(userId) {

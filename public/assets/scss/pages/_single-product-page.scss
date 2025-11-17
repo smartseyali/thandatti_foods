@@ -16,17 +16,34 @@
 
         .slick-list {
             margin: 0 -8px;
+            overflow: visible;
+        }
+
+        .slick-track {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center;
         }
 
         .single-slide {
             padding: 0px 10px 0 10px;
-            display: block !important;
+            display: inline-block !important;
+            vertical-align: top;
+            float: left;
 
             .iiz__hint {
 
                 &::before {
                     display: none;
                 }
+            }
+
+            img {
+                display: block;
+                width: 100%;
+                height: auto;
+                max-height: 100px;
+                object-fit: cover;
             }
         }
 

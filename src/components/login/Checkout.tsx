@@ -11,8 +11,13 @@ import { Formik, FormikHelpers, FormikProps } from "formik";
 import * as yup from "yup";
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 import { addOrder, clearCart, setOrders } from '@/store/reducer/cartSlice';
+import { useLoadOrders } from '@/hooks/useOrders';
 import { login } from '@/store/reducer/loginSlice';
 import { getAttributionForConversion } from '@/utils/attribution';
+import PaymentGateway from '../payment/PaymentGateway';
+import { orderApi, addressApi, locationApi } from '@/utils/api';
+import { cartApi } from '@/utils/api';
+import { authStorage } from '@/utils/authStorage';
 
 interface FormValues {
     id: string;
@@ -25,13 +30,12 @@ interface FormValues {
     city: string;
 }
 interface userValues {
-    email: string;
+    phoneNumber: string;
     password: string;
 }
 interface Registration {
     firstName: string;
     lastName: string;
-    email: string;
     phoneNumber: string;
     address: string;
     city: string;
@@ -66,7 +70,15 @@ const Checkout = () => {
     const [billingVisible, setBillingVisible] = useState(true);
     const [selectedAddress, setSelectedAddress] = useState<FormValues | null>(null);
     const [addressVisible, setAddressVisible] = useState<any[]>([]);
-    const [activeIndex, setActiveIndex] = useState<{ [key: number]: number }>({})
+    const [activeIndex, setActiveIndex] = useState<{ [key: number]: number }>({});
+    const [paymentMethod, setPaymentMethod] = useState("cod");
+    const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+    const [countries, setCountries] = useState<any[]>([]);
+    const [states, setStates] = useState<any[]>([]);
+    const [cities, setCities] = useState<any[]>([]);
+    const [selectedCountryId, setSelectedCountryId] = useState<string>('');
+    const [selectedStateId, setSelectedStateId] = useState<string>('');
 
     const options: Option[] = [
         { value: '250g', tooltip: 'Small' },
@@ -108,16 +120,95 @@ const Checkout = () => {
     const discountAmount = subTotal * (discount / 100);
     const total = subTotal + vat - discountAmount;
 
+    // Load countries on mount
     useEffect(() => {
-        const existingAddresses = JSON.parse(
-            localStorage.getItem("shippingAddresses") || "[]"
-        );
-        setAddressVisible(existingAddresses);
+        const loadCountries = async () => {
+            try {
+                const countriesData = await locationApi.getCountries();
+                setCountries(countriesData);
+            } catch (error) {
+                console.error('Error loading countries:', error);
+            }
+        };
+        loadCountries();
+    }, []);
 
-        if (existingAddresses.length > 0 && !selectedAddress) {
-            setSelectedAddress(existingAddresses[0]);
-        }
-    }, [selectedAddress]);
+    // Load states when country is selected
+    useEffect(() => {
+        const loadStates = async () => {
+            if (selectedCountryId) {
+                try {
+                    const statesData = await locationApi.getStates(selectedCountryId);
+                    setStates(statesData);
+                    setCities([]); // Clear cities when country changes
+                    setSelectedStateId('');
+                } catch (error) {
+                    console.error('Error loading states:', error);
+                }
+            } else {
+                setStates([]);
+                setCities([]);
+            }
+        };
+        loadStates();
+    }, [selectedCountryId]);
+
+    // Load cities when state is selected
+    useEffect(() => {
+        const loadCities = async () => {
+            if (selectedStateId) {
+                try {
+                    const citiesData = await locationApi.getCities(selectedStateId);
+                    setCities(citiesData);
+                } catch (error) {
+                    console.error('Error loading cities:', error);
+                }
+            } else {
+                setCities([]);
+            }
+        };
+        loadCities();
+    }, [selectedStateId]);
+
+    // Load existing addresses from database when user is authenticated
+    useEffect(() => {
+        const loadAddresses = async () => {
+            if (isAuthenticated) {
+                try {
+                    const addresses = await addressApi.getAll();
+                    // Map addresses to frontend format
+                    const mappedAddresses = addresses.map((addr: any) => ({
+                        id: addr.id,
+                        firstName: addr.first_name || addr.firstName,
+                        lastName: addr.last_name || addr.lastName,
+                        address: addr.address_line || addr.addressLine || addr.address,
+                        city: addr.city,
+                        postCode: addr.postal_code || addr.postalCode || addr.postCode,
+                        country: addr.country_name || addr.country || '',
+                        state: addr.state_name || addr.state || '',
+                        is_default: addr.is_default || false,
+                    }));
+                    setAddressVisible(mappedAddresses);
+
+                    // Select default address if available and no address is currently selected
+                    if (mappedAddresses.length > 0 && !selectedAddress) {
+                        const defaultAddress = mappedAddresses.find((addr: any) => addr.is_default) || mappedAddresses[0];
+                        setSelectedAddress(defaultAddress);
+                        setBillingAddressMethod("use");
+                    }
+                } catch (error) {
+                    console.error('Error loading addresses:', error);
+                    setAddressVisible([]);
+                }
+            } else {
+                setAddressVisible([]);
+                setSelectedAddress(null);
+            }
+        };
+        loadAddresses();
+        // Only reload when authentication status changes, not when selectedAddress changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]);
 
     useEffect(() => {
 
@@ -128,11 +219,7 @@ const Checkout = () => {
         }
     }, [selectedAddress]);
 
-    //login
-    useEffect(() => {
-        const storedRegistration = JSON.parse(localStorage.getItem("registrationData") || '[]');
-        setRegistrations(storedRegistration)
-    }, [])
+    // No longer using localStorage for registration - all data is in database
 
     // Track begin_checkout when user lands on checkout page
     useEffect(() => {
@@ -185,115 +272,163 @@ const Checkout = () => {
 
     const randomId = generateRandomId();
 
-    const handleCheckout = () => {
-
+    const handleCheckout = async () => {
         if (!selectedAddress) {
             showErrorToast("Please select a billing address.");
             return;
         }
 
-        // Get attribution data for conversion tracking
-        const attribution = getAttributionForConversion();
-
-        const newOrder = {
-            orderId: randomId,
-            date: new Date().getTime(),
-            shippingMethod: selectedMethod,
-            totalItems: cartSlice.length,
-            totalPrice: total,
-            status: "Pending",
-            products: cartSlice,
-            address: selectedAddress,
-            // Store attribution data with order
-            attribution: attribution ? {
-                source: attribution.source,
-                medium: attribution.medium,
-                campaign: attribution.campaign,
-                channel: attribution.channel,
-            } : null,
-        };
-
-        const orderExists = orders.some(
-            (order: any) => order.id === newOrder.orderId
-        );
-
-        if (!orderExists) {
-            dispatch(addOrder(newOrder));
-        } else {
-            console.log(
-                `Order with ID ${newOrder.orderId} already exists and won't be added again.`
-            );
+        if (isCreatingOrder) {
+            return;
         }
 
-        // Track conversion events with attribution
-        if (typeof window !== 'undefined') {
-            // Prepare items array for e-commerce tracking
+        try {
+            setIsCreatingOrder(true);
+
+            // Check if user is authenticated
+            const loginUser = typeof window !== 'undefined' 
+                ? authStorage.getUserData()
+                : {};
+
+            if (!loginUser?.token) {
+                showErrorToast("Please login to place an order.");
+                setIsCreatingOrder(false);
+                return;
+            }
+
+            // Prepare order items
             const items = cartSlice.map((item: any) => ({
-                item_id: item.id?.toString() || '',
-                item_name: item.title || '',
-                item_category: item.category || '',
-                price: item.newPrice || 0,
+                productId: item.productId || item.id,
                 quantity: item.quantity || 1,
+                price: item.newPrice || 0,
             }));
 
-            // Track purchase in Google Analytics
-            if ((window as any).gtag) {
-                (window as any).gtag('event', 'purchase', {
-                    transaction_id: randomId,
-                    value: total,
-                    currency: 'INR',
-                    items: items,
-                    // Attribution data
-                    source: attribution?.source || 'direct',
-                    medium: attribution?.medium || 'none',
-                    campaign: attribution?.campaign || '',
-                    channel: attribution?.channel || 'Direct',
-                });
-
-                // Also track begin_checkout if not already tracked
-                (window as any).gtag('event', 'begin_checkout', {
-                    currency: 'INR',
-                    value: total,
-                    items: items,
-                    source: attribution?.source || 'direct',
-                    medium: attribution?.medium || 'none',
-                });
+            // Use address ID from selected address (already saved in database)
+            let addressId = selectedAddress.id;
+            
+            // If address doesn't have a valid UUID, it might be a new address - create it
+            // UUIDs are typically 36 characters long with dashes
+            if (!addressId || addressId.length < 30) {
+                // Create address on backend
+                try {
+                    // Find country and state IDs if needed
+                    const selectedCountry = countries.find(c => c.name === selectedAddress.country || c.id === selectedAddress.country);
+                    const selectedState = states.find(s => s.name === selectedAddress.state || s.id === selectedAddress.state);
+                    
+                    const addressData = {
+                        firstName: selectedAddress.firstName,
+                        lastName: selectedAddress.lastName,
+                        addressLine: selectedAddress.address,
+                        city: selectedAddress.city,
+                        postalCode: selectedAddress.postCode,
+                        state: selectedState?.id || selectedState?.name || selectedAddress.state,
+                        stateName: selectedState?.name || selectedAddress.state,
+                        country: selectedCountry?.id || selectedCountry?.code || selectedAddress.country,
+                        countryName: selectedCountry?.name || selectedAddress.country,
+                        addressType: 'billing',
+                        isDefault: false,
+                    };
+                    const createdAddress = await addressApi.create(addressData);
+                    addressId = createdAddress.id;
+                } catch (error: any) {
+                    console.error('Error creating address:', error);
+                    showErrorToast("Failed to save address. Please try again.");
+                    setIsCreatingOrder(false);
+                    return;
+                }
             }
 
-            // Track purchase in Meta Pixel
-            if ((window as any).fbq) {
-                (window as any).fbq('track', 'Purchase', {
-                    value: total,
-                    currency: 'INR',
-                    contents: items,
-                    content_ids: cartSlice.map((item: any) => item.id?.toString() || ''),
-                    content_type: 'product',
-                    num_items: cartSlice.length,
-                    // Attribution data
-                    source: attribution?.source || 'direct',
-                    medium: attribution?.medium || 'none',
-                    campaign: attribution?.campaign || '',
-                });
+            // Create order on backend
+            const orderData = {
+                shippingAddressId: addressId,
+                billingAddressId: addressId,
+                shippingMethod: selectedMethod,
+                items: items,
+                couponCode: discount > 0 ? 'COUPON' : null,
+                paymentMethod: paymentMethod,
+            };
 
-                // Track InitiateCheckout
-                (window as any).fbq('track', 'InitiateCheckout', {
-                    value: total,
-                    currency: 'INR',
-                    contents: items,
-                    num_items: cartSlice.length,
-                    source: attribution?.source || 'direct',
-                });
+            const orderResponse = await orderApi.create(orderData);
+            const createdOrder = orderResponse.order;
+
+            if (!createdOrder) {
+                throw new Error("Failed to create order");
             }
+
+            setCreatedOrderId(createdOrder.id);
+
+            // Get attribution data for conversion tracking
+            const attribution = getAttributionForConversion();
+
+            // Track conversion events with attribution
+            if (typeof window !== 'undefined') {
+                const trackingItems = cartSlice.map((item: any) => ({
+                    item_id: item.id?.toString() || '',
+                    item_name: item.title || '',
+                    item_category: item.category || '',
+                    price: item.newPrice || 0,
+                    quantity: item.quantity || 1,
+                }));
+
+                // Track purchase in Google Analytics
+                if ((window as any).gtag) {
+                    (window as any).gtag('event', 'purchase', {
+                        transaction_id: createdOrder.order_number,
+                        value: total,
+                        currency: 'INR',
+                        items: trackingItems,
+                        source: attribution?.source || 'direct',
+                        medium: attribution?.medium || 'none',
+                        campaign: attribution?.campaign || '',
+                        channel: attribution?.channel || 'Direct',
+                    });
+                }
+
+                // Track purchase in Meta Pixel
+                if ((window as any).fbq) {
+                    (window as any).fbq('track', 'Purchase', {
+                        value: total,
+                        currency: 'INR',
+                        contents: trackingItems,
+                        content_ids: cartSlice.map((item: any) => item.id?.toString() || ''),
+                        content_type: 'product',
+                        num_items: cartSlice.length,
+                        source: attribution?.source || 'direct',
+                        medium: attribution?.medium || 'none',
+                        campaign: attribution?.campaign || '',
+                    });
+                }
+            }
+
+            // Handle payment method
+            if (paymentMethod === 'cod') {
+                // For COD, order is created and cart is cleared
+                showSuccessToast("Order placed successfully!");
+                dispatch(clearCart());
+                router.push("/orders");
+            } else {
+                // For payment gateways, the PaymentGateway component will handle the payment
+                showSuccessToast("Order created. Please complete the payment.");
+                // PaymentGateway component will handle the rest
+            }
+
+        } catch (error: any) {
+            console.error('Checkout error:', error);
+            showErrorToast(error.message || "Failed to place order. Please try again.");
+        } finally {
+            setIsCreatingOrder(false);
         }
+    };
 
+    const handlePaymentSuccess = (gateway: string, response: any) => {
+        showSuccessToast("Payment successful! Order confirmed.");
         dispatch(clearCart());
+        router.push("/orders");
+    };
 
-        const loginUser = JSON.parse(localStorage.getItem("login_user") || "{}");
-        if (loginUser?.uid) {
-            router.push("/orders");
-        } else {
-            console.info("User is not logged in or missing user ID.");
-        }
+    const handlePaymentError = (gateway: string, error: Error) => {
+        console.error(`Payment error (${gateway}):`, error);
+        showErrorToast(`Payment failed: ${error.message}`);
     };
 
     const handleDiscountApplied = (discount: any) => {
@@ -343,14 +478,25 @@ const Checkout = () => {
         console.log("Selected selectedAddress:", selectedAddress);
         setSelectedAddress(address);
     };
-    const handleRemoveAddress = (index: number) => {
-        const updatedAddresses = addressVisible.filter((_, i) => i !== index);
-        localStorage.setItem("shippingAddresses", JSON.stringify(updatedAddresses));
-        setAddressVisible(updatedAddresses);
+    const handleRemoveAddress = async (addressId: string) => {
+        try {
+            // Delete address from database
+            await addressApi.delete(addressId);
+            
+            // Update local state
+            const updatedAddresses = addressVisible.filter((addr) => addr.id !== addressId);
+            setAddressVisible(updatedAddresses);
 
-        if (selectedAddress && selectedAddress.id === addressVisible[index].id) {
-            setSelectedAddress(null);
-            localStorage.removeItem('selectedAddress');
+            // Clear selected address if it was removed
+            if (selectedAddress && selectedAddress.id === addressId) {
+                setSelectedAddress(null);
+                setBillingAddressMethod("new");
+            }
+            
+            showSuccessToast("Address removed successfully!");
+        } catch (error: any) {
+            console.error('Error removing address:', error);
+            showErrorToast(error.message || "Failed to remove address. Please try again.");
         }
     };
 
@@ -376,48 +522,127 @@ const Checkout = () => {
         state: "",
     };
 
-    const handleSubmit = (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
-        formikHelpers.setSubmitting(false);
+    const handleSubmit = async (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
+        formikHelpers.setSubmitting(true);
+        
+        try {
+            // Find country and state IDs from selected values
+            const selectedCountry = countries.find(c => c.name === values.country || c.id === values.country);
+            const selectedState = states.find(s => s.name === values.state || s.id === values.state);
+            const selectedCity = cities.find(c => c.name === values.city || c.id === values.city);
 
-        values.id = `${Date.now()}`;
-        const existingAddresses = JSON.parse(
-            localStorage.getItem("shippingAddresses") || "[]"
-        );
-        const updatedAddresses = [...existingAddresses, values];
-        localStorage.setItem("shippingAddresses", JSON.stringify(updatedAddresses));
-        setAddressVisible(updatedAddresses);
-        setSelectedAddress(values);
-        setBillingAddressMethod("use")
-        formikHelpers.setSubmitting(false);
-        formikHelpers.resetForm();
+            // Create address on backend
+            const addressData = {
+                firstName: values.firstName,
+                lastName: values.lastName,
+                addressLine: values.address,
+                city: selectedCity?.name || values.city,
+                postalCode: values.postCode,
+                state: selectedState?.id || selectedState?.name || values.state,
+                stateName: selectedState?.name || values.state,
+                country: selectedCountry?.id || selectedCountry?.code || values.country,
+                countryName: selectedCountry?.name || values.country,
+                isDefault: addressVisible.length === 0, // Set as default if it's the first address
+                addressType: 'billing',
+            };
+
+            const createdAddress = await addressApi.create(addressData);
+            
+            // Update local state
+            const newAddress = {
+                id: createdAddress.id,
+                firstName: createdAddress.first_name || createdAddress.firstName,
+                lastName: createdAddress.last_name || createdAddress.lastName,
+                address: createdAddress.address_line || createdAddress.addressLine || createdAddress.address,
+                city: createdAddress.city,
+                postCode: createdAddress.postal_code || createdAddress.postalCode,
+                country: createdAddress.country_name || createdAddress.country,
+                state: createdAddress.state_name || createdAddress.state,
+            };
+
+            const updatedAddresses = [...addressVisible, newAddress];
+            setAddressVisible(updatedAddresses);
+            setSelectedAddress(newAddress);
+            setBillingAddressMethod("use");
+            
+            showSuccessToast("Address saved successfully!");
+            formikHelpers.resetForm();
+            
+            // Reset location selects
+            setSelectedCountryId('');
+            setSelectedStateId('');
+            setStates([]);
+            setCities([]);
+        } catch (error: any) {
+            console.error('Error saving address:', error);
+            showErrorToast(error.message || "Failed to save address. Please try again.");
+        } finally {
+            formikHelpers.setSubmitting(false);
+        }
     }
     // user login
 
     const UserSchema = yup.object().shape({
-        email: yup.string().required(),
+        phoneNumber: yup.string()
+            .min(10, "Phone number must be at least 10 digits")
+            .matches(/^[0-9]+$/, "Phone number must contain only digits")
+            .required("Phone Number is required"),
         password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
     })
 
     const initialUserValues: userValues = {
-        email: "",
-        password: "",
+        phoneNumber: "" as string,
+        password: "" as string,
     }
 
-    const handleLoginBtn = (values: userValues, formikHelpers: FormikHelpers<userValues>) => {
-        formikHelpers.setSubmitting(false);
-        const loginUser = registrations.find((user) => user.email === values.email && user.password === values.password)
-        if (loginUser) {
-            const findUser = { uid: loginUser.uid, email: values.email, password: values.password }
-            localStorage.setItem("login_user", JSON.stringify(findUser));
-            dispatch(login(loginUser))
-            showSuccessToast("User login successfull!")
-            setCheckOutMethod("guest")
-            setBillingVisible(true)
-            setLoginVisible(false)
-        } else {
-            showErrorToast("Invalid email and password")
+    const handleLoginBtn = async (values: userValues, formikHelpers: FormikHelpers<userValues>) => {
+        formikHelpers.setSubmitting(true);
+        try {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phoneNumber: values.phoneNumber,
+                    password: values.password,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Invalid phone number or password');
+            }
+
+            // Store token securely in sessionStorage
+            const { authStorage } = await import('@/utils/authStorage');
+            authStorage.setToken(data.token);
+            authStorage.setUserData(data.user);
+
+            // Store user data in Redux (without password)
+            dispatch(login({
+                id: data.user.id,
+                email: data.user.email,
+                phoneNumber: data.user.phone_number,
+                firstName: data.user.first_name,
+                lastName: data.user.last_name,
+                role: data.user.role || 'customer',
+                token: data.token,
+            }));
+
+            showSuccessToast("User login successful!");
+            formikHelpers.resetForm();
+            setCheckOutMethod("guest");
+            setBillingVisible(true);
+            setLoginVisible(false);
+        } catch (error: any) {
+            console.error('Login error:', error);
+            showErrorToast(error.message || 'Login failed. Please try again.');
+            formikHelpers.setSubmitting(false);
         }
-        formikHelpers.resetForm();
     }
 
     return (
@@ -512,35 +737,73 @@ const Checkout = () => {
                                 </Fade>
                                 <Fade triggerOnce direction='up' duration={1000} delay={600}  >
                                     <div className="checkout-items">
-                                        <div className="sub-title">
-                                            <h4>Payment Method</h4>
-                                        </div>
-                                        <div className="checkout-method">
-                                            <span className="details">Please select the preferred shipping method to use on this
-                                                order.</span>
-                                            <div className="bb-del-option">
-                                                <div className="inner-del">
-                                                    <div className="radio-itens">
-                                                        <input type="radio" id="Cash1" name="radio-itens" />
-                                                        <label htmlFor="Cash1">Cash On Delivery</label>
+                                        {createdOrderId && (paymentMethod === 'razorpay' || paymentMethod === 'phonepe') ? (
+                                            <div>
+                                                <div className="sub-title">
+                                                    <h4>Complete Payment</h4>
+                                                </div>
+                                                <PaymentGateway
+                                                    orderId={createdOrderId}
+                                                    amount={total}
+                                                    currency="INR"
+                                                    onPaymentSuccess={handlePaymentSuccess}
+                                                    onPaymentError={handlePaymentError}
+                                                    selectedMethod={paymentMethod}
+                                                    onMethodChange={setPaymentMethod}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="sub-title">
+                                                    <h4>Payment Method</h4>
+                                                </div>
+                                                <div className="checkout-method">
+                                                    <span className="details">Please select your preferred payment method.</span>
+                                                    <div className="bb-del-option">
+                                                        <div className="inner-del">
+                                                            <div className="radio-itens">
+                                                                <input
+                                                                    type="radio"
+                                                                    id="Cash1"
+                                                                    name="payment-method"
+                                                                    checked={paymentMethod === "cod"}
+                                                                    onChange={() => setPaymentMethod("cod")}
+                                                                />
+                                                                <label htmlFor="Cash1">Cash On Delivery</label>
+                                                            </div>
+                                                        </div>
+                                                        <div className="inner-del">
+                                                            <div className="radio-itens">
+                                                                <input
+                                                                    type="radio"
+                                                                    id="razorpay1"
+                                                                    name="payment-method"
+                                                                    checked={paymentMethod === "razorpay"}
+                                                                    onChange={() => setPaymentMethod("razorpay")}
+                                                                />
+                                                                <label htmlFor="razorpay1">Razorpay</label>
+                                                            </div>
+                                                        </div>
+                                                        <div className="inner-del">
+                                                            <div className="radio-itens">
+                                                                <input
+                                                                    type="radio"
+                                                                    id="phonepe1"
+                                                                    name="payment-method"
+                                                                    checked={paymentMethod === "phonepe"}
+                                                                    onChange={() => setPaymentMethod("phonepe")}
+                                                                />
+                                                                <label htmlFor="phonepe1">PhonePe</label>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div className="about-order">
-                                            <h5>Add Comments About Your Order</h5>
-                                            <textarea name="your-commemt" placeholder="Comments"></textarea>
-                                        </div>
-                                    </div>
-                                </Fade>
-                                <Fade triggerOnce direction='up' duration={1000} delay={800} >
-                                    <div className="checkout-items">
-                                        <div className="sub-title">
-                                            <h4>Payment Method</h4>
-                                        </div>
-                                        <div className="payment-img">
-                                            <img src="/assets/img/payment/payment.png" alt="payment" />
-                                        </div>
+                                                <div className="about-order">
+                                                    <h5>Add Comments About Your Order</h5>
+                                                    <textarea name="your-commemt" placeholder="Comments"></textarea>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </Fade>
                             </div>
@@ -592,12 +855,12 @@ const Checkout = () => {
                                                 return (
                                                     <Form onSubmit={handleSubmit} method="post">
                                                         <div className="input-item">
-                                                            <label>Email Address</label>
+                                                            <label>Phone Number</label>
                                                             <Form.Group>
                                                                 <InputGroup>
-                                                                    <Form.Control onChange={handleChange} value={values.email} type="email" id="email" name="email" placeholder="Enter Your Email" isInvalid={!!errors.email} />
+                                                                    <Form.Control onChange={handleChange} value={values.phoneNumber || ""} type="tel" id="phoneNumber" name="phoneNumber" placeholder="Enter Your Phone Number" isInvalid={!!errors.phoneNumber} />
                                                                     <Form.Control.Feedback type="invalid">
-                                                                        {errors.email}
+                                                                        {errors.phoneNumber}
                                                                     </Form.Control.Feedback>
                                                                 </InputGroup>
                                                             </Form.Group>
@@ -606,7 +869,7 @@ const Checkout = () => {
                                                             <label>Password</label>
                                                             <Form.Group>
                                                                 <InputGroup>
-                                                                    <Form.Control value={values.password} onChange={handleChange} type="password" name="password" placeholder="Enter your password" isInvalid={!!errors.password} />
+                                                                    <Form.Control value={values.password || ""} onChange={handleChange} type="password" name="password" placeholder="Enter your password" isInvalid={!!errors.password} />
                                                                     <Form.Control.Feedback type="invalid">
                                                                         {errors.password}
                                                                     </Form.Control.Feedback>
@@ -693,13 +956,25 @@ const Checkout = () => {
                                                                         <Form.Group className="input-item">
                                                                             <label>Country *</label>
                                                                             <InputGroup>
-                                                                                <Form.Select onChange={handleChange} value={values.country} isInvalid={!!errors.country} name='country' className="custom-select">
-                                                                                    <option value='' disabled>Country</option>
-                                                                                    <option value="india">India</option>
-                                                                                    <option value="chile">Chile</option>
-                                                                                    <option value="egypt">Egypt</option>
-                                                                                    <option value="italy">Italy</option>
-                                                                                    <option value="yemen">Yemen</option>
+                                                                                <Form.Select 
+                                                                                    onChange={(e) => {
+                                                                                        handleChange(e);
+                                                                                        setSelectedCountryId(e.target.value);
+                                                                                        // Reset state and city when country changes
+                                                                                        setSelectedStateId('');
+                                                                                        setStates([]);
+                                                                                        setCities([]);
+                                                                                    }} 
+                                                                                    value={selectedCountryId || values.country} 
+                                                                                    isInvalid={!!errors.country} 
+                                                                                    name='country' 
+                                                                                    className="custom-select">
+                                                                                    <option value='' disabled>Select Country</option>
+                                                                                    {countries.map((country) => (
+                                                                                        <option key={country.id} value={country.id}>
+                                                                                            {country.name}
+                                                                                        </option>
+                                                                                    ))}
                                                                                 </Form.Select>
                                                                                 <Form.Control.Feedback type="invalid">
                                                                                     {errors.country}
@@ -711,13 +986,24 @@ const Checkout = () => {
                                                                         <Form.Group className="input-item">
                                                                             <label>Region State *</label>
                                                                             <InputGroup>
-                                                                                <Form.Select onChange={handleChange} value={values.state} isInvalid={!!errors.state} name='state' className="custom-select">
-                                                                                    <option value='' disabled>State</option>
-                                                                                    <option value="gujarat">Gujarat</option>
-                                                                                    <option value="goa">Goa</option>
-                                                                                    <option value="hariyana">Hariyana</option>
-                                                                                    <option value="mumbai">Mumbai</option>
-                                                                                    <option value="delhi">Delhi</option>
+                                                                                <Form.Select 
+                                                                                    onChange={(e) => {
+                                                                                        handleChange(e);
+                                                                                        setSelectedStateId(e.target.value);
+                                                                                        // Reset city when state changes
+                                                                                        setCities([]);
+                                                                                    }} 
+                                                                                    value={selectedStateId || values.state} 
+                                                                                    isInvalid={!!errors.state} 
+                                                                                    name='state' 
+                                                                                    className="custom-select"
+                                                                                    disabled={!selectedCountryId}>
+                                                                                    <option value='' disabled>Select State</option>
+                                                                                    {states.map((state) => (
+                                                                                        <option key={state.id} value={state.id}>
+                                                                                            {state.name}
+                                                                                        </option>
+                                                                                    ))}
                                                                                 </Form.Select>
                                                                                 <Form.Control.Feedback type="invalid">
                                                                                     {errors.state}
@@ -729,13 +1015,19 @@ const Checkout = () => {
                                                                         <Form.Group className="input-item">
                                                                             <label>City *</label>
                                                                             <InputGroup>
-                                                                                <Form.Select onChange={handleChange} value={values.city} isInvalid={!!errors.city} name='city' className="custom-select">
-                                                                                    <option value='' disabled>City</option>
-                                                                                    <option value="surat">Surat</option>
-                                                                                    <option value="bhavnagar">Bhavnagar</option>
-                                                                                    <option value="amreli">Amreli</option>
-                                                                                    <option value="rajkot">Rajkot</option>
-                                                                                    <option value="amdavad">Amdavad</option>
+                                                                                <Form.Select 
+                                                                                    onChange={handleChange} 
+                                                                                    value={values.city} 
+                                                                                    isInvalid={!!errors.city} 
+                                                                                    name='city' 
+                                                                                    className="custom-select"
+                                                                                    disabled={!selectedStateId}>
+                                                                                    <option value='' disabled>Select City</option>
+                                                                                    {cities.map((city) => (
+                                                                                        <option key={city.id} value={city.name}>
+                                                                                            {city.name}
+                                                                                        </option>
+                                                                                    ))}
                                                                                 </Form.Select>
                                                                                 <Form.Control.Feedback type="invalid">
                                                                                     {errors.city}
@@ -792,14 +1084,21 @@ const Checkout = () => {
                                                                                     </ul>
                                                                                 </div>
                                                                                 <div >
-                                                                                    <a className="cart-remove-item"><i onClick={() => handleRemoveAddress(index)} className="ri-close-line"></i></a>
+                                                                                    <a className="cart-remove-item"><i onClick={() => handleRemoveAddress(address.id)} className="ri-close-line"></i></a>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     ))}
                                                                     <div style={{ marginTop: "24px" }} className="col-12">
                                                                         <div className="input-button">
-                                                                            <button onClick={handleCheckout} type="button" className="bb-btn-2">Place Order</button>
+                                                                            <button 
+                                                                                onClick={handleCheckout} 
+                                                                                type="button" 
+                                                                                className="bb-btn-2"
+                                                                                disabled={isCreatingOrder}
+                                                                            >
+                                                                                {isCreatingOrder ? 'Placing Order...' : 'Place Order'}
+                                                                            </button>
                                                                         </div>
                                                                     </div>
                                                                 </>
@@ -820,20 +1119,3 @@ const Checkout = () => {
 }
 
 export default Checkout
-
-export const useLoadOrders = () => {
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            const loginUser = JSON.parse(localStorage.getItem("login_user") || "{}");
-            if (loginUser?.uid) {
-                const storedOrders = JSON.parse(localStorage.getItem("orders") || "{}");
-                const userOrders = storedOrders[loginUser.uid] || [];
-                if (userOrders.length > 0) {
-                    dispatch(setOrders(userOrders));
-                }
-            }
-        }
-    }, [dispatch]);
-};

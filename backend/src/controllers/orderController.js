@@ -40,6 +40,30 @@ async function getOrderById(req, res, next) {
   }
 }
 
+async function getOrderByTransactionId(req, res, next) {
+  try {
+    const { transactionId } = req.params;
+    const orders = await Order.findByPaymentTransactionId(transactionId);
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const order = orders[0];
+
+    // Check if user owns this order (unless admin)
+    if (order.user_id !== req.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    order.items = await OrderItem.findByOrderId(order.id);
+
+    res.json({ order });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createOrder(req, res, next) {
   try {
     const {
@@ -82,6 +106,18 @@ async function createOrder(req, res, next) {
     const vat = subtotal * 0.18; // 18% VAT (adjust as needed)
     const totalPrice = subtotal + vat - discountAmount;
 
+    // Determine payment status based on payment method
+    let paymentStatus = 'pending';
+    let paymentGateway = null;
+    
+    if (paymentMethod === 'razorpay' || paymentMethod === 'phonepe') {
+      paymentStatus = 'pending_payment';
+      paymentGateway = paymentMethod;
+    } else if (paymentMethod === 'cod') {
+      paymentStatus = 'pending';
+      paymentGateway = 'cod';
+    }
+
     // Create order
     const orderData = {
       userId: req.userId,
@@ -95,10 +131,17 @@ async function createOrder(req, res, next) {
       totalPrice,
       couponCode: couponCode || null,
       paymentMethod,
-      paymentStatus: 'pending',
+      paymentStatus,
     };
 
     const order = await Order.create(orderData);
+
+    // Update payment gateway info if applicable
+    if (paymentGateway) {
+      await Order.updatePaymentInfo(order.id, {
+        payment_gateway: paymentGateway,
+      });
+    }
 
     // Create order items
     const orderItemsData = orderItems.map(item => ({
@@ -112,8 +155,10 @@ async function createOrder(req, res, next) {
       await Coupon.recordUsage(couponId, req.userId, order.id, discountAmount);
     }
 
-    // Clear cart
-    await Cart.clear(req.userId);
+    // Clear cart only for COD, for payment gateways cart will be cleared after payment verification
+    if (paymentMethod === 'cod') {
+      await Cart.clear(req.userId);
+    }
 
     // Get order with items
     order.items = await OrderItem.findByOrderId(order.id);
@@ -121,6 +166,39 @@ async function createOrder(req, res, next) {
     res.status(201).json({
       message: 'Order created successfully',
       order,
+      requiresPayment: paymentMethod === 'razorpay' || paymentMethod === 'phonepe',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAllOrders(req, res, next) {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+    
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      status,
+    };
+
+    const orders = await Order.findAll(options);
+    const total = await Order.count(options);
+
+    // Get order items for each order
+    for (let order of orders) {
+      order.items = await OrderItem.findByOrderId(order.id);
+    }
+
+    res.json({
+      orders,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     next(error);
@@ -154,7 +232,9 @@ async function updateOrderStatus(req, res, next) {
 module.exports = {
   getUserOrders,
   getOrderById,
+  getOrderByTransactionId,
   createOrder,
+  getAllOrders,
   updateOrderStatus,
 };
 

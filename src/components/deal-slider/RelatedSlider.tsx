@@ -1,10 +1,32 @@
 "use client"
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import Slider from './slider/Slider'
 import { Row } from 'react-bootstrap'
+import useSWR from 'swr'
+import fetcher from '@/components/fetcher/Fetcher'
+import { productApi } from '@/utils/api'
 
-const RelatedSlider = () => {
+const RelatedSlider = ({ productId }: { productId?: string }) => {
+    const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+
+    // Fetch product to get category for related products
+    useEffect(() => {
+        const fetchProductCategory = async () => {
+            if (productId) {
+                try {
+                    const product = await productApi.getById(productId);
+                    if (product?.category_id) {
+                        setCategoryId(product.category_id);
+                    }
+                } catch (error) {
+                    console.error("Error fetching product category:", error);
+                }
+            }
+        };
+        fetchProductCategory();
+    }, [productId]);
+
     return (
         <>
             <section className="section-deal padding-tb-50">
@@ -20,7 +42,7 @@ const RelatedSlider = () => {
                                 </div>
                             </Fade>
                         </div>
-                        <Slider />
+                        <Slider productId={productId} categoryId={categoryId} />
                     </Row>
                 </div>
             </section>

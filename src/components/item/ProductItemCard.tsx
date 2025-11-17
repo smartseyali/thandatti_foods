@@ -3,12 +3,12 @@ import React, { useState } from 'react'
 import StarRating from '../stars/StarRating'
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { addItem, updateItemQuantity } from '@/store/reducer/cartSlice';
 import { showErrorToast, showSuccessToast } from '../toast-popup/Toastify';
-import { addWishlist } from '@/store/reducer/wishlistSlice';
 import { addCompare } from '@/store/reducer/compareSlice';
+import { addWishlist } from '@/store/reducer/wishlistSlice';
 import ItemModal from '../modal/ItemModal';
 import Link from 'next/link';
+import { addItemToCart, incrementCartItem } from '@/utils/cartOperations';
 
 interface Item {
     id: number;
@@ -43,20 +43,20 @@ const ProductItemCard = ({ data }: any) => {
         setIsModalOpen(false)
     }
 
-    const handleCart = (data: Item) => {
-        const isItemInCart = cartSlice?.some((item: Item) => item.id === data.id);
+    const handleCart = async (data: Item) => {
+        try {
+            const isItemInCart = cartSlice?.some((item: any) => item.productId === data.id || item.id === data.id);
 
-        if (!isItemInCart) {
-            dispatch(addItem({ ...data, quantity: 1 }));
-            showSuccessToast("Item added to cart item");
-        } else {
-            const updatedCartItems = cartSlice.map((item: Item) =>
-                item.id === data.id
-                    ? { ...item, quantity: item.quantity + 1, price: item.newPrice + data.newPrice } // Increment quantity and update price
-                    : item
-            );
-            dispatch(updateItemQuantity(updatedCartItems));
-            showSuccessToast("Item quantity increased in cart");
+            if (!isItemInCart) {
+                await addItemToCart(dispatch, data, 1);
+                showSuccessToast("Item added to cart");
+            } else {
+                await incrementCartItem(dispatch, data, cartSlice || []);
+                showSuccessToast("Item quantity increased in cart");
+            }
+        } catch (error: any) {
+            console.error('Error adding to cart:', error);
+            showErrorToast(error.message || "Failed to add item to cart. Please login.");
         }
     };
 
@@ -93,10 +93,24 @@ const ProductItemCard = ({ data }: any) => {
                         <span>{data.sale}</span>
                     </span>
                     <div className="inner-img">
-                        <img className="main-img" src={data.image}
-                            alt="product-1" />
-                        <img className="hover-img" src={data.imageTwo}
-                            alt="product-1" />
+                        <img 
+                            className="main-img" 
+                            src={data.image || '/assets/img/product/default.jpg'}
+                            alt={data.title || 'product'}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                            }}
+                        />
+                        <img 
+                            className="hover-img" 
+                            src={data.imageTwo || data.image || '/assets/img/product/default.jpg'}
+                            alt={data.title || 'product'}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                            }}
+                        />
                     </div>
                     <ul className="bb-pro-actions">
                         <li className="bb-btn-group">
@@ -112,11 +126,6 @@ const ProductItemCard = ({ data }: any) => {
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a title="Compare">
-                                <i onClick={() => handleCompareItem(data)} className="ri-repeat-line"></i>
-                            </a>
-                        </li>
-                        <li className="bb-btn-group">
                             <a title="Add To Cart">
                                 <i onClick={() => handleCart(data)} className="ri-shopping-bag-4-line"></i>
                             </a>
@@ -128,11 +137,13 @@ const ProductItemCard = ({ data }: any) => {
                         <Link href="/shop-full-width-col-4">{data.category}</Link>
                         <StarRating rating={data.rating} />
                     </div>
-                    <h4 className="bb-pro-title"><Link href="/product-full-width">{data.title}</Link></h4>
+                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link></h4>
                     <div className="bb-price">
                         <div className="inner-price">
                             <span className="new-price">₹{data.newPrice}</span>
-                            <span className={`${data.oldPrice ? "old-price" : "item-left"}`}>{data.oldPrice ? `₹${data.oldPrice}` : data.itemLeft}</span>
+                            <span className={data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}>
+                                {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : data.itemLeft}
+                            </span>
                         </div>
                         <span className="last-items">{data.weight}</span>
                     </div>

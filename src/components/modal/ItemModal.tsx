@@ -102,15 +102,13 @@ const ItemModal = ({
                             <Col xs={12} sm={12} md={7} className="mb-24">
                                 <div className="quickview-pro-content">
                                     <h5 className="bb-quick-title">
-                                        <Link href="/product-left-sidebar">{data?.title}</Link>
+                                        <Link href={`/product/${data?.id}`}>{data?.title}</Link>
                                     </h5>
                                     <StarRating rating={data?.rating} />
-                                    <div className="bb-quickview-desc">Lorem Ipsum is simply dummy text of the printing and
-                                        typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever
-                                        since the 1900s,</div>
+                                    <div className="bb-quickview-desc">{data?.description || "No description available."}</div>
                                     <div className="bb-quickview-price">
-                                        <span className="new-price">${data?.newPrice * quantites}</span>
-                                        <span className="old-price">${data?.oldPrice}</span>
+                                        <span className="new-price">₹{((data?.newPrice || 0) * quantites).toFixed(2)}</span>
+                                        {data?.oldPrice && <span className="old-price">₹{typeof data.oldPrice === 'number' ? data.oldPrice.toFixed(2) : data.oldPrice}</span>}
                                     </div>
                                     <div className="bb-pro-variation">
                                         <ul>

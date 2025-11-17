@@ -1,18 +1,18 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
-import { showSuccessToast } from '../toast-popup/Toastify'
+import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify'
 import { useRouter } from 'next/navigation'
 import { useDispatch } from 'react-redux'
 import { login } from '@/store/reducer/loginSlice'
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import * as yup from "yup";
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
+import { authStorage } from '@/utils/authStorage';
 
 interface FormValues {
     firstName: string;
     lastName: string;
-    email: string;
     password: string;
     phoneNumber: string;
     address: string;
@@ -26,51 +26,102 @@ interface FormValues {
 const Register = () => {
     const router = useRouter()
     const dispatch = useDispatch();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const schema = yup.object().shape({
-        email: yup.string().required(),
         password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
-        conformPassword: yup.string().min(6, "Conform Password must be at least 6 characters").required("Password is required"),
-        firstName: yup.string().required(),
-        lastName: yup.string().required(),
-        phoneNumber: yup.string().min(10, "Conform Password must be at least 6 characters").required(),
-        address: yup.string().required(),
-        postCode: yup.string().min(6, "Conform Password must be at least 6 characters").required(),
-        country: yup.string().required(),
-        state: yup.string().required(),
-        city: yup.string().required(),
+        conformPassword: yup.string()
+            .oneOf([yup.ref('password')], 'Passwords must match')
+            .min(6, "Confirm Password must be at least 6 characters")
+            .required("Confirm Password is required"),
+        firstName: yup.string().required("First Name is required"),
+        lastName: yup.string().required("Last Name is required"),
+        phoneNumber: yup.string()
+            .min(10, "Phone number must be at least 10 digits")
+            .matches(/^[0-9]+$/, "Phone number must contain only digits")
+            .required("Phone Number is required"),
+        address: yup.string().required("Address is required"),
+        postCode: yup.string().min(6, "Post Code must be at least 6 characters").required("Post Code is required"),
+        country: yup.string().required("Country is required"),
+        state: yup.string().required("State is required"),
+        city: yup.string().required("City is required"),
     });
 
     const initialValues: FormValues = {
-        firstName: "",
-        lastName: "",
-        email: "",
-        phoneNumber: "",
-        address: "",
-        city: "",
-        postCode: "",
-        country: "",
-        state: "",
-        password: "",
-        conformPassword: "",
+        firstName: "" as string,
+        lastName: "" as string,
+        phoneNumber: "" as string,
+        address: "" as string,
+        city: "" as string,
+        postCode: "" as string,
+        country: "" as string,
+        state: "" as string,
+        password: "" as string,
+        conformPassword: "" as string,
     };
 
-    const handleSubmit = (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
-        formikHelpers.setSubmitting(false);
+    const handleSubmit = async (values: FormValues, formikHelpers: FormikHelpers<FormValues>) => {
+        setIsSubmitting(true);
+        formikHelpers.setSubmitting(true);
 
-        const uniqueId = `${Date.now()}`;
-        const newRegistration = { ...values, uid: uniqueId };
-        const existingRegistrations = JSON.parse(localStorage.getItem("registrationData") || "[]");
+        try {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phoneNumber: values.phoneNumber,
+                    password: values.password,
+                    firstName: values.firstName,
+                    lastName: values.lastName,
+                    address: values.address,
+                    city: values.city,
+                    postCode: values.postCode,
+                    country: values.country,
+                    state: values.state,
+                }),
+            });
 
-        if (typeof window !== "undefined") {
-            localStorage.setItem("registrationData", JSON.stringify([...existingRegistrations, newRegistration]));
-            localStorage.setItem("login_user", JSON.stringify(newRegistration));
-            dispatch(login(newRegistration))
-            router.push("/");
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Registration failed');
+            }
+
+            // Store token securely in sessionStorage
+            authStorage.setToken(data.token);
+            authStorage.setUserData(data.user);
+
+            // Store user data in Redux (without password)
+            dispatch(login({
+                id: data.user.id,
+                email: data.user.email,
+                phoneNumber: data.user.phone_number,
+                firstName: data.user.first_name,
+                lastName: data.user.last_name,
+                role: data.user.role || 'customer',
+                token: data.token,
+            }));
+
+            showSuccessToast("Registration successful!");
+            formikHelpers.resetForm();
+            
+            // Redirect based on role
+            if (data.user.role === 'admin') {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
+        } catch (error: any) {
+            console.error('Registration error:', error);
+            showErrorToast(error.message || 'Registration failed. Please try again.');
+            formikHelpers.setSubmitting(false);
+        } finally {
+            setIsSubmitting(false);
         }
-
-        formikHelpers.resetForm();
-        showSuccessToast("Registration successful!")
     }
     return (
         <>
@@ -107,7 +158,7 @@ const Register = () => {
                                                         <label>First Name*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.firstName} onChange={handleChange} type="text" name="firstName" placeholder="Enter your first name" required isInvalid={!!errors.firstName} />
+                                                                <Form.Control value={values.firstName || ""} onChange={handleChange} type="text" name="firstName" placeholder="Enter your first name" required isInvalid={!!errors.firstName} />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.firstName}
                                                                 </Form.Control.Feedback>
@@ -118,7 +169,7 @@ const Register = () => {
                                                         <label>Last Name*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.lastName} onChange={handleChange} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last name" required />
+                                                                <Form.Control value={values.lastName || ""} onChange={handleChange} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last name" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.lastName}
                                                                 </Form.Control.Feedback>
@@ -127,21 +178,10 @@ const Register = () => {
                                                     </div>
 
                                                     <div className="bb-register-wrap bb-register-width-50">
-                                                        <label>Email*</label>
-                                                        <Form.Group>
-                                                            <InputGroup>
-                                                                <Form.Control value={values.email} onChange={handleChange} isInvalid={!!errors.email} type="email" name="email" placeholder="Enter your Email" required />
-                                                                <Form.Control.Feedback type="invalid">
-                                                                    {errors.email}
-                                                                </Form.Control.Feedback>
-                                                            </InputGroup>
-                                                        </Form.Group>
-                                                    </div>
-                                                    <div className="bb-register-wrap bb-register-width-50">
                                                         <label>Phone Number*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.phoneNumber} onChange={handleChange} isInvalid={!!errors.phoneNumber} type="text" name="phoneNumber" placeholder="Enter your phone number" required />
+                                                                <Form.Control value={values.phoneNumber || ""} onChange={handleChange} isInvalid={!!errors.phoneNumber} type="tel" name="phoneNumber" placeholder="Enter your phone number" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.phoneNumber}
                                                                 </Form.Control.Feedback>
@@ -149,11 +189,10 @@ const Register = () => {
                                                         </Form.Group>
                                                     </div>
                                                     <div className="bb-register-wrap bb-register-width-50">
-
                                                         <label>Password*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.password} onChange={handleChange} isInvalid={!!errors.password} type="password" name="password" placeholder="Enter your phone number" required />
+                                                                <Form.Control value={values.password || ""} onChange={handleChange} isInvalid={!!errors.password} type="password" name="password" placeholder="Enter your password" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.password}
                                                                 </Form.Control.Feedback>
@@ -161,10 +200,10 @@ const Register = () => {
                                                         </Form.Group>
                                                     </div>
                                                     <div className="bb-register-wrap bb-register-width-50">
-                                                        <label>Conform Password*</label>
+                                                        <label>Confirm Password*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.conformPassword} onChange={handleChange} isInvalid={!!errors.conformPassword} type="password" name="conformPassword" placeholder="Enter your phone number" required />
+                                                                <Form.Control value={values.conformPassword || ""} onChange={handleChange} isInvalid={!!errors.conformPassword} type="password" name="conformPassword" placeholder="Confirm your password" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.conformPassword}
                                                                 </Form.Control.Feedback>
@@ -176,7 +215,7 @@ const Register = () => {
                                                         <label>Address*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.address} onChange={handleChange} isInvalid={!!errors.address} type="text" name="address" placeholder="Address Line 1" required />
+                                                                <Form.Control value={values.address || ""} onChange={handleChange} isInvalid={!!errors.address} type="text" name="address" placeholder="Address Line 1" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.address}
                                                                 </Form.Control.Feedback>
@@ -187,7 +226,7 @@ const Register = () => {
                                                         <label>Country*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.country} isInvalid={!!errors.country} onChange={handleChange} name='country' className="custom-select" required>
+                                                                <Form.Select value={values.country || ""} isInvalid={!!errors.country} onChange={handleChange} name='country' className="custom-select" required>
                                                                     <option value='' disabled>Country</option>
                                                                     <option value="india">India</option>
                                                                     <option value="chile">Chile</option>
@@ -205,7 +244,7 @@ const Register = () => {
                                                         <label>Region State*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.state} isInvalid={!!errors.state} onChange={handleChange} name='state' className="custom-select" required>
+                                                                <Form.Select value={values.state || ""} isInvalid={!!errors.state} onChange={handleChange} name='state' className="custom-select" required>
                                                                     <option value='' disabled>State</option>
                                                                     <option value="gujarat">Gujarat</option>
                                                                     <option value="goa">Goa</option>
@@ -223,7 +262,7 @@ const Register = () => {
                                                         <label>City*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.city} isInvalid={!!errors.city} name='city' onChange={handleChange} className="custom-select" required>
+                                                                <Form.Select value={values.city || ""} isInvalid={!!errors.city} name='city' onChange={handleChange} className="custom-select" required>
                                                                     <option value='' disabled>City</option>
                                                                     <option value="surat">Surat</option>
                                                                     <option value="bhavnagar">Bhavnagar</option>
@@ -242,7 +281,7 @@ const Register = () => {
                                                         <label>Post Code*</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.postCode} onChange={handleChange} isInvalid={!!errors.postCode} type="text" name="postCode" placeholder="Post Code" required />
+                                                                <Form.Control value={values.postCode || ""} onChange={handleChange} isInvalid={!!errors.postCode} type="text" name="postCode" placeholder="Post Code" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.postCode}
                                                                 </Form.Control.Feedback>
@@ -250,7 +289,9 @@ const Register = () => {
                                                         </Form.Group>
                                                     </div>
                                                     <div className="bb-register-button">
-                                                        <button type="submit" className="bb-btn-2">Register</button>
+                                                        <button type="submit" className="bb-btn-2" disabled={isSubmitting}>
+                                                            {isSubmitting ? 'Registering...' : 'Register'}
+                                                        </button>
                                                     </div>
                                                 </Form>
                                             )
@@ -268,17 +309,3 @@ const Register = () => {
 }
 
 export default Register;
-
-export const getRegistrationData = () => {
-    if (typeof window !== "undefined") {
-        const registrationData = localStorage.getItem("registrationData");
-        return registrationData ? JSON.parse(registrationData) : [];
-    }
-    return [];
-};
-
-export const setRegistrationData = (data: any) => {
-    if (typeof window !== "undefined") {
-        localStorage.setItem("registrationData", JSON.stringify(data));
-    }
-};

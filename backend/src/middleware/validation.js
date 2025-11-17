@@ -3,6 +3,19 @@ const { body, param, query, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    // For GET requests on public endpoints, return empty data instead of error
+    // This prevents breaking the UI when validation fails (e.g., invalid UUID in URL)
+    if (req.method === 'GET' && (req.path.includes('/categories') || req.path.includes('/products'))) {
+      console.warn(`Validation error on GET ${req.path}, returning empty data`);
+      // Check if it's a list endpoint (no ID) or detail endpoint (with ID)
+      if (!req.params.id) {
+        // List endpoint - return empty array
+        return res.status(200).json({ categories: [], products: [] });
+      } else {
+        // Detail endpoint - return 404
+        return res.status(404).json({ message: 'Resource not found' });
+      }
+    }
     return res.status(400).json({
       message: 'Validation error',
       errors: errors.array(),
@@ -13,16 +26,24 @@ const handleValidationErrors = (req, res, next) => {
 
 // Auth validation
 const validateRegister = [
-  body('email').isEmail().normalizeEmail(),
+  body('phoneNumber').notEmpty().trim().isLength({ min: 10 }),
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
   handleValidationErrors,
 ];
 
 const validateLogin = [
-  body('email').isEmail().normalizeEmail(),
   body('password').notEmpty(),
+  body('phoneNumber').optional().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
+  body().custom((value) => {
+    if (!value.phoneNumber && !value.email) {
+      throw new Error('Either phone number or email is required');
+    }
+    return true;
+  }),
   handleValidationErrors,
 ];
 
@@ -31,7 +52,7 @@ const validateProduct = [
   body('title').notEmpty().trim(),
   body('sku').notEmpty().trim(),
   body('newPrice').isFloat({ min: 0 }),
-  body('primaryImage').notEmpty(),
+  body('primaryImage').optional().isString(),
   handleValidationErrors,
 ];
 

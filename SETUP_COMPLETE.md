@@ -4,7 +4,7 @@
 
 ### ✅ Database
 - **Server**: 159.89.163.255:5432
-- **Database**: thandattifoods
+- **Database**: pattikadai
 - **Status**: Connected and migrated
 - **Tables**: 21 migrations completed successfully
 

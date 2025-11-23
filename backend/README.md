@@ -32,7 +32,7 @@ npm install
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=thandatti_foods
+DB_NAME=pattikadai
 DB_USER=postgres
 DB_PASSWORD=postgres
 
@@ -47,7 +47,7 @@ CORS_ORIGIN=http://localhost:3000
 
 3. Create PostgreSQL database:
 ```bash
-createdb thandatti_foods
+createdb pattikadai
 ```
 
 4. Run migrations:

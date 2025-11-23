@@ -1,10 +1,10 @@
 **Readme Deploy**
 
-This file describes how to deploy the project to a production Ubuntu server (DigitalOcean Droplet) and host the UI at `thanndattifoods.com` and the API at `api.thandattifoods.com`.
+This file describes how to deploy the project to a production Ubuntu server (DigitalOcean Droplet) and host the UI at `thanndattifoods.com` and the API at `api.pattikadai.com`.
 
 **Prerequisites**
 - Ubuntu 22.04+ server with a public IP
-- Domain DNS control (set A records for `thanndattifoods.com` and `api.thandattifoods.com` to the server IP)
+- Domain DNS control (set A records for `thanndattifoods.com` and `api.pattikadai.com` to the server IP)
 - SSH access to the server and an SSH key added to Droplet
 - Node.js 18+ (LTS) installed on the server or use Docker
 - `nginx`, `certbot`, and `pm2` (or Docker) installed on the server
@@ -55,8 +55,8 @@ git clone https://github.com/<your-org>/thandatti_foods.git .
 - Frontend: create or verify `/.env.production` (repo root). Example:
 
 ```dotenv
-NEXT_PUBLIC_DOMAIN="https://thandattifoods.com"
-NEXT_PUBLIC_API_BASE_URL=https://api.thandattifoods.com
+NEXT_PUBLIC_DOMAIN="https://pattikadai.com"
+NEXT_PUBLIC_API_BASE_URL=https://api.pattikadai.com
 NEXT_TELEMETRY_DISABLED=1
 NODE_ENV=production
 ```
@@ -104,12 +104,12 @@ pm2 start npm --name thanndattifoods-backend -- run start
 ```
 
 **Nginx configuration**
-- This repo contains a sample Nginx configuration at `deploy/nginx/thandattifoods.conf`.
-- Copy or symlink it to `/etc/nginx/sites-available/thandattifoods.conf` and enable it:
+- This repo contains a sample Nginx configuration at `deploy/nginx/pattikadai.conf`.
+- Copy or symlink it to `/etc/nginx/sites-available/pattikadai.conf` and enable it:
 
 ```bash
-sudo cp deploy/nginx/thandattifoods.conf /etc/nginx/sites-available/thandattifoods.conf
-sudo ln -s /etc/nginx/sites-available/thandattifoods.conf /etc/nginx/sites-enabled/
+sudo cp deploy/nginx/pattikadai.conf /etc/nginx/sites-available/pattikadai.conf
+sudo ln -s /etc/nginx/sites-available/pattikadai.conf /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -119,7 +119,7 @@ Adjust the backend `proxy_pass` port if you started the backend on a different p
 **Obtain TLS certificates (Let's Encrypt)**
 
 ```bash
-sudo certbot --nginx -d thandattifoods.com -d www.thandattifoods.com -d api.thandattifoods.com
+sudo certbot --nginx -d pattikadai.com -d www.pattikadai.com -d api.pattikadai.com
 # Test renewal
 sudo certbot renew --dry-run
 ```

@@ -10,7 +10,7 @@
 ### 1. Backend Configuration (.env)
 The backend `.env` file has been created in `backend/.env` with the following configuration:
 - **Database Host**: 159.89.163.255
-- **Database Name**: thandattifoods
+- **Database Name**: pattikadai
 - **Database Port**: 5432
 - **Database User**: postgres
 
@@ -109,7 +109,7 @@ Open http://localhost:3000 in your browser.
 - Verify the database server is running
 
 **Database Name Issues**
-- Verify database name is exactly "thandattifoods" (case-sensitive)
+- Verify database name is exactly "pattikadai" (case-sensitive)
 - Check if the database exists on the remote server
 
 ### Port Already in Use

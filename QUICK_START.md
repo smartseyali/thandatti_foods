@@ -60,11 +60,11 @@ npm run dev
 ## Configuration Files
 
 - **Backend**: `backend/.env`
-  - Database: 159.89.163.255:5432/thandattifoods
-  - Server: http://localhost:5000
+  - Database: 159.89.163.255:5432/pattikadai
+  - Server: http://localhost:5000 (local) or https://api.pattikadai.com (production)
 
 - **Frontend**: `.env.local`
-  - API URL: http://localhost:5000
+  - API URL: http://localhost:5000 (local) or https://api.pattikadai.com (production)
 
 ## Troubleshooting
 

@@ -144,7 +144,7 @@ Create a `.env` file with:
 ```
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=thandatti_foods
+DB_NAME=pattikadai
 DB_USER=postgres
 DB_PASSWORD=postgres
 JWT_SECRET=your-secret-key-change-this-in-production

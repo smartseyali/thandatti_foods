@@ -7,7 +7,7 @@ import { useLoadOrders } from '@/hooks/useOrders';
 import { orderApi, mapOrderToFrontend } from '@/utils/api';
 
 interface Product {
-    id: number;
+    id: string | number;
     title: string;
     newPrice: number;
     weight: string;
@@ -16,21 +16,35 @@ interface Product {
     date: string;
     status: string;
     rating: number;
-    oldPrice: number;
+    oldPrice: number | string;
     location: string;
     brand: string;
-    sku: number;
+    sku: string | number;
     category: string;
     quantity: number;
 }
 
 interface Order {
+    orderId: string | number;
+    date: string;
+    status: string;
+    totalPrice: number;
+    totalItems: number;
+    shippingMethod: string;
     products: Product[];
+    address: {
+        firstName: string;
+        lastName: string;
+        address: string;
+        city: string;
+        postalCode: string;
+        country: string;
+    } | null;
 }
 
 const OrderPage = ({ id }: any) => {
     const orders = useSelector((state: RootState) => state.cart.orders);
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     
     useLoadOrders();
@@ -39,7 +53,7 @@ const OrderPage = ({ id }: any) => {
         const loadOrder = async () => {
             try {
                 // First check Redux store
-                let foundOrder = orders.find((order: any) => (order as any).orderId === id);
+                let foundOrder = orders.find((o: any) => o.orderId === id || o.id === id);
                 
                 if (!foundOrder) {
                     // If not found, try to fetch from API
@@ -65,7 +79,7 @@ const OrderPage = ({ id }: any) => {
                     }
                 }
                 
-                setOrder(foundOrder || null);
+                setOrder((foundOrder as Order) || null);
             } catch (error) {
                 console.error('Error loading order:', error);
             } finally {
@@ -173,7 +187,7 @@ const OrderPage = ({ id }: any) => {
                                                     <div className="bg-light p-3 rounded">
                                                         <div className="d-flex justify-content-between mb-2">
                                                             <span>Subtotal:</span>
-                                                            <span>₹{order.totalPrice.toFixed(2)}</span>
+                                                            <span>₹{order.products.reduce((acc, item) => acc + (item.newPrice * item.quantity), 0).toFixed(2)}</span>
                                                         </div>
                                                         <div className="d-flex justify-content-between mb-2">
                                                             <span>Shipping:</span>
@@ -181,7 +195,7 @@ const OrderPage = ({ id }: any) => {
                                                         </div>
                                                         <div className="d-flex justify-content-between border-top pt-2 mt-2">
                                                             <strong>Total:</strong>
-                                                            <strong>₹{order.totalPrice.toFixed(2)}</strong>
+                                                            <strong>₹{(order.products.reduce((acc, item) => acc + (item.newPrice * item.quantity), 0) + (order.shippingMethod === 'free' ? 0 : 5)).toFixed(2)}</strong>
                                                         </div>
                                                     </div>
                                                 </div>

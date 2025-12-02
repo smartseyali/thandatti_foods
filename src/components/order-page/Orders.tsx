@@ -83,7 +83,7 @@ const Orders = () => {
                                                         <span className="price">{data.totalItems}</span>
                                                     </td>
                                                     <td>
-                                                        <span className="price">₹{data.totalPrice.toFixed(2)}</span>
+                                                        <span className="price">₹{(data.products.reduce((acc: number, item: any) => acc + (item.newPrice * item.quantity), 0) + (data.shippingMethod === 'free' ? 0 : 5)).toFixed(2)}</span>
                                                     </td>
                                                     <td>
                                                         <span className={`price ${getStatusBadgeClass(data.status)}`} style={{ fontWeight: 'bold' }}>

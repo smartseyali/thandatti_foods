@@ -1,5 +1,5 @@
 // Auth API service utility for backend communication
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
 
 // Generic API request function
 const apiRequest = async (

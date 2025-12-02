@@ -125,7 +125,7 @@ const SingleProductSlider = ({
                                 alt="product-1"
                                 onError={(e: any) => {
                                     const target = e.target as HTMLImageElement;
-                                    const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                                    const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
                                     if (target.src !== defaultImage) {
                                         target.src = defaultImage;
                                     }
@@ -156,7 +156,7 @@ const SingleProductSlider = ({
                                     }}
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                                        const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
                                         if (target.src !== defaultImage) {
                                             target.src = defaultImage;
                                         }

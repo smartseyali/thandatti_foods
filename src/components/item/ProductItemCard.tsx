@@ -99,7 +99,7 @@ const ProductItemCard = ({ data }: any) => {
                             alt={data.title || 'product'}
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
                             }}
                         />
                         <img 
@@ -108,7 +108,7 @@ const ProductItemCard = ({ data }: any) => {
                             alt={data.title || 'product'}
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                                target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
                             }}
                         />
                     </div>

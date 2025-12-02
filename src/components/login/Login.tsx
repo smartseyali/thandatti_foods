@@ -55,7 +55,7 @@ const Login = () => {
         formikHelpers.setSubmitting(true);
 
         try {
-            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
             
             const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',

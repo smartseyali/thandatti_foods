@@ -1,7 +1,7 @@
 // Admin API service utility for backend communication
 import { authStorage } from './authStorage';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
 
 // Get auth token from sessionStorage (secure storage)
 const getAuthToken = (): string | null => {

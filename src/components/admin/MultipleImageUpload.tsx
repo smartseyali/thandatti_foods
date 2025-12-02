@@ -157,7 +157,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
       return imagePath;
     }
     // Otherwise, prepend API base URL
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
     if (imagePath.startsWith('/')) {
       return `${API_BASE_URL}${imagePath}`;
     }
@@ -198,7 +198,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
                     }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+                      target.src = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
                     }}
                   />
                 </div>

@@ -4,7 +4,7 @@ import 'react-inner-image-zoom/lib/InnerImageZoom/styles.css';
 
 const ZoomProductImage = ({ src, className, onError }: any) => {
   const [imageSrc, setImageSrc] = useState(src);
-  const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/assets/img/product/default.jpg`;
+  const defaultImage = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}/assets/img/product/default.jpg`;
   
   useEffect(() => {
     setImageSrc(src || defaultImage);

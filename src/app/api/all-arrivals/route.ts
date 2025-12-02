@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { productApi, mapProductToFrontend } from "@/utils/api";
+import { productApi, mapProductToFrontend, categoryApi } from "@/utils/api";
 
 function sortData(filteredData: any[], sortOption: string) {
   switch (sortOption) {
@@ -70,9 +70,20 @@ export async function POST(req: NextRequest) {
       // If a category is selected, get the category ID
       let categoryId: string | undefined = undefined;
       if (selectedCategory && selectedCategory.length > 0) {
-        // selectedCategory is an array of category names, we need to get category IDs
-        // For now, we'll filter by category name in the frontend
-        // In a production app, you'd want to map category names to IDs
+        // Fetch all categories to find the ID
+        try {
+            const categories = await categoryApi.getAll();
+            const selectedCatName = selectedCategory[0]; // Assuming single category selection for now
+            const matchedCategory = categories.find((cat: any) => 
+                (cat.name && cat.name.toLowerCase() === selectedCatName.toLowerCase()) || 
+                (cat.category && cat.category.toLowerCase() === selectedCatName.toLowerCase())
+            );
+            if (matchedCategory) {
+                categoryId = matchedCategory.id;
+            }
+        } catch (catError) {
+            console.error("Error fetching categories for ID mapping:", catError);
+        }
       }
       
       // Use minPrice/maxPrice from request, or fall back to range
@@ -81,7 +92,7 @@ export async function POST(req: NextRequest) {
       
       const productResponse = await productApi.getAll({
         page: 1,
-        limit: 100, // Reduced from 1000 to improve performance
+        limit: itemsPerPage > 100 ? itemsPerPage : 100, // Use requested limit if large, otherwise default to 100
         search: searchTerm || undefined,
         categoryId: categoryId,
       });
@@ -223,7 +234,7 @@ export async function GET(req: NextRequest) {
     try {
       // Calculate how many products we might need
       // For filtering, we need more than the paginated amount, but not all
-      const fetchLimit = Math.min(limit * 3, 100); // Fetch 3x the page size, max 100
+      const fetchLimit = itemsPerPage > 100 ? itemsPerPage : Math.min(limit * 3, 100); 
       
       const productResponse = await productApi.getAll({
         page: 1,

@@ -15,9 +15,10 @@ import { useLoadOrders } from '@/hooks/useOrders';
 import { login } from '@/store/reducer/loginSlice';
 import { getAttributionForConversion } from '@/utils/attribution';
 import PaymentGateway from '../payment/PaymentGateway';
-import { orderApi, addressApi, locationApi } from '@/utils/api';
+import { orderApi, addressApi, deliveryApi } from '@/utils/api';
 import { cartApi } from '@/utils/api';
 import { authStorage } from '@/utils/authStorage';
+import locationsData from '@/data/locations.json';
 
 interface FormValues {
     id: string;
@@ -59,7 +60,8 @@ const Checkout = () => {
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const orders = useSelector((state: RootState) => state.cart.orders);
     const [subTotal, setSubTotal] = useState(0);
-    const [vat, setVat] = useState(0);
+    const [deliveryCharge, setDeliveryCharge] = useState(0);
+
     const [discount, setDiscount] = useState(0);
     const [selectedMethod, setSelectedMethod] = useState("free");
     const [checkOutMethod, setCheckOutMethod] = useState("guest");
@@ -74,11 +76,9 @@ const Checkout = () => {
     const [paymentMethod, setPaymentMethod] = useState("cod");
     const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-    const [countries, setCountries] = useState<any[]>([]);
+    const [countries, setCountries] = useState<any[]>(locationsData);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
-    const [selectedCountryId, setSelectedCountryId] = useState<string>('');
-    const [selectedStateId, setSelectedStateId] = useState<string>('');
 
     const options: Option[] = [
         { value: '250g', tooltip: 'Small' },
@@ -105,7 +105,6 @@ const Checkout = () => {
     useEffect(() => {
         if (cartSlice.length === 0) {
             setSubTotal(0);
-            setVat(0);
             return;
         }
         const subtotal = cartSlice.reduce(
@@ -113,62 +112,31 @@ const Checkout = () => {
             0
         );
         setSubTotal(subtotal);
-        const vatAmount = subtotal * 0.2;
-        setVat(vatAmount);
     }, [cartSlice]);
 
+    // Calculate delivery charge when address or cart changes
+    useEffect(() => {
+        const calculateDelivery = async () => {
+            if (selectedAddress && selectedAddress.state && cartSlice.length > 0) {
+                const items = cartSlice.map((item: any) => ({
+                    attributeValue: item.weight || '250g', // Default fallback if missing
+                    quantity: item.quantity
+                }));
+
+                const charge = await deliveryApi.calculate({
+                    state: selectedAddress.state,
+                    items: items
+                });
+                setDeliveryCharge(charge);
+            } else {
+                setDeliveryCharge(0);
+            }
+        };
+        calculateDelivery();
+    }, [selectedAddress, cartSlice]);
+
     const discountAmount = subTotal * (discount / 100);
-    const total = subTotal + vat - discountAmount;
-
-    // Load countries on mount
-    useEffect(() => {
-        const loadCountries = async () => {
-            try {
-                const countriesData = await locationApi.getCountries();
-                setCountries(countriesData);
-            } catch (error) {
-                console.error('Error loading countries:', error);
-            }
-        };
-        loadCountries();
-    }, []);
-
-    // Load states when country is selected
-    useEffect(() => {
-        const loadStates = async () => {
-            if (selectedCountryId) {
-                try {
-                    const statesData = await locationApi.getStates(selectedCountryId);
-                    setStates(statesData);
-                    setCities([]); // Clear cities when country changes
-                    setSelectedStateId('');
-                } catch (error) {
-                    console.error('Error loading states:', error);
-                }
-            } else {
-                setStates([]);
-                setCities([]);
-            }
-        };
-        loadStates();
-    }, [selectedCountryId]);
-
-    // Load cities when state is selected
-    useEffect(() => {
-        const loadCities = async () => {
-            if (selectedStateId) {
-                try {
-                    const citiesData = await locationApi.getCities(selectedStateId);
-                    setCities(citiesData);
-                } catch (error) {
-                    console.error('Error loading cities:', error);
-                }
-            } else {
-                setCities([]);
-            }
-        };
-        loadCities();
-    }, [selectedStateId]);
+    const total = subTotal + deliveryCharge - discountAmount;
 
     // Load existing addresses from database when user is authenticated
     useEffect(() => {
@@ -211,15 +179,12 @@ const Checkout = () => {
     }, [isAuthenticated]);
 
     useEffect(() => {
-
         if (selectedAddress) {
             setBillingAddressMethod("use");
         } else {
             setBillingAddressMethod("new");
         }
     }, [selectedAddress]);
-
-    // No longer using localStorage for registration - all data is in database
 
     // Track begin_checkout when user lands on checkout page
     useEffect(() => {
@@ -264,7 +229,6 @@ const Checkout = () => {
         }
     }, [cartSlice])
 
-    //login end
     const generateRandomId: any = () => {
         const randomNum = Math.floor(Math.random() * 100000);
         return `${randomNum}`;
@@ -290,7 +254,7 @@ const Checkout = () => {
                 ? authStorage.getUserData()
                 : {};
 
-            if (!loginUser?.token) {
+            if (!loginUser?.token && checkOutMethod !== 'guest') {
                 showErrorToast("Please login to place an order.");
                 setIsCreatingOrder(false);
                 return;
@@ -312,8 +276,8 @@ const Checkout = () => {
                 // Create address on backend
                 try {
                     // Find country and state IDs if needed
-                    const selectedCountry = countries.find(c => c.name === selectedAddress.country || c.id === selectedAddress.country);
-                    const selectedState = states.find(s => s.name === selectedAddress.state || s.id === selectedAddress.state);
+                    const selectedCountry = locationsData.find(c => c.name === selectedAddress.country);
+                    const selectedState = selectedCountry?.states.find((s: any) => s.name === selectedAddress.state);
                     
                     const addressData = {
                         firstName: selectedAddress.firstName,
@@ -321,14 +285,14 @@ const Checkout = () => {
                         addressLine: selectedAddress.address,
                         city: selectedAddress.city,
                         postalCode: selectedAddress.postCode,
-                        state: selectedState?.id || selectedState?.name || selectedAddress.state,
+                        state: selectedState?.name || selectedAddress.state,
                         stateName: selectedState?.name || selectedAddress.state,
-                        country: selectedCountry?.id || selectedCountry?.code || selectedAddress.country,
+                        country: selectedCountry?.name || selectedAddress.country,
                         countryName: selectedCountry?.name || selectedAddress.country,
                         addressType: 'billing',
                         isDefault: false,
                     };
-                    const createdAddress = await addressApi.create(addressData);
+                    const createdAddress = await addressApi.create(addressData, !isAuthenticated);
                     addressId = createdAddress.id;
                 } catch (error: any) {
                     console.error('Error creating address:', error);
@@ -346,9 +310,10 @@ const Checkout = () => {
                 items: items,
                 couponCode: discount > 0 ? 'COUPON' : null,
                 paymentMethod: paymentMethod,
+                deliveryCharge: deliveryCharge // Pass delivery charge to backend
             };
 
-            const orderResponse = await orderApi.create(orderData);
+            const orderResponse = await orderApi.create(orderData, !isAuthenticated);
             const createdOrder = orderResponse.order;
 
             if (!createdOrder) {
@@ -405,8 +370,15 @@ const Checkout = () => {
                 // For COD, order is created and cart is cleared
                 showSuccessToast("Order placed successfully!");
                 dispatch(clearCart());
+                
+                // Save order ID for guest tracking
+                if (!isAuthenticated) {
+                    sessionStorage.setItem('guest_last_order_id', createdOrder.id);
+                }
+
                 router.push("/orders");
             } else {
+
                 // For payment gateways, the PaymentGateway component will handle the payment
                 showSuccessToast("Order created. Please complete the payment.");
                 // PaymentGateway component will handle the rest
@@ -418,97 +390,91 @@ const Checkout = () => {
         } finally {
             setIsCreatingOrder(false);
         }
-    };
+    }
 
-    const handlePaymentSuccess = (gateway: string, response: any) => {
-        showSuccessToast("Payment successful! Order confirmed.");
+    const handlePaymentSuccess = (paymentId: string) => {
+        showSuccessToast("Payment successful! Order placed.");
         dispatch(clearCart());
+        if (!isAuthenticated && createdOrderId) {
+            sessionStorage.setItem('guest_last_order_id', createdOrderId);
+        }
         router.push("/orders");
     };
 
-    const handlePaymentError = (gateway: string, error: Error) => {
-        console.error(`Payment error (${gateway}):`, error);
-        showErrorToast(`Payment failed: ${error.message}`);
+    const handlePaymentError = (errorMessage: string) => {
+        showErrorToast(errorMessage || "Payment failed. Please try again.");
     };
 
-    const handleDiscountApplied = (discount: any) => {
-        setDiscount(discount);
-    };
+    const handleDeliveryChange = (e: any) => {
+        setSelectedMethod(e.target.value);
+    }
 
-    const handleDeliveryChange = (event: any) => {
-        setSelectedMethod(event.target.value);
-    };
-    const handleBillingAddressChange = (event: any) => {
-        const addressMethod = event.target.value
-        setBillingAddressMethod(addressMethod);
-    };
-    const handleCheckOutChange = (event: any) => {
-        const method = event.target.value
-        setCheckOutMethod(method);
-
-        if (method === "guest") {
-            setBtnVisible(false)
-            setTextVisible(false)
-            setLoginVisible(false)
-            setBillingVisible(true)
+    const handleCheckOutChange = (e: any) => {
+        setCheckOutMethod(e.target.value);
+        if (e.target.value === 'login') {
+            setLoginVisible(true);
+            setBtnVisible(false);
+            setTextVisible(false);
+            setBillingVisible(false);
+        } else if (e.target.value === 'guest') {
+            setLoginVisible(false);
+            setBtnVisible(true);
+            setTextVisible(true);
+            setBillingVisible(false);
+        } else {
+            setLoginVisible(false);
+            setBtnVisible(true);
+            setTextVisible(true);
+            setBillingVisible(false);
         }
+    }
 
-        if (method === "register") {
-            setBtnVisible(true)
-            setTextVisible(true)
-            setLoginVisible(false)
-            setBillingVisible(false)
+    const handleBillingAddressChange = (e: any) => {
+        setBillingAddressMethod(e.target.value);
+        if (e.target.value === 'new') {
+            setSelectedAddress(null);
         }
-        if (method === "login") {
-            setBtnVisible(false)
-            setTextVisible(false)
-            setBillingVisible(false)
-            setLoginVisible(true)
-        }
-    };
+    }
 
     const handleContinueBtn = () => {
-        if (checkOutMethod === "register") {
-            router.push("/register");
-        }
+        setBtnVisible(false);
+        setTextVisible(false);
+        setBillingVisible(true);
+    }
+
+    const handleDiscountApplied = (discountValue: number) => {
+        setDiscount(discountValue);
     };
 
-    const handleSelectAddress = (address: FormValues) => {
-        console.log("Selected Address:", address);
-        console.log("Selected selectedAddress:", selectedAddress);
+    const handleSelectAddress = (address: any) => {
         setSelectedAddress(address);
-    };
-    const handleRemoveAddress = async (addressId: string) => {
-        try {
-            // Delete address from database
-            await addressApi.delete(addressId);
-            
-            // Update local state
-            const updatedAddresses = addressVisible.filter((addr) => addr.id !== addressId);
-            setAddressVisible(updatedAddresses);
+        setBillingAddressMethod("use");
+    }
 
-            // Clear selected address if it was removed
-            if (selectedAddress && selectedAddress.id === addressId) {
+    const handleRemoveAddress = async (id: string) => {
+        try {
+            await addressApi.delete(id);
+            const updatedAddresses = addressVisible.filter((addr) => addr.id !== id);
+            setAddressVisible(updatedAddresses);
+            if (selectedAddress && selectedAddress.id === id) {
                 setSelectedAddress(null);
                 setBillingAddressMethod("new");
             }
-            
-            showSuccessToast("Address removed successfully!");
-        } catch (error: any) {
+            showSuccessToast("Address removed successfully");
+        } catch (error) {
             console.error('Error removing address:', error);
-            showErrorToast(error.message || "Failed to remove address. Please try again.");
+            showErrorToast("Failed to remove address");
         }
-    };
+    }
 
-    // billing address
     const schema = yup.object().shape({
-        firstName: yup.string().required(),
-        lastName: yup.string().required(),
-        address: yup.string().required(),
-        postCode: yup.string().min(5).max(6).required(),
-        country: yup.string().required(),
-        state: yup.string().required(),
-        city: yup.string().required(),
+        firstName: yup.string().required("First Name is required"),
+        lastName: yup.string().required("Last Name is required"),
+        address: yup.string().required("Address is required"),
+        city: yup.string().required("City is required"),
+        postCode: yup.string().required("Post Code is required"),
+        country: yup.string().required("Country is required"),
+        state: yup.string().required("State is required"),
     });
 
     const initialValues: FormValues = {
@@ -527,28 +493,32 @@ const Checkout = () => {
         
         try {
             // Find country and state IDs from selected values
-            const selectedCountry = countries.find(c => c.name === values.country || c.id === values.country);
-            const selectedState = states.find(s => s.name === values.state || s.id === values.state);
-            const selectedCity = cities.find(c => c.name === values.city || c.id === values.city);
+            const selectedCountry = locationsData.find(c => c.name === values.country);
+            const selectedState = selectedCountry?.states.find((s: any) => s.name === values.state);
+            // City is just a string in the JSON
 
             // Create address on backend
             const addressData = {
                 firstName: values.firstName,
                 lastName: values.lastName,
                 addressLine: values.address,
-                city: selectedCity?.name || values.city,
+                city: values.city,
                 postalCode: values.postCode,
-                state: selectedState?.id || selectedState?.name || values.state,
+                state: selectedState?.name || values.state,
                 stateName: selectedState?.name || values.state,
-                country: selectedCountry?.id || selectedCountry?.code || values.country,
+                country: selectedCountry?.name || values.country,
                 countryName: selectedCountry?.name || values.country,
                 isDefault: addressVisible.length === 0, // Set as default if it's the first address
                 addressType: 'billing',
             };
 
-            const createdAddress = await addressApi.create(addressData);
+            const createdAddress = await addressApi.create(addressData, !isAuthenticated);
             
             // Update local state
+            if (!createdAddress) {
+                throw new Error("Failed to create address. Please check your input and try again.");
+            }
+
             const newAddress = {
                 id: createdAddress.id,
                 firstName: createdAddress.first_name || createdAddress.firstName,
@@ -569,10 +539,17 @@ const Checkout = () => {
             formikHelpers.resetForm();
             
             // Reset location selects
-            setSelectedCountryId('');
-            setSelectedStateId('');
             setStates([]);
             setCities([]);
+
+            // Trigger checkout automatically after address is saved
+            setTimeout(() => {
+                const placeOrderBtn = document.querySelector('.bb-btn-2.place-order-btn') as HTMLElement;
+                if (placeOrderBtn) {
+                    placeOrderBtn.click();
+                }
+            }, 500);
+
         } catch (error: any) {
             console.error('Error saving address:', error);
             showErrorToast(error.message || "Failed to save address. Please try again.");
@@ -580,7 +557,6 @@ const Checkout = () => {
             formikHelpers.setSubmitting(false);
         }
     }
-    // user login
 
     const UserSchema = yup.object().shape({
         phoneNumber: yup.string()
@@ -660,7 +636,7 @@ const Checkout = () => {
                                         <div className="checkout-summary">
                                             <ul>
                                                 <li><span className="left-item">sub-total</span><span>₹{subTotal.toFixed(2)}</span></li>
-                                                <li><span className="left-item">Delivery Charges</span><span>₹{vat.toFixed(2)}</span></li>
+                                                <li><span className="left-item">Delivery Charge</span><span>₹{deliveryCharge.toFixed(2)}</span></li>
                                                 <li>
                                                     <span className="left-item">Coupon Discount</span>
                                                     <span><a onClick={(e) => e.preventDefault()} href="#" className="apply drop-coupon">Apply Coupon</a></span>
@@ -913,9 +889,33 @@ const Checkout = () => {
                                                     >{({
                                                         handleSubmit,
                                                         handleChange,
+                                                        setFieldValue,
                                                         values,
                                                         errors,
                                                     }: FormikProps<FormValues>) => {
+                                                        
+                                                        // Handle Country Change
+                                                        const handleCountryChange = (e: React.ChangeEvent<any>) => {
+                                                            const selectedCountry = e.target.value;
+                                                            handleChange(e);
+                                                            setFieldValue('state', ''); // Reset state
+                                                            setFieldValue('city', '');   // Reset city
+                                                            
+                                                            const countryData = locationsData.find(c => c.name === selectedCountry);
+                                                            setStates(countryData ? countryData.states : []);
+                                                            setCities([]);
+                                                        };
+
+                                                        // Handle State Change
+                                                        const handleStateChange = (e: React.ChangeEvent<any>) => {
+                                                            const selectedState = e.target.value;
+                                                            handleChange(e);
+                                                            setFieldValue('city', ''); // Reset city
+                                                            
+                                                            const stateData = states.find(s => s.name === selectedState);
+                                                            setCities(stateData ? stateData.cities : []);
+                                                        };
+
                                                         return (
                                                             <Form onSubmit={handleSubmit} method="post">
                                                                 <Row>
@@ -957,21 +957,14 @@ const Checkout = () => {
                                                                             <label>Country *</label>
                                                                             <InputGroup>
                                                                                 <Form.Select 
-                                                                                    onChange={(e) => {
-                                                                                        handleChange(e);
-                                                                                        setSelectedCountryId(e.target.value);
-                                                                                        // Reset state and city when country changes
-                                                                                        setSelectedStateId('');
-                                                                                        setStates([]);
-                                                                                        setCities([]);
-                                                                                    }} 
-                                                                                    value={selectedCountryId || values.country} 
+                                                                                    onChange={handleCountryChange} 
+                                                                                    value={values.country} 
                                                                                     isInvalid={!!errors.country} 
                                                                                     name='country' 
                                                                                     className="custom-select">
                                                                                     <option value='' disabled>Select Country</option>
-                                                                                    {countries.map((country) => (
-                                                                                        <option key={country.id} value={country.id}>
+                                                                                    {countries.map((country, index) => (
+                                                                                        <option key={index} value={country.name}>
                                                                                             {country.name}
                                                                                         </option>
                                                                                     ))}
@@ -987,20 +980,15 @@ const Checkout = () => {
                                                                             <label>Region State *</label>
                                                                             <InputGroup>
                                                                                 <Form.Select 
-                                                                                    onChange={(e) => {
-                                                                                        handleChange(e);
-                                                                                        setSelectedStateId(e.target.value);
-                                                                                        // Reset city when state changes
-                                                                                        setCities([]);
-                                                                                    }} 
-                                                                                    value={selectedStateId || values.state} 
+                                                                                    onChange={handleStateChange} 
+                                                                                    value={values.state} 
                                                                                     isInvalid={!!errors.state} 
                                                                                     name='state' 
                                                                                     className="custom-select"
-                                                                                    disabled={!selectedCountryId}>
+                                                                                    disabled={!values.country}>
                                                                                     <option value='' disabled>Select State</option>
-                                                                                    {states.map((state) => (
-                                                                                        <option key={state.id} value={state.id}>
+                                                                                    {states.map((state, index) => (
+                                                                                        <option key={index} value={state.name}>
                                                                                             {state.name}
                                                                                         </option>
                                                                                     ))}
@@ -1021,11 +1009,11 @@ const Checkout = () => {
                                                                                     isInvalid={!!errors.city} 
                                                                                     name='city' 
                                                                                     className="custom-select"
-                                                                                    disabled={!selectedStateId}>
+                                                                                    disabled={!values.state}>
                                                                                     <option value='' disabled>Select City</option>
-                                                                                    {cities.map((city) => (
-                                                                                        <option key={city.id} value={city.name}>
-                                                                                            {city.name}
+                                                                                    {cities.map((city, index) => (
+                                                                                        <option key={index} value={city}>
+                                                                                            {city}
                                                                                         </option>
                                                                                     ))}
                                                                                 </Form.Select>
@@ -1094,7 +1082,7 @@ const Checkout = () => {
                                                                             <button 
                                                                                 onClick={handleCheckout} 
                                                                                 type="button" 
-                                                                                className="bb-btn-2"
+                                                                                className="bb-btn-2 place-order-btn"
                                                                                 disabled={isCreatingOrder}
                                                                             >
                                                                                 {isCreatingOrder ? 'Placing Order...' : 'Place Order'}

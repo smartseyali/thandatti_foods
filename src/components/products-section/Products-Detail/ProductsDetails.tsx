@@ -3,9 +3,20 @@ import SingleProductSlider from './single-product-slider/SingleProductSlider'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link';
 import { productApi, mapProductToFrontend, reviewApi } from '@/utils/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { addItemToCart, updateCartItemQuantity } from '@/utils/cartOperations';
+import { showSuccessToast, showErrorToast } from '@/components/toast-popup/Toastify';
+import { addWishlist } from '@/store/reducer/wishlistSlice';
+import ItemModal from '@/components/modal/ItemModal';
 
 const ProductsDetails = ({ productId }: { productId?: string }) => {
+    const dispatch = useDispatch();
+    const cartSlice = useSelector((state: RootState) => state.cart?.items);
+    const wishlistItem = useSelector((state: RootState) => state.wishlist?.wishlist);
     const [activeIndex, setActiveIndex] = useState<number>(0);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const [quantity, setQuantity] = useState(1);
     const [product, setProduct] = useState<any>(null);
     const [selectedAttribute, setSelectedAttribute] = useState<any>(null);
@@ -99,6 +110,61 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productId]);
+
+    const handleAddToCart = async () => {
+        if (!product) return;
+        
+        try {
+            const productToAdd = {
+                ...product,
+                // Ensure we use the selected attribute details if available
+                newPrice: selectedPrice || product.newPrice,
+                oldPrice: selectedOldPrice || product.oldPrice,
+            };
+
+            const existingItem = cartSlice?.find((item: any) => item.productId === product.id || item.id === product.id);
+
+            if (!existingItem) {
+                await addItemToCart(dispatch, productToAdd, quantity);
+                showSuccessToast("Item added to cart");
+            } else {
+                // If item exists, update quantity
+                if (existingItem.cartItemId) {
+                    const newQuantity = existingItem.quantity + quantity;
+                    await updateCartItemQuantity(dispatch, existingItem.cartItemId, newQuantity);
+                    showSuccessToast("Item quantity updated in cart");
+                } else {
+                    // Fallback if cartItemId is missing (shouldn't happen with correct API sync)
+                    await addItemToCart(dispatch, productToAdd, quantity);
+                    showSuccessToast("Item added to cart");
+                }
+            }
+        } catch (error: any) {
+            console.error('Error adding to cart:', error);
+            showErrorToast(error.message || "Failed to add item to cart.");
+        }
+    };
+
+    const handleAddToWishlist = () => {
+        if (!product) return;
+        const isItemInWishlist = wishlistItem.some(
+            (item: any) => item.id === product.id
+        );
+        if (!isItemInWishlist) {
+            dispatch(addWishlist(product));
+            showSuccessToast("Item added to wishlist");
+        } else {
+            showErrorToast("Item already in wishlist");
+        }
+    };
+
+    const openItemModal = () => {
+        setIsModalOpen(true);
+    }
+
+    const closeItemModal = () => {
+        setIsModalOpen(false);
+    }
 
     const handleActiveTab = (index: any) => {
         setActiveIndex(index);
@@ -310,16 +376,16 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                     </div>
                                 </div>
                                 <div className="buttons">
-                                    <Link href="/cart" className="bb-btn-2">View Cart</Link>
+                                    <button onClick={handleAddToCart} className="bb-btn-2">Add to Cart</button>
                                 </div>
                                 <ul className="bb-pro-actions">
                                     <li className="bb-btn-group">
-                                        <a onClick={(e) => e.preventDefault()} href="#">
+                                        <a onClick={(e) => { e.preventDefault(); handleAddToWishlist(); }} href="#" title="Wishlist">
                                             <i className="ri-heart-line"></i>
                                         </a>
                                     </li>
                                     <li className="bb-btn-group">
-                                        <a onClick={(e) => e.preventDefault()} href="#" data-link-action="quickview" title="Quick view" data-bs-toggle="modal"
+                                        <a onClick={(e) => { e.preventDefault(); openItemModal(); }} href="#" data-link-action="quickview" title="Quick view" data-bs-toggle="modal"
                                             data-bs-target="#bry_quickview_modal">
                                             <i className="ri-eye-line"></i>
                                         </a>
@@ -330,6 +396,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                     </Col>
                 </Row>
             </div>
+            {product && <ItemModal data={product} isModalOpen={isModalOpen} closeItemModal={closeItemModal} />}
         </>
     )
 }

@@ -4,7 +4,7 @@ import Breadcrumb from '@/components/breadcrumb/Breadcrumb'
 import ShopDetailBanner from '@/components/banner/ShopDetailBanner'
 import ShopListRight from '@/components/shop/ShopListRight'
 
-const page = () => {
+const Page = () => {
   return (
     <>
       <Breadcrumb title={"Shop Page"} />
@@ -14,4 +14,4 @@ const page = () => {
   )
 };
 
-export default page
+export default Page

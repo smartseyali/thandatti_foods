@@ -10,7 +10,7 @@ interface Product {
     id: number;
     title: string;
     newPrice: number;
-    waight: string;
+    weight: string;
     image: string;
     imageTwo: string;
     date: string;
@@ -32,15 +32,8 @@ const OrderPage = ({ id }: any) => {
     const orders = useSelector((state: RootState) => state.cart.orders);
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentDate, setCurrentDate] = useState<string>(
-        new Date().toLocaleDateString("en-GB")
-    );
     
     useLoadOrders();
-
-    useEffect(() => {
-        setCurrentDate(new Date().toLocaleDateString("en-GB"));
-    }, []);
 
     useEffect(() => {
         const loadOrder = async () => {
@@ -51,8 +44,22 @@ const OrderPage = ({ id }: any) => {
                 if (!foundOrder) {
                     // If not found, try to fetch from API
                     try {
-                        const orderData = await orderApi.getById(id);
-                        foundOrder = mapOrderToFrontend(orderData, orderData.items);
+                        // Try fetching as guest if not found in store (which might be populated for auth user)
+                        // If user is logged in, this call works. If guest, we need to pass true if we have the ID.
+                        // However, for security, we can't just fetch any ID as guest.
+                        // But since we are on the frontend, if the user has the ID (e.g. from URL), we can try.
+                        // The backend 'optionalAuth' allows it, but we need to pass 'isGuest=true' to api wrapper
+                        // if we want to bypass the frontend auth check if it exists.
+                        // Actually, api.ts getById takes (id, isGuest).
+                        
+                        // Check if we have a guest order ID in session storage that matches
+                        const guestOrderId = sessionStorage.getItem('guest_last_order_id');
+                        const isGuest = guestOrderId === id;
+
+                        const orderData = await orderApi.getById(id, isGuest);
+                        if (orderData) {
+                            foundOrder = mapOrderToFrontend(orderData, orderData.items);
+                        }
                     } catch (error) {
                         console.error('Error fetching order:', error);
                     }
@@ -71,6 +78,15 @@ const OrderPage = ({ id }: any) => {
         }
     }, [id, orders]);
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
+
     function isOrderWithData(obj: any): obj is Order {
         return (
             typeof obj === "object" && obj !== null && Array.isArray(obj.products)
@@ -83,59 +99,102 @@ const OrderPage = ({ id }: any) => {
                 <div className="container">
                     <div className="row mb-minus-24">
                         <div className="col-12 mb-24">
-                            <Fade triggerOnce direction='up' duration={1000} delay={200} className="bb-cart-table">
-                                <table style={{ width: '100%' }}>
-                                    <thead>
-                                        <tr style={{ textAlign: "center" }}>
-                                            <th>ID</th>
-                                            <th>Image</th>
-                                            <th>Name</th>
-                                            <th>Date</th>
-                                            <th>Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loading ? (
-                                            <tr>
-                                                <td colSpan={5} style={{ textAlign: "center" }}>
-                                                    <span style={{ color: "#777" }}>Loading...</span>
-                                                </td>
-                                            </tr>
-                                        ) : isOrderWithData(order) ? (order.products.map((product: Product, productIndex: number) => (
-                                            <tr style={{ textAlign: "center" }} key={productIndex}>
-                                                <td>
-                                                    <span>{productIndex + 1}</span>
-                                                </td>
-                                                <td>
-                                                    <a onClick={(e) => e.preventDefault()} href="#">
-                                                        <div className="Product-cart">
-                                                            <img src={product.image} alt="new-product-5" />
-                                                        </div>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <span>{product.title}</span>
-                                                </td>
-                                                <td>
-                                                    <span>{currentDate}</span>
-                                                </td>
-                                                <td>
-                                                    <span className="price">${product.newPrice}</span>
-                                                </td>
-                                            </tr>
-                                        ))) : (
-                                            <tr>
-                                                <td colSpan={12}>
-                                                    <span style={{ color: "#777" }}>
-                                                        Order list empty...
+                            {loading ? (
+                                <div className="text-center py-5">Loading order details...</div>
+                            ) : isOrderWithData(order) ? (
+                                <Fade triggerOnce direction='up' duration={1000} delay={200} className="bb-cart-table">
+                                    <div className="card mb-4">
+                                        <div className="card-header bg-light">
+                                            <div className="row align-items-center">
+                                                <div className="col">
+                                                    <h5 className="mb-0">Order #{order.orderId}</h5>
+                                                </div>
+                                                <div className="col-auto">
+                                                    <span className="text-muted">{formatDate(order.date)}</span>
+                                                    <span className={`badge ms-2 ${order.status === 'Completed' ? 'bg-success' : 'bg-warning'}`}>
+                                                        {order.status}
                                                     </span>
-                                                </td>
-                                            </tr>
-                                        )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="card-body">
+                                            {/* Order Items Table */}
+                                            <table style={{ width: '100%' }} className="table table-borderless">
+                                                <thead>
+                                                    <tr style={{ textAlign: "center", borderBottom: "1px solid #eee" }}>
+                                                        <th>Image</th>
+                                                        <th>Product Name</th>
+                                                        <th>Price</th>
+                                                        <th>Quantity</th>
+                                                        <th>Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {order.products.map((product: Product, productIndex: number) => (
+                                                        <tr style={{ textAlign: "center", borderBottom: "1px solid #eee" }} key={productIndex}>
+                                                            <td className="py-3">
+                                                                <div className="Product-cart">
+                                                                    <img src={product.image} alt={product.title} style={{width: '60px', height: '60px', objectFit: 'cover'}} />
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3">
+                                                                <span>{product.title}</span>
+                                                            </td>
+                                                            <td className="py-3">
+                                                                <span className="price">₹{product.newPrice.toFixed(2)}</span>
+                                                            </td>
+                                                            <td className="py-3">
+                                                                <span>{product.quantity}</span>
+                                                            </td>
+                                                            <td className="py-3">
+                                                                <span className="price">₹{(product.newPrice * product.quantity).toFixed(2)}</span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
 
-                                    </tbody>
-                                </table>
-                            </Fade>
+                                            {/* Order Summary */}
+                                            <div className="row mt-4">
+                                                <div className="col-md-6">
+                                                    {order.address && (
+                                                        <div className="mb-3">
+                                                            <h6>Shipping Address</h6>
+                                                            <p className="mb-0 text-muted">
+                                                                {order.address.firstName} {order.address.lastName}<br />
+                                                                {order.address.address}<br />
+                                                                {order.address.city}, {order.address.postalCode}<br />
+                                                                {order.address.country}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="col-md-6">
+                                                    <div className="bg-light p-3 rounded">
+                                                        <div className="d-flex justify-content-between mb-2">
+                                                            <span>Subtotal:</span>
+                                                            <span>₹{order.totalPrice.toFixed(2)}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-2">
+                                                            <span>Shipping:</span>
+                                                            <span>{order.shippingMethod === 'free' ? 'Free' : '₹5.00'}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between border-top pt-2 mt-2">
+                                                            <strong>Total:</strong>
+                                                            <strong>₹{order.totalPrice.toFixed(2)}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Fade>
+                            ) : (
+                                <div className="text-center py-5">
+                                    <h3>Order not found</h3>
+                                    <p className="text-muted">The order you are looking for does not exist or you do not have permission to view it.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

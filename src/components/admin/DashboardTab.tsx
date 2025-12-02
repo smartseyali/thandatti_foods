@@ -83,7 +83,7 @@ const DashboardTab = () => {
                             <i className="ri-money-rupee-circle-line"></i>
                         </div>
                         <div className="stat-content">
-                            <h3>₹{stats.totalRevenue.toFixed(2)}</h3>
+                            <h3>₹{parseFloat(stats.totalRevenue as any || 0).toFixed(2)}</h3>
                             <p>Total Revenue</p>
                         </div>
                     </div>

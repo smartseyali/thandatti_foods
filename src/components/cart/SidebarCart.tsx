@@ -20,7 +20,7 @@ const SidebarCart = ({
 
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const [subTotal, setSubTotal] = useState(0);
-    const [vat, setVat] = useState(0);
+
     const dispatch = useDispatch();
 
     // Fetch related products (multiple products for the sidebar)
@@ -29,7 +29,7 @@ const SidebarCart = ({
     useEffect(() => {
         if (cartSlice.length === 0) {
             setSubTotal(0);
-            setVat(0);
+
             return;
         }
 
@@ -39,11 +39,10 @@ const SidebarCart = ({
         );
         setSubTotal(subtotal);
 
-        const vatAmount = subtotal * 0.2;
-        setVat(vatAmount);
+
     }, [cartSlice]);
 
-    const total = subTotal + vat;
+    const total = subTotal;
 
     if (error) return <div>Failed to load products</div>;
     if (!data) return <div></div>;
@@ -88,19 +87,9 @@ const SidebarCart = ({
                         </div>
                         <div className="bb-cart-box mb-minus-24 cart-related bb-border-right">
                             <div className="bb-deal-card mb-24">
-                                {getData().map((data: any, index: any) => (
+                                {getData().slice(0, 2).map((data: any, index: any) => (
                                     <ProductItemCard data={data} key={index} />
                                 ))}
-                            </div>
-                            <div className="bb-cart-banner mb-24">
-                                <div className="banner">
-                                    <img src="/assets/img/category/cart-banner.jpg" alt="cart-banner" />
-                                    <div className="detail">
-                                        <h4>Organic & Fresh</h4>
-                                        <h3>Vegetables</h3>
-                                        <Link href="/shop-full-width-col-4">Buy Now</Link>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </Col>
@@ -142,10 +131,7 @@ const SidebarCart = ({
                                                     <td className="title">Sub-Total :</td>
                                                     <td className="price">₹{subTotal.toFixed(2)}</td>
                                                 </tr>
-                                                <tr>
-                                                    <td className="title">VAT (20%) :</td>
-                                                    <td className="price">₹{vat.toFixed(2)}</td>
-                                                </tr>
+
                                                 <tr>
                                                     <td className="title">Total :</td>
                                                     <td className="price">₹{total.toFixed(2)}</td>

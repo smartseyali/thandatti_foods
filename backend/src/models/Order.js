@@ -14,13 +14,14 @@ class Order {
     const query = `
       INSERT INTO orders (order_number, user_id, shipping_address_id, billing_address_id,
                          shipping_method, total_items, subtotal, discount_amount, vat,
-                         total_price, coupon_code, payment_method, payment_status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                         total_price, coupon_code, payment_method, payment_status, delivery_charge)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
     const values = [orderNumber, userId, shippingAddressId, billingAddressId,
                    shippingMethod || 'free', totalItems, subtotal, discountAmount || 0,
-                   vat || 0, totalPrice, couponCode, paymentMethod, paymentStatus || 'pending'];
+                   vat || 0, totalPrice, couponCode, paymentMethod, paymentStatus || 'pending',
+                   orderData.deliveryCharge || 0];
     const result = await pool.query(query, values);
     return result.rows[0];
   }

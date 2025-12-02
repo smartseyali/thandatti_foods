@@ -11,6 +11,8 @@ interface OrderItem {
     quantity: number;
     unit_price: number;
     total_price: number;
+    title?: string;
+    primary_image?: string;
     product?: {
         title: string;
         primary_image: string;
@@ -24,6 +26,8 @@ interface Order {
     user_email?: string;
     user_first_name?: string;
     user_last_name?: string;
+    shipping_first_name?: string;
+    shipping_last_name?: string;
     shipping_address?: string;
     shipping_city?: string;
     shipping_postal_code?: string;
@@ -106,6 +110,11 @@ const OrdersTab = () => {
         });
     };
 
+    const formatPrice = (price: any) => {
+        const numPrice = parseFloat(price);
+        return isNaN(numPrice) ? '0.00' : numPrice.toFixed(2);
+    };
+
     const getStatusBadgeClass = (status: string) => {
         switch (status?.toLowerCase()) {
             case 'completed':
@@ -119,6 +128,16 @@ const OrdersTab = () => {
             default:
                 return 'bg-secondary';
         }
+    };
+
+    const getCustomerName = (order: Order) => {
+        if (order.user_first_name && order.user_last_name) {
+            return `${order.user_first_name} ${order.user_last_name}`;
+        }
+        if (order.shipping_first_name && order.shipping_last_name) {
+            return `${order.shipping_first_name} ${order.shipping_last_name}`;
+        }
+        return order.user_email || 'Guest User';
     };
 
     return (
@@ -172,13 +191,9 @@ const OrdersTab = () => {
                                 orders.map((order) => (
                                     <tr key={order.id}>
                                         <td>#{order.order_number}</td>
-                                        <td>
-                                            {order.user_first_name && order.user_last_name
-                                                ? `${order.user_first_name} ${order.user_last_name}`
-                                                : order.user_email || 'N/A'}
-                                        </td>
+                                        <td>{getCustomerName(order)}</td>
                                         <td>{order.total_items}</td>
-                                        <td>₹{order.total_price.toFixed(2)}</td>
+                                        <td>₹{formatPrice(order.total_price)}</td>
                                         <td>
                                             <span className={`badge ${getStatusBadgeClass(order.payment_status)}`}>
                                                 {order.payment_status}
@@ -243,9 +258,7 @@ const OrdersTab = () => {
                                     <h5>Customer Information</h5>
                                     <p>
                                         <strong>Name:</strong>{' '}
-                                        {selectedOrder.user_first_name && selectedOrder.user_last_name
-                                            ? `${selectedOrder.user_first_name} ${selectedOrder.user_last_name}`
-                                            : 'N/A'}
+                                        {getCustomerName(selectedOrder)}
                                     </p>
                                     <p>
                                         <strong>Email:</strong> {selectedOrder.user_email || 'N/A'}
@@ -278,10 +291,10 @@ const OrdersTab = () => {
                                     {selectedOrder.items && selectedOrder.items.length > 0 ? (
                                         selectedOrder.items.map((item) => (
                                             <tr key={item.id}>
-                                                <td>{item.product?.title || 'Product'}</td>
+                                                <td>{item.title || item.product?.title || 'Product'}</td>
                                                 <td>{item.quantity}</td>
-                                                <td>₹{item.unit_price.toFixed(2)}</td>
-                                                <td>₹{item.total_price.toFixed(2)}</td>
+                                                <td>₹{formatPrice(item.unit_price)}</td>
+                                                <td>₹{formatPrice(item.total_price)}</td>
                                             </tr>
                                         ))
                                     ) : (
@@ -295,16 +308,16 @@ const OrdersTab = () => {
                             <Row className="mt-3">
                                 <Col md={6}>
                                     <p>
-                                        <strong>Subtotal:</strong> ₹{selectedOrder.subtotal.toFixed(2)}
+                                        <strong>Subtotal:</strong> ₹{formatPrice(selectedOrder.subtotal)}
                                     </p>
                                     <p>
-                                        <strong>Discount:</strong> ₹{selectedOrder.discount_amount.toFixed(2)}
+                                        <strong>Discount:</strong> ₹{formatPrice(selectedOrder.discount_amount)}
                                     </p>
                                     <p>
-                                        <strong>VAT:</strong> ₹{selectedOrder.vat.toFixed(2)}
+                                        <strong>VAT:</strong> ₹{formatPrice(selectedOrder.vat)}
                                     </p>
                                     <p>
-                                        <strong>Total:</strong> ₹{selectedOrder.total_price.toFixed(2)}
+                                        <strong>Total:</strong> ₹{formatPrice(selectedOrder.total_price)}
                                     </p>
                                 </Col>
                                 <Col md={6}>

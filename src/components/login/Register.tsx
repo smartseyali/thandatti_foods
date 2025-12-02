@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify'
 import { useRouter } from 'next/navigation'
@@ -9,6 +9,7 @@ import { Formik, FormikHelpers, FormikProps } from "formik";
 import * as yup from "yup";
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 import { authStorage } from '@/utils/authStorage';
+import locationsData from '@/data/locations.json';
 
 interface FormValues {
     firstName: string;
@@ -27,6 +28,8 @@ const Register = () => {
     const router = useRouter()
     const dispatch = useDispatch();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [availableStates, setAvailableStates] = useState<any[]>([]);
+    const [availableCities, setAvailableCities] = useState<any[]>([]);
 
     const schema = yup.object().shape({
         password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
@@ -123,6 +126,7 @@ const Register = () => {
             setIsSubmitting(false);
         }
     }
+
     return (
         <>
             <section className="section-register padding-tb-50">
@@ -144,7 +148,6 @@ const Register = () => {
                                             validationSchema={schema}
                                             onSubmit={handleSubmit}
                                             initialValues={initialValues}
-
                                         >{({
                                             setFieldValue,
                                             handleSubmit,
@@ -152,6 +155,29 @@ const Register = () => {
                                             values,
                                             errors,
                                         }: FormikProps<FormValues>) => {
+                                            
+                                            // Handle Country Change
+                                            const handleCountryChange = (e: React.ChangeEvent<any>) => {
+                                                const selectedCountry = e.target.value;
+                                                handleChange(e);
+                                                setFieldValue('state', ''); // Reset state
+                                                setFieldValue('city', '');   // Reset city
+                                                
+                                                const countryData = locationsData.find(c => c.name === selectedCountry);
+                                                setAvailableStates(countryData ? countryData.states : []);
+                                                setAvailableCities([]);
+                                            };
+
+                                            // Handle State Change
+                                            const handleStateChange = (e: React.ChangeEvent<any>) => {
+                                                const selectedState = e.target.value;
+                                                handleChange(e);
+                                                setFieldValue('city', ''); // Reset city
+                                                
+                                                const stateData = availableStates.find(s => s.name === selectedState);
+                                                setAvailableCities(stateData ? stateData.cities : []);
+                                            };
+
                                             return (
                                                 <Form noValidate onSubmit={handleSubmit} method="post">
                                                     <div className="bb-register-wrap bb-register-width-50">
@@ -226,13 +252,18 @@ const Register = () => {
                                                         <label>Country*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.country || ""} isInvalid={!!errors.country} onChange={handleChange} name='country' className="custom-select" required>
-                                                                    <option value='' disabled>Country</option>
-                                                                    <option value="india">India</option>
-                                                                    <option value="chile">Chile</option>
-                                                                    <option value="egypt">Egypt</option>
-                                                                    <option value="italy">Italy</option>
-                                                                    <option value="yemen">Yemen</option>
+                                                                <Form.Select 
+                                                                    value={values.country || ""} 
+                                                                    isInvalid={!!errors.country} 
+                                                                    onChange={handleCountryChange} 
+                                                                    name='country' 
+                                                                    className="custom-select" 
+                                                                    required
+                                                                >
+                                                                    <option value='' disabled>Select Country</option>
+                                                                    {locationsData.map((country: any, index: number) => (
+                                                                        <option key={index} value={country.name}>{country.name}</option>
+                                                                    ))}
                                                                 </Form.Select>
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.country}
@@ -244,13 +275,19 @@ const Register = () => {
                                                         <label>Region State*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.state || ""} isInvalid={!!errors.state} onChange={handleChange} name='state' className="custom-select" required>
-                                                                    <option value='' disabled>State</option>
-                                                                    <option value="gujarat">Gujarat</option>
-                                                                    <option value="goa">Goa</option>
-                                                                    <option value="hariyana">Hariyana</option>
-                                                                    <option value="mumbai">Mumbai</option>
-                                                                    <option value="delhi">Delhi</option>
+                                                                <Form.Select 
+                                                                    value={values.state || ""} 
+                                                                    isInvalid={!!errors.state} 
+                                                                    onChange={handleStateChange} 
+                                                                    name='state' 
+                                                                    className="custom-select" 
+                                                                    required
+                                                                    disabled={!values.country}
+                                                                >
+                                                                    <option value='' disabled>Select State</option>
+                                                                    {availableStates.map((state: any, index: number) => (
+                                                                        <option key={index} value={state.name}>{state.name}</option>
+                                                                    ))}
                                                                 </Form.Select>
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.state}
@@ -262,13 +299,19 @@ const Register = () => {
                                                         <label>City*</label>
                                                         <Form.Group >
                                                             <InputGroup>
-                                                                <Form.Select value={values.city || ""} isInvalid={!!errors.city} name='city' onChange={handleChange} className="custom-select" required>
-                                                                    <option value='' disabled>City</option>
-                                                                    <option value="surat">Surat</option>
-                                                                    <option value="bhavnagar">Bhavnagar</option>
-                                                                    <option value="amreli">Amreli</option>
-                                                                    <option value="rajkot">Rajkot</option>
-                                                                    <option value="amdavad">Amdavad</option>
+                                                                <Form.Select 
+                                                                    value={values.city || ""} 
+                                                                    isInvalid={!!errors.city} 
+                                                                    name='city' 
+                                                                    onChange={handleChange} 
+                                                                    className="custom-select" 
+                                                                    required
+                                                                    disabled={!values.state}
+                                                                >
+                                                                    <option value='' disabled>Select City</option>
+                                                                    {availableCities.map((city: string, index: number) => (
+                                                                        <option key={index} value={city}>{city}</option>
+                                                                    ))}
                                                                 </Form.Select>
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.city}

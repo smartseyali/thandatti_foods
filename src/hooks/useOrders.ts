@@ -17,8 +17,21 @@ export const useLoadOrders = () => {
           const mappedOrders = orders.map((order: any) => mapOrderToFrontend(order, order.items));
           dispatch(setOrders(mappedOrders));
         } else {
-          // User not authenticated, set empty orders
-          dispatch(setOrders([]));
+          // User not authenticated, check for guest order in sessionStorage
+          const guestOrderId = sessionStorage.getItem('guest_last_order_id');
+          if (guestOrderId) {
+             // Fetch specific order for guest
+             const order = await orderApi.getById(guestOrderId, true);
+             if (order) {
+                 const mappedOrder = mapOrderToFrontend(order, order.items);
+                 dispatch(setOrders([mappedOrder]));
+             } else {
+                 dispatch(setOrders([]));
+             }
+          } else {
+             // No guest order found
+             dispatch(setOrders([]));
+          }
         }
       } catch (error) {
         console.error('Error loading orders:', error);

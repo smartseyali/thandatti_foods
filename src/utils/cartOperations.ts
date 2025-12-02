@@ -17,7 +17,24 @@ export const addItemToCart = async (
 ) => {
   try {
     if (!isAuthenticated()) {
-      throw new Error('Please login to add items to cart');
+      // Guest user - use localStorage
+      const guestCart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+      const existingItemIndex = guestCart.findIndex((i: any) => i.id === item.id);
+      
+      if (existingItemIndex > -1) {
+        guestCart[existingItemIndex].quantity += quantity;
+        // Dispatch update to Redux
+        // We need to import updateQuantity from cartSlice, but it's not imported yet.
+        // Let's assume we will add it to imports.
+        // Actually, let's just reload the whole cart from localStorage to be safe and consistent
+      } else {
+        const newItem = { ...item, quantity };
+        guestCart.push(newItem);
+      }
+      
+      localStorage.setItem('guest_cart', JSON.stringify(guestCart));
+      dispatch(setItems(guestCart));
+      return true;
     }
 
     // Add to cart via API (database)
@@ -44,7 +61,26 @@ export const updateCartItemQuantity = async (
 ) => {
   try {
     if (!isAuthenticated()) {
-      throw new Error('Please login to update cart');
+       // Guest user - use localStorage
+       const guestCart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+       // For guest users, cartItemId might be the product id or we need to find by product id
+       // Since we don't have cartItemId for guest items (unless we generate fake ones), 
+       // we should rely on finding the item.
+       // However, the caller passes cartItemId. 
+       // If we look at ProductsDetails, it passes existingItem.cartItemId.
+       // For guest items, we should ensure they have some ID.
+       // Let's assume for guest, cartItemId is passed as product ID if cartItemId is missing.
+       
+       // Actually, let's find the item by ID matching cartItemId (which might be product ID for guest)
+       const itemIndex = guestCart.findIndex((i: any) => i.id.toString() === cartItemId.toString() || i.cartItemId === cartItemId);
+       
+       if (itemIndex > -1) {
+           guestCart[itemIndex].quantity = quantity;
+           localStorage.setItem('guest_cart', JSON.stringify(guestCart));
+           dispatch(setItems(guestCart));
+           return true;
+       }
+       return false;
     }
 
     // Update cart item via API (database)
@@ -71,7 +107,13 @@ export const removeItemFromCart = async (
 ) => {
   try {
     if (!isAuthenticated()) {
-      throw new Error('Please login to remove items from cart');
+      // Guest user - use localStorage
+      let guestCart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+      guestCart = guestCart.filter((i: any) => i.id.toString() !== cartItemId.toString() && i.cartItemId !== cartItemId);
+      
+      localStorage.setItem('guest_cart', JSON.stringify(guestCart));
+      dispatch(setItems(guestCart));
+      return true;
     }
 
     // Remove cart item via API (database)

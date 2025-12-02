@@ -22,7 +22,7 @@ const ShopFullwidthProducts = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [isGridView, setIsGridView] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { selectedCategory, selectedColor, selectedTags, selectedWeight, sortOption, maxPrice, minPrice, range } = useSelector((state: RootState) => state.filter)
+    const { selectedCategory, selectedColor, selectedTags, selectedWeight, sortOption, maxPrice, minPrice, range, searchTerm } = useSelector((state: RootState) => state.filter)
     const postData = useMemo(() => ({
         page: currentPage,
         limit: itemsPerPage,
@@ -34,6 +34,7 @@ const ShopFullwidthProducts = ({
         minPrice,
         maxPrice,
         range,
+        searchTerm,
     }), [
         currentPage,
         selectedCategory,
@@ -45,6 +46,7 @@ const ShopFullwidthProducts = ({
         minPrice,
         maxPrice,
         range,
+        searchTerm,
     ])
 
     const { data, error } = useSWR(["/api/all-arrivals", postData], ([url, postData]) => fetcher(url, postData));
@@ -134,9 +136,6 @@ const ShopFullwidthProducts = ({
                             <Row>
                                 <Col className='col-6'>
                                     <div className="bb-bl-btn">
-                                        <button onClick={openSidebar} type="button" className={`grid-btn btn-filter ${isSidebarOpen ? "active" : ""}`}>
-                                            <i className="ri-equalizer-2-line"></i>
-                                        </button>
                                         <button onClick={() => toggleView(false)} type="button" className={`grid-btn btn-grid-100 ${!isGridView ? "active" : ""}`}>
                                             <i className="ri-apps-line"></i>
                                         </button>

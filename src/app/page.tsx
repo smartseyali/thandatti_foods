@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <>
       {/* <HeroSlider /> */}
-      <ExploreCategory />
+      {/* <ExploreCategory /> */}
       <DealSlider />
       <BannerOne />
       <BannerTwo />

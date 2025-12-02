@@ -13,7 +13,7 @@ import { showErrorToast, showSuccessToast } from '@/components/toast-popup/Toast
 const Cart = () => {
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const [subTotal, setSubTotal] = useState(0);
-    const [vat, setVat] = useState(0);
+
     const [discount, setDiscount] = useState(0);
     const dispatch = useDispatch()
 
@@ -31,7 +31,7 @@ const Cart = () => {
     useEffect(() => {
         if (cartSlice.length === 0) {
             setSubTotal(0);
-            setVat(0);
+
             return;
         }
         const subtotal = cartSlice.reduce(
@@ -39,8 +39,7 @@ const Cart = () => {
             0
         );
         setSubTotal(subtotal);
-        const vatAmount = subtotal * 0.2;
-        setVat(vatAmount);
+
     }, [cartSlice]);
 
     const handleDiscountApplied = (discount: any) => {
@@ -48,7 +47,7 @@ const Cart = () => {
     };
 
     const discountAmount = subTotal * (discount / 100);
-    const total = subTotal + vat - discountAmount;
+    const total = subTotal - discountAmount;
 
     return (
         <>
@@ -98,7 +97,7 @@ const Cart = () => {
                                             <div className="inner-summary">
                                                 <ul>
                                                     <li><span className="text-left">Sub-Total</span><span className="text-right">₹{subTotal.toFixed(2)}</span></li>
-                                                    <li><span className="text-left">Delivery Charges</span><span className="text-right">₹{vat.toFixed(2)}</span></li>
+
                                                     <li>
                                                         <span className="text-left">Coupon Discount</span>
                                                         <span className="text-right"><a className="bb-coupon drop-coupon">Apply Coupon</a></span>

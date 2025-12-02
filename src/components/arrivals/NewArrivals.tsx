@@ -12,42 +12,16 @@ const NewArrivals = ({
     onError = () => { },
 }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const Categories: any = [
-        {
-            groupname: "Snacks",
-            categoryName: [
-                "Snacks",
-                "Juice",
-                "Chips",
-                "Spices",
-                "Sauces"
-            ],
-        },
-        {
-            groupname: "Fruit",
-            categoryName: [
-                "Fruit"
-            ],
-        },
-        {
-            groupname: "Vegetable",
-            categoryName: [
-                "Vegetable",
-                "Tuber Root",
-                "Leaves",
-            ],
-        },
-    ]
 
-    const { data, error } = useSWR("/api/all-product", fetcher, { onSuccess, onError });
+    const { data: productsData, error: productsError } = useSWR("/api/all-product?limit=1000", fetcher, { onSuccess, onError });
+    const { data: categoriesData, error: categoriesError } = useSWR("/api/category", fetcher);
 
     const handleProductClick = (index: number) => {
         setSelectedIndex(index);
     };
     
-    if (error) {
-        console.error("Error loading products:", error);
-        // Show empty state instead of error message
+    if (productsError) {
+        console.error("Error loading products:", productsError);
         return (
             <section className="section-product-tabs padding-tb-50">
                 <div className="container">
@@ -62,34 +36,30 @@ const NewArrivals = ({
             </section>
         );
     }
-    if (!data) return <div></div>
+
+    if (!productsData || !categoriesData) return <div></div>
     
     // Ensure data is an array
-    const products = Array.isArray(data) ? data : [];
+    const products = Array.isArray(productsData) ? productsData : [];
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
     const filterByAll = () => {
         if (!products || products.length === 0) return [];
         return products
         .map((item:any) => ({ item, sort: Math.random() }))
         .sort((a:any, b:any) => a.sort - b.sort)
-        .map(({ item }: any) => item)
-        .slice(0, 12);
+        .map(({ item }: any) => item);
     };
 
-    const filterByCategory = (category: string) => {
+    const filterByCategory = (categoryName: string) => {
         if (!products || products.length === 0) return [];
-        return products
-        .filter((product: any) =>
-            Categories.find((cat: any) =>
-                cat.groupname === category && cat.categoryName.includes(product.category)
-            )
-        );
+        return products.filter((product: any) => product.category === categoryName);
     };
 
     return (
         <section className="section-product-tabs padding-tb-50">
             <div className="container">
-                <Tabs>
+                <Tabs selectedIndex={selectedIndex} onSelect={index => setSelectedIndex(index)}>
                     <Row>
                         <div className='col-12'>
                             <Fade triggerOnce direction='up' duration={1000} delay={200} >
@@ -106,24 +76,14 @@ const NewArrivals = ({
                                                 key={"all"}>
                                                 <a className={`nav-link ${selectedIndex == 0 ? "active" : ""}`} onClick={() => handleProductClick(0)}>All</a>
                                             </Tab>
-                                            <Tab
-                                                style={{ outline: "none" }}
-                                                className="nav-item"
-                                                key={"snack"}>
-                                                <a className={`nav-link ${selectedIndex == 1 ? "active" : ""}`} onClick={() => handleProductClick(1)} data-bs-toggle="tab">Snack & Spices</a>
-                                            </Tab>
-                                            <Tab
-                                                style={{ outline: "none" }}
-                                                className="nav-item"
-                                                key={"fruit"}>
-                                                <a className={`nav-link ${selectedIndex == 2 ? "active" : ""}`} onClick={() => handleProductClick(2)}>Fruits</a>
-                                            </Tab>
-                                            <Tab
-                                                style={{ outline: "none" }}
-                                                className="nav-item"
-                                                key={"veg"}>
-                                                <a className={`nav-link ${selectedIndex == 3 ? "active" : ""}`} onClick={() => handleProductClick(3)}>Vegetables</a>
-                                            </Tab>
+                                            {categories.map((cat: any, index: number) => (
+                                                <Tab
+                                                    style={{ outline: "none" }}
+                                                    className="nav-item"
+                                                    key={index}>
+                                                    <a className={`nav-link ${selectedIndex == index + 1 ? "active" : ""}`} onClick={() => handleProductClick(index + 1)}>{cat.category}</a>
+                                                </Tab>
+                                            ))}
                                         </ul>
                                     </TabList>
                                 </div>
@@ -134,7 +94,7 @@ const NewArrivals = ({
                         <div className='col-12'>
                             <div className="tab-content">
                                 {/* <!-- 1st Product tab start --> */}
-                                <TabPanel className={`tab-pane fade ${selectedIndex === 0 ? "show active" : ""}`} id="all">
+                                <TabPanel className={`tab-pane fade ${selectedIndex === 0 ? "show active" : ""}`}>
                                     <Row>
                                         <Fade triggerOnce direction='up' duration={1000} delay={200} className="col-xl-3 col-md-4 col-6 mb-24 bb-product-box" data-aos="fade-up"
                                             data-aos-duration="1000" data-aos-delay="200">
@@ -144,13 +104,17 @@ const NewArrivals = ({
                                         </Fade>
                                     </Row>
                                 </TabPanel>
-                                {Categories.map((category: any, idx: number) => (
-                                    <TabPanel key={idx} className={`tab-pane fade ${selectedIndex === idx + 1 ? "show active" : ""}`} id={category.groupname.toLowerCase()}>
+                                {categories.map((cat: any, index: number) => (
+                                    <TabPanel key={index} className={`tab-pane fade ${selectedIndex === index + 1 ? "show active" : ""}`}>
                                         <Row>
                                             <Fade triggerOnce direction="up" duration={1000} delay={200} className="col-xl-3 col-md-4 col-6 mb-24 bb-product-box">
-                                                {filterByCategory(category.groupname).map((product: any, index: number) => (
-                                                    <ProductItemCard data={product} key={index} />
-                                                ))}
+                                                {filterByCategory(cat.category).length > 0 ? (
+                                                    filterByCategory(cat.category).map((product: any, idx: number) => (
+                                                        <ProductItemCard data={product} key={idx} />
+                                                    ))
+                                                ) : (
+                                                    <div className="col-12 text-center">No products found in this category.</div>
+                                                )}
                                             </Fade>
                                         </Row>
                                     </TabPanel>

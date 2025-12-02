@@ -16,7 +16,7 @@ const { execSync } = require('child_process');
 
 const command = process.argv.slice(2).join(' ');
 const migrationsDir = path.join(__dirname, 'src', 'migrations');
-const migrationCommand = `node-pg-migrate ${command} --migrations-dir "${migrationsDir}" --database-url "${databaseUrl}"`;
+const migrationCommand = `npx node-pg-migrate ${command} --migrations-dir "${migrationsDir}" --database-url "${databaseUrl}"`;
 
 // Ensure all environment variables are passed
 const env = {

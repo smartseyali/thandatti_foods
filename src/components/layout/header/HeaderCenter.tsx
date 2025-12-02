@@ -60,6 +60,10 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
             dispatch(setSelectedCategory([categoryName]));
         }
         
+        // Clear search term to ensure we see all products in the selected category
+        dispatch(setSearchTerm(""));
+        setSearchInput("");
+
         // Navigate to shop page to show filtered results
         router.push("/shop-full-width-col-4");
     };

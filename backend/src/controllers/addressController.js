@@ -13,7 +13,7 @@ async function createAddress(req, res, next) {
   try {
     const addressData = {
       ...req.body,
-      userId: req.userId,
+      userId: req.userId || null,
     };
 
     const address = await Address.create(addressData);

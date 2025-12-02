@@ -28,7 +28,10 @@ async function getOrderById(req, res, next) {
     }
 
     // Check if user owns this order (unless admin)
-    if (order.user_id !== req.userId && req.user.role !== 'admin') {
+    const userId = req.userId || null;
+    const userRole = req.user ? req.user.role : 'guest';
+
+    if (order.user_id !== userId && userRole !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -103,8 +106,9 @@ async function createOrder(req, res, next) {
       }
     }
 
+    const deliveryChargeAmount = parseFloat(req.body.deliveryCharge) || 0;
     const vat = subtotal * 0.18; // 18% VAT (adjust as needed)
-    const totalPrice = subtotal + vat - discountAmount;
+    const totalPrice = subtotal + vat + deliveryChargeAmount - discountAmount;
 
     // Determine payment status based on payment method
     let paymentStatus = 'pending';
@@ -120,7 +124,7 @@ async function createOrder(req, res, next) {
 
     // Create order
     const orderData = {
-      userId: req.userId,
+      userId: req.userId || null,
       shippingAddressId,
       billingAddressId,
       shippingMethod: shippingMethod || 'free',
@@ -132,6 +136,7 @@ async function createOrder(req, res, next) {
       couponCode: couponCode || null,
       paymentMethod,
       paymentStatus,
+      deliveryCharge: deliveryChargeAmount,
     };
 
     const order = await Order.create(orderData);
@@ -152,11 +157,11 @@ async function createOrder(req, res, next) {
 
     // Record coupon usage if applicable
     if (couponId) {
-      await Coupon.recordUsage(couponId, req.userId, order.id, discountAmount);
+      await Coupon.recordUsage(couponId, req.userId || null, order.id, discountAmount);
     }
 
     // Clear cart only for COD, for payment gateways cart will be cleared after payment verification
-    if (paymentMethod === 'cod') {
+    if (paymentMethod === 'cod' && req.userId) {
       await Cart.clear(req.userId);
     }
 

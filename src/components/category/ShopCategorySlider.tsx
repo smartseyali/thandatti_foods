@@ -12,11 +12,15 @@ import AOS from "aos";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 
+import { useDispatch } from 'react-redux';
+import { setSelectedCategory, setSearchTerm } from '@/store/reducer/filterReducer';
+
 const ShopCategorySlider = ({
   onSuccess = () => { },
   onError = () => { },
-}) => {
-
+  }) => {
+  
+  const dispatch = useDispatch();
   const { data, error } = useSWR("/api/category-slider", fetcher, { onSuccess, onError });
   const settings = {
     modules:[Autoplay],
@@ -40,6 +44,11 @@ const ShopCategorySlider = ({
   if (error) return <div>Failed to load products</div>;
   if (!data) return <div></div>
 
+  const handleCategoryClick = (categoryName: string) => {
+    dispatch(setSelectedCategory([categoryName]));
+    dispatch(setSearchTerm(""));
+  };
+
   return (
     <section className="section-category padding-t-50 mb-24">
       <div className="container">
@@ -53,7 +62,14 @@ const ShopCategorySlider = ({
                         <img src={each.image} alt="category" />
                       </div>
                       <div className="category-sub-contact">
-                        <h5><Link href="/shop-full-width-col-4">{each.name}</Link></h5>
+                        <h5>
+                          <Link 
+                            href="/shop-full-width-col-4" 
+                            onClick={() => handleCategoryClick(each.name)}
+                          >
+                            {each.name}
+                          </Link>
+                        </h5>
                         <p>{each.item} items</p>
                       </div>
                     </div>

@@ -8,7 +8,7 @@ const page = () => {
     <>
       <Breadcrumb title={"Shop Page"} />
       <ShopCategorySlider />
-      <ShopFullwidth col={3} itemsPerPage={12} />
+      <ShopFullwidth col={3} itemsPerPage={1000} />
     </>
   )
 }

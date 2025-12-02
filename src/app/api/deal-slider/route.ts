@@ -3,10 +3,10 @@ import { productApi, mapProductToFrontend } from "@/utils/api";
 
 async function getDealProducts() {
   try {
-    // Fetch products with sale tags from backend API
+    // Fetch products from backend API
     const productResponse = await productApi.getAll({
       page: 1,
-      limit: 20,
+      limit: 10,
       status: 'In Stock',
     });
 
@@ -18,9 +18,8 @@ async function getDealProducts() {
       products = productResponse.products;
     }
 
-    // Filter products with sale tags and map to frontend format
+    // Map to frontend format without filtering by sale_tag
     const dealProducts = products
-      .filter((product: any) => product.sale_tag && product.sale_tag !== '')
       .slice(0, 10)
       .map((product: any) => {
         return mapProductToFrontend(product, product.images || []);

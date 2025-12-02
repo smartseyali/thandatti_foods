@@ -285,9 +285,9 @@ export const orderApi = {
     }
   },
 
-  getById: async (id: string) => {
+  getById: async (id: string, isGuest: boolean = false) => {
     try {
-      const response = await apiRequest(`/api/orders/${id}`, {}, true);
+      const response = await apiRequest(`/api/orders/${id}`, {}, !isGuest);
       return response.order;
     } catch (error: any) {
       console.error('Error fetching order:', error);
@@ -305,12 +305,12 @@ export const orderApi = {
     }
   },
 
-  create: async (orderData: any) => {
+  create: async (orderData: any, isGuest: boolean = false) => {
     try {
       const response = await apiRequest('/api/orders', {
         method: 'POST',
         body: JSON.stringify(orderData),
-      }, true);
+      }, !isGuest);
       return response;
     } catch (error: any) {
       console.error('Error creating order:', error);
@@ -432,12 +432,12 @@ export const addressApi = {
     }
   },
 
-  create: async (addressData: any) => {
+  create: async (addressData: any, isGuest: boolean = false) => {
     try {
       const response = await apiRequest('/api/addresses', {
         method: 'POST',
         body: JSON.stringify(addressData),
-      }, true);
+      }, !isGuest);
       return response.address;
     } catch (error: any) {
       console.error('Error creating address:', error);
@@ -499,6 +499,22 @@ export const locationApi = {
     } catch (error: any) {
       console.error('Error fetching cities:', error);
       return [];
+    }
+  },
+};
+
+// Delivery API (public endpoints - no auth required)
+export const deliveryApi = {
+  calculate: async (data: { state: string; items: any[] }) => {
+    try {
+      const response = await apiRequest('/api/delivery/calculate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }, false);
+      return response.deliveryCharge || 0;
+    } catch (error: any) {
+      console.error('Error calculating delivery charge:', error);
+      return 0;
     }
   },
 };

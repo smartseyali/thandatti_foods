@@ -163,6 +163,7 @@ app.use('/api/payments', require('./src/routes/payments'));
 app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/locations', require('./src/routes/locations'));
 app.use('/api/upload', require('./src/routes/upload'));
+app.use('/api/delivery', require('./src/routes/delivery'));
 
 // Error handling middleware
 const errorHandler = require('./src/middleware/errorHandler');

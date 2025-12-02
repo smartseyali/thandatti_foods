@@ -5,11 +5,11 @@ import StarRating from '../stars/StarRating'
 import QuantitySelector from '../quantity-selector/QuantitySelector'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/store'
-import { addItem, updateItemQuantity } from '@/store/reducer/cartSlice'
-import { showSuccessToast } from '../toast-popup/Toastify'
+import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify'
 import ZoomProductImage from '../products-section/zoom-product-img/ZoomProductImage'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link'
+import { addItemToCart, updateCartItemQuantity } from '@/utils/cartOperations'
 
 interface Item {
     id: number;
@@ -27,11 +27,8 @@ interface Item {
     sku: number;
     category: string;
     quantity: number;
-}
-
-interface Option {
-    value: string;
-    tooltip: string;
+    attributes?: any[];
+    description?: string;
 }
 
 const ItemModal = ({
@@ -41,46 +38,81 @@ const ItemModal = ({
 }: any) => {
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const dispatch = useDispatch();
-    const [quantites, setQuantity] = useState(1);
+    const [quantity, setQuantity] = useState(1);
     const [activeIndex, setActiveIndex] = useState<number>(0);
-
-    const options: Option[] = [
-        { value: '250g', tooltip: 'Small' },
-        { value: '500g', tooltip: 'Medium' },
-        { value: '1kg', tooltip: 'Large' },
-        { value: '2kg', tooltip: 'Extra Large' }
-    ];
-
-    const handleClick = (index: number) => {
-        setActiveIndex(index);
-    };
+    
+    const [selectedAttribute, setSelectedAttribute] = useState<any>(null);
+    const [selectedPrice, setSelectedPrice] = useState<number>(0);
+    const [selectedOldPrice, setSelectedOldPrice] = useState<number | null>(null);
 
     useEffect(() => {
-        if (cartSlice.length === 0) {
-            return;
+        if (data) {
+            // Reset state when data changes
+            setQuantity(1);
+            
+            if (data.attributes && data.attributes.length > 0) {
+                const defaultIndex = data.attributes.findIndex((attr: any) => attr.isDefault);
+                const selectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
+                setActiveIndex(selectedIndex);
+                const defaultAttr = data.attributes[selectedIndex];
+                setSelectedAttribute(defaultAttr);
+                setSelectedPrice(defaultAttr.price);
+                setSelectedOldPrice(defaultAttr.oldPrice);
+            } else {
+                setActiveIndex(0);
+                setSelectedAttribute(null);
+                setSelectedPrice(data.newPrice || 0);
+                setSelectedOldPrice(data.oldPrice || null);
+            }
         }
-        const subtotal = cartSlice.reduce(
-            (acc, item) => acc + item.newPrice * item.quantity,
-            0
-        );
-    }, [cartSlice]);
+    }, [data]);
 
-    const handleCart = (data: Item) => {
-        const isItemInCart = cartSlice.some((item: Item) => item.id === data.id);
-
-        if (!isItemInCart) {
-            dispatch(addItem({ ...data, quantity: quantites }));
-            showSuccessToast("Item added to cart item");
-        } else {
-            const updatedCartItems = cartSlice.map((item: Item) =>
-                item.id === data.id
-                    ? { ...item, quantity: item.quantity + quantites, price: item.newPrice + data.newPrice } // Increment quantity and update price
-                    : item
-            );
-            dispatch(updateItemQuantity(updatedCartItems));
-            showSuccessToast("Item quantity increased in cart");
+    const handleAttributeClick = (index: number) => {
+        setActiveIndex(index);
+        if (data?.attributes && data.attributes[index]) {
+            const attr = data.attributes[index];
+            setSelectedAttribute(attr);
+            setSelectedPrice(attr.price);
+            setSelectedOldPrice(attr.oldPrice);
         }
     };
+
+    const handleCart = async (itemData: Item) => {
+        try {
+            const productToAdd = {
+                ...itemData,
+                newPrice: selectedPrice || itemData.newPrice,
+                oldPrice: selectedOldPrice || itemData.oldPrice,
+                // Add selected attribute info if needed
+            };
+
+            const existingItem = cartSlice?.find((item: any) => item.productId === itemData.id || item.id === itemData.id);
+
+            if (!existingItem) {
+                await addItemToCart(dispatch, productToAdd, quantity);
+                showSuccessToast("Item added to cart");
+            } else {
+                if (existingItem.cartItemId) {
+                    const newQuantity = existingItem.quantity + quantity;
+                    await updateCartItemQuantity(dispatch, existingItem.cartItemId, newQuantity);
+                    showSuccessToast("Item quantity updated in cart");
+                } else {
+                    // Fallback for guest or if cartItemId missing
+                    await addItemToCart(dispatch, productToAdd, quantity);
+                    showSuccessToast("Item added to cart");
+                }
+            }
+            // Optional: Close modal after adding to cart
+            // closeItemModal(); 
+        } catch (error: any) {
+            console.error('Error adding to cart:', error);
+            showErrorToast(error.message || "Failed to add item to cart");
+        }
+    };
+
+    // Calculate display price
+    const displayPrice = selectedPrice > 0 ? selectedPrice : (data?.newPrice || 0);
+    const displayOldPrice = selectedOldPrice || data?.oldPrice;
 
     return (
         <Fade triggerOnce duration={500} delay={100}>
@@ -107,21 +139,27 @@ const ItemModal = ({
                                     <StarRating rating={data?.rating} />
                                     <div className="bb-quickview-desc">{data?.description || "No description available."}</div>
                                     <div className="bb-quickview-price">
-                                        <span className="new-price">₹{((data?.newPrice || 0) * quantites).toFixed(2)}</span>
-                                        {data?.oldPrice && <span className="old-price">₹{typeof data.oldPrice === 'number' ? data.oldPrice.toFixed(2) : data.oldPrice}</span>}
+                                        <span className="new-price">₹{(displayPrice).toFixed(2)}</span>
+                                        {displayOldPrice && displayOldPrice > displayPrice && (
+                                            <span className="old-price">₹{typeof displayOldPrice === 'number' ? displayOldPrice.toFixed(2) : displayOldPrice}</span>
+                                        )}
                                     </div>
-                                    <div className="bb-pro-variation">
-                                        <ul>
-                                            {options.map((data, index) => (
-                                                <li key={index} onClick={() => handleClick(index)} className={activeIndex === index ? "active" : ""}>
-                                                    <a  className="bb-opt-sz" data-tooltip={data.tooltip}>{data.value}</a>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                    
+                                    {data?.attributes && data.attributes.length > 0 && (
+                                        <div className="bb-pro-variation">
+                                            <ul>
+                                                {data.attributes.map((attr: any, index: number) => (
+                                                    <li key={index} onClick={() => handleAttributeClick(index)} className={activeIndex === index ? "active" : ""}>
+                                                        <a className="bb-opt-sz" style={{cursor: 'pointer'}}>{attr.attributeValue}</a>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    
                                     <div className="bb-quickview-qty">
                                         <div className="qty-plus-minus">
-                                            <QuantitySelector setQuantity={setQuantity} quantity={quantites} id={data.id} />
+                                            <QuantitySelector setQuantity={setQuantity} quantity={quantity} id={data?.id} />
                                         </div>
                                         <div className="bb-quickview-cart">
                                             <button onClick={() => handleCart(data)} type="button" className="bb-btn-1">

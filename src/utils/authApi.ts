@@ -48,19 +48,15 @@ const apiRequest = async (
 export const authApi = {
   login: async (phoneNumber: string, password: string) => {
     try {
-      // Try backend API first - but backend expects email, so we'll use phoneNumber as identifier
-      // Note: Backend login uses email, but we're using phoneNumber
-      // For now, we'll keep localStorage for existing users and add backend support
       const response = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ 
-          email: phoneNumber, // Using phoneNumber as email for now
+          phoneNumber,
           password 
         }),
       });
       return response;
     } catch (error: any) {
-      // If backend fails, fallback to localStorage (for existing users)
       throw error;
     }
   },

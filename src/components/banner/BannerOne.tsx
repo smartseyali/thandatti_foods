@@ -11,34 +11,16 @@ const BannerOne = () => {
                     <Row className="mb-minus-24">
                         <Col lg={6} className="mb-24 col-12">
                             <Fade triggerOnce direction='up' duration={1000} delay={400}>
-                                <div className="banner-box bg-box-color-one">
-                                    <div className="inner-banner-box">
-                                        <div className="side-image">
-                                            <img src="/assets/img/banner-one/one.png" alt="one" />
-                                        </div>
-                                        <div className="inner-contact">
-                                            <h5>Tasty Snack & Fast food</h5>
-                                            <p>The flavour of something special</p>
-                                            <Link href="/shop-full-width-col-4" className="bb-btn-1">Shop Now</Link>
-                                        </div>
-                                    </div>
-                                </div>
+                                <Link href="/shop-full-width-col-6">
+                                    <img src="/assets/img/banner-one/one1.png" alt="one" className="w-100 rounded-3" />
+                                </Link>
                             </Fade>
                         </Col>
                         <Col lg={6} className="mb-24 col-12">
                             <Fade triggerOnce direction='up' duration={1000} delay={400}>
-                                <div className="banner-box bg-box-color-two">
-                                    <div className="inner-banner-box">
-                                        <div className="side-image">
-                                            <img src="/assets/img/banner-one/two.png" alt="two" />
-                                        </div>
-                                        <div className="inner-contact">
-                                            <h5>Fresh Fruits & Vegetables</h5>
-                                            <p>A healthy meal for every one</p>
-                                            <Link href="/shop-left-sidebar-col-3" className="bb-btn-1">Shop Now</Link>
-                                        </div>
-                                    </div>
-                                </div>
+                                <Link href="/shop-full-width-col-6">
+                                    <img src="/assets/img/banner-one/two2.png" alt="two" className="w-100 rounded-3" />
+                                </Link>
                             </Fade>
                         </Col>
                     </Row>

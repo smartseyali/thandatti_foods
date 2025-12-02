@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import useSWR from 'swr';
 import fetcher from '@/components/fetcher/Fetcher';
-import ShopProductItemCard from '@/components/item/ShopProductItemCard';
+import ProductItemCard from '@/components/item/ProductItemCard';
 import { Fade } from 'react-awesome-reveal';
 import ShopFullwidthSidebar from '../sidebar-section/ShopFullwidthSidebar';
 import { useDispatch, useSelector } from 'react-redux';
@@ -131,7 +131,7 @@ const ShopFullwidthProducts = ({
         <>
             <div className="bb-shop-pro-inner">
                 <Row className="mb-minus-24">
-                    <Col sm={12}>
+                    {/* <Col sm={12}>
                         <div className="bb-pro-list-top">
                             <Row>
                                 <Col className='col-6'>
@@ -159,16 +159,19 @@ const ShopFullwidthProducts = ({
                                 </Col>
                             </Row>
                         </div>
-                    </Col>
+                    </Col> */}
                     {!data ? (
                         <Spinner />
                     ) : (
                         <>
                             {/* Mobile: horizontal scroll with 2 columns visible */}
-                            <div className="bb-scrollable-row d-flex d-md-none">
+                            {/* Mobile: horizontal scroll with single column visible */}
+                            <div className="bb-scrollable-row d-flex d-md-none" style={{ overflowX: 'auto', gap: '15px', paddingBottom: '10px', scrollSnapType: 'x mandatory' }}>
                                 {Array.isArray(productsData) && productsData.length > 0 ? (
                                     productsData.map((items: any, index: number) => (
-                                        <ShopProductItemCard data={items} key={index} />
+                                        <div key={index} style={{ minWidth: '90vw', scrollSnapAlign: 'center' }}>
+                                            <ProductItemCard data={items} />
+                                        </div>
                                     ))
                                 ) : (
                                     <div style={{ textAlign: "center", padding: "20px", width: "100%" }}>No products found.</div>
@@ -179,7 +182,7 @@ const ShopFullwidthProducts = ({
                             <Fade triggerOnce direction='up' duration={1000} delay={200} className={`d-none d-md-block col-lg-${col} ${colfive} ${width} ${lg} col-md-4 col-6 mb-24 bb-product-box pro-bb-content ${isGridView ? "width-100" : ""}`} data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
                                 {Array.isArray(productsData) && productsData.length > 0 ? (
                                     productsData.map((items: any, index: number) => (
-                                        <ShopProductItemCard data={items} key={index} />
+                                        <ProductItemCard data={items} key={index} />
                                     ))
                                 ) : (
                                     <div style={{ textAlign: "center", padding: "20px" }}>No products found.</div>

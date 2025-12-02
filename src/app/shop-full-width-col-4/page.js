@@ -7,7 +7,7 @@ const page = () => {
   return (
     <>
       <Breadcrumb title={"Shop Page"} />
-      <ShopCategorySlider />
+      {/* <ShopCategorySlider /> */}
       <ShopFullwidth col={3} itemsPerPage={1000} />
     </>
   )

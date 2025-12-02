@@ -32,126 +32,40 @@ const MobileMenu = ({
                     <div className="bb-menu-content">
                         <ul>
                             <li>
-                                <Link href="/">Home</Link>
+                                <Link href="/" className="d-flex align-items-center gap-2">
+                                    <i className="ri-home-line fs-5"></i>
+                                    <span>Home</span>
+                                </Link>
                             </li>
                             <li>
-                                <span onClick={() => toggleMainMenu('Categories')} className='menu-toggle'></span>
-                                <Link onClick={() => toggleMainMenu('Categories')} href="">Categories</Link>
-                                <Collapse in={activeMainMenu === 'Categories'}>
-                                    <ul style={{ display: activeMainMenu === 'Categories' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('Classic')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('Classic')} href="#">Classic</a>
-                                            <Collapse in={activeSubMenu === 'Classic'}>
-                                                <ul style={{ display: activeSubMenu === 'Classic' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    {classic.map((data, index) => (
-                                                        <li key={index}>
-                                                            <Link href={data.href}>{data.name}</Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('Banner')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('Banner')} href="#">Banner</a>
-                                            <Collapse in={activeSubMenu === 'Banner'}>
-                                                <ul style={{ display: activeSubMenu === 'Banner' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    {banner.map((data, index) => (
-                                                        <li key={index}>
-                                                            <Link href={data.href}>{data.name}</Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('Columns')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('Columns')} href="#">Columns</a>
-                                            <Collapse in={activeSubMenu === 'Columns'}>
-                                                <ul style={{ display: activeSubMenu === 'Columns' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    {column.map((data, index) => (
-                                                        <li key={index}>
-                                                            <Link href={data.href}>{data.name}</Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('List')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('List')} href="#">List</a>
-                                            <Collapse in={activeSubMenu === 'List'}>
-                                                <ul style={{ display: activeSubMenu === 'List' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    {list.map((data, index) => (
-                                                        <li key={index}>
-                                                            <Link href={data.href}>{data.name}</Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                    </ul>
-                                </Collapse>
+                                <Link href="/shop-full-width-col-4" className="d-flex align-items-center gap-2">
+                                    <span>All categories</span>
+                                </Link>
                             </li>
                             <li>
-                                <span onClick={() => toggleMainMenu('Products')} className='menu-toggle'></span>
-                                <Link onClick={() => toggleMainMenu('Products')} href="#">Products</Link>
-                                <Collapse in={activeMainMenu === 'Products'}>
-                                    <ul style={{ display: activeMainMenu === 'Products' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('Product')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('Product')} href="#">Product page</a>
-                                            <Collapse in={activeSubMenu === 'Product'}>
-                                                <ul style={{ display: activeSubMenu === 'Product' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    <li><Link href="/product-left-sidebar">Product left sidebar</Link></li>
-                                                    <li><Link href="/product-right-sidebar">Product right sidebar</Link></li>
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                        <li>
-                                            <span onClick={() => toggleSubMenu('ProductAccordion')} className='menu-toggle'></span>
-                                            <a onClick={() => toggleSubMenu('ProductAccordion')} href="#">Product Accordion</a>
-                                            <Collapse in={activeSubMenu === 'ProductAccordion'}>
-                                                <ul style={{ display: activeSubMenu === 'ProductAccordion' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                                    <li><Link href="/product-accordion-left-sidebar">left sidebar</Link></li>
-                                                    <li><Link href="/product-accordion-right-sidebar">right sidebar</Link></li>
-                                                </ul>
-                                            </Collapse>
-                                        </li>
-                                        <li><Link href="/product-full-width">Product full width</Link></li>
-                                        <li><Link href="/product-accordion-full-width">accordion full width</Link></li>
-                                    </ul>
-                                </Collapse>
+                                <Link href="/shop-full-width-col-4" className="d-flex align-items-center gap-2 position-relative">
+                                    <i className="ri-fire-line fs-5"></i>
+                                    <span>Best selling</span>
+                                    <span className="badge bg-danger ms-2" style={{ fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>HOT</span>
+                                </Link>
                             </li>
                             <li>
-                                <span onClick={() => toggleMainMenu('Pages')} className='menu-toggle'></span>
-                                <Link onClick={() => toggleMainMenu('Pages')} href="#">Pages</Link>
-                                <Collapse in={activeMainMenu === 'Pages'}>
-                                    <ul style={{ display: activeMainMenu === 'Pages' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                        {pages.map((data, index) => (
-                                            <li key={index}>
-                                                <Link href={data.href}>{data.name}</Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Collapse>
+                                <Link href="/shop-full-width-col-4" className="d-flex align-items-center gap-2 position-relative">
+                                    <i className="ri-heart-line fs-5"></i>
+                                    <span>Pattikadai Special</span>
+                                    <span className="badge bg-success ms-2" style={{ fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>BEST</span>
+                                </Link>
                             </li>
                             <li>
-                                <span onClick={() => toggleMainMenu('Blog')} className='menu-toggle'></span>
-                                <Link onClick={() => toggleMainMenu('Blog')} href="#">Blog</Link>
-                                <Collapse in={activeMainMenu === 'Blog'}>
-                                    <ul style={{ display: activeMainMenu === 'Blog' ? 'block' : 'none' }} className="sub-menu height-transition-1s-ease">
-                                        {blog.map((data, index) => (
-                                            <li key={index}>
-                                                <Link href={data.href}>{data.name}</Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Collapse>
+                                <Link href="/shop-full-width-col-4" className="d-flex align-items-center gap-2 position-relative">
+                                    <span>Special Combo</span>
+                                    <span className="badge bg-danger ms-2" style={{ fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>Offers</span>
+                                </Link>
                             </li>
                             <li>
-                                <Link href="/offer">Offers</Link>
+                                <Link href="/track-order" className="d-flex align-items-center gap-2">
+                                    <span>Track Order</span>
+                                </Link>
                             </li>
                         </ul>
                     </div>

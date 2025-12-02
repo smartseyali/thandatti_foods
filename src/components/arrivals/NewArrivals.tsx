@@ -65,7 +65,7 @@ const NewArrivals = ({
                             <Fade triggerOnce direction='up' duration={1000} delay={200} >
                                 <div className="section-title bb-deal">
                                     <div className="section-detail">
-                                        <h2 className="bb-title">New <span>Arrivals</span></h2>
+                                        <h2 className="bb-title">Our <span>Products</span></h2>
                                         <p>Shop online for new arrivals and get free shipping!</p>
                                     </div>
                                     <TabList className="bb-pro-tab">

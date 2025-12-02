@@ -57,7 +57,7 @@ export const initiateRazorpayPayment = async (
     key: orderData.keyId,
     amount: orderData.amount,
     currency: orderData.currency || 'INR',
-    name: orderData.name || 'Thandatti Foods',
+    name: orderData.name || 'Pattikadai',
     description: orderData.description || 'Order Payment',
     order_id: orderData.orderId,
     handler: orderData.handler,

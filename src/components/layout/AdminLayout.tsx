@@ -49,7 +49,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="d-flex justify-content-between align-items-center py-3">
             <div className="d-flex align-items-center">
               <Link href="/admin" className="admin-logo me-4">
-                <h4 className="mb-0">Thandatti Foods Admin</h4>
+                <h4 className="mb-0">Pattikadai Admin</h4>
               </Link>
             </div>
             <div className="d-flex align-items-center gap-3">

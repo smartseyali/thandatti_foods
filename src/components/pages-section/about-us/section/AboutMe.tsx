@@ -18,7 +18,7 @@ const AboutMe = () => {
                                 <Fade triggerOnce direction='up' duration={1000} delay={200} data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
                                     <div className="section-title">
                                         <div className="section-detail">
-                                            <h2 className="bb-title">About the <span>Thandatti foods</span></h2>
+                                            <h2 className="bb-title">About the <span>Pattikadai</span></h2>
                                         </div>
                                     </div>
                                 </Fade>

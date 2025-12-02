@@ -53,7 +53,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
         keyId: paymentOrder.keyId,
-        name: 'Thandatti Foods',
+        name: 'Pattikadai',
         description: `Order Payment for Order #${orderId}`,
         prefill: {
           email: loginUser.email || '',

@@ -49,7 +49,7 @@ const NewsletterModal = () => {
                         <Col md={6} className="col-12">
                             <div className="bb-popnews-box-content">
                                 <h2>Newsletter.</h2>
-                                <p>Subscribe to Thandatti foods to get in touch and receive future updates.</p>
+                                <p>Subscribe to Pattikadai to get in touch and receive future updates.</p>
                                 <Formik
                                     validationSchema={schema}
                                     onSubmit={handleSubmit}

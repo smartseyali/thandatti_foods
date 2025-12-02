@@ -56,7 +56,7 @@ const Footer = ({
                                     <div className="bb-footer-widget bb-footer-company">
                                         <img src="/assets/img/logo/Thandatti.png" className="bb-footer-logo" alt="footer logo" />
                                         <img src="/assets/img/logo/Thandatti.png" className="bb-footer-dark-logo" alt="footer logo" />
-                                        <p className="bb-footer-detail">Thandatti foods is the biggest market of grocery products. Get
+                                        <p className="bb-footer-detail">Pattikadai is the biggest market of grocery products. Get
                                             your daily needs from our store.</p>
                                         <div className="bb-app-store">
                                             <a onClick={(e) => e.preventDefault()} href="#" className="app-img">
@@ -255,7 +255,7 @@ const Footer = ({
                                     <div className="footer-copy">
                                         <div className="footer-bottom-copy ">
                                             <div className="bb-copy">Copyright © <span id="copyright_year">2024 </span>
-                                                <Link className="site-name" href="/">Thandatti foods</Link> all rights reserved.
+                                                <Link className="site-name" href="/">Pattikadai</Link> all rights reserved.
                                             </div>
                                         </div>
                                     </div>

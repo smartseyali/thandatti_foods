@@ -168,13 +168,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                     <Link href="/">
                                         <img 
                                             src="/assets/img/logo/Thandatti.png" 
-                                            alt="Thandatti foods" 
+                                            alt="Pattikadai" 
                                             className="light"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
                                         />
                                         <img 
                                             src="/assets/img/logo/Thandatti.png" 
-                                            alt="Thandatti foods" 
+                                            alt="Pattikadai" 
                                             className="dark"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
                                         />

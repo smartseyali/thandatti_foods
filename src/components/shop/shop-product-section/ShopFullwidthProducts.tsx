@@ -23,33 +23,32 @@ const ShopFullwidthProducts = ({
     const [isGridView, setIsGridView] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { selectedCategory, selectedColor, selectedTags, selectedWeight, sortOption, maxPrice, minPrice, range, searchTerm } = useSelector((state: RootState) => state.filter)
-    const postData = useMemo(() => ({
-        page: currentPage,
-        limit: itemsPerPage,
-        selectedCategory,
-        sortOption,
-        selectedWeight,
-        selectedColor,
-        selectedTags,
-        minPrice,
-        maxPrice,
-        range,
-        searchTerm,
-    }), [
-        currentPage,
-        selectedCategory,
-        sortOption,
-        selectedWeight,
-        selectedColor,
-        selectedTags,
-        itemsPerPage,
-        minPrice,
-        maxPrice,
-        range,
-        searchTerm,
-    ])
+    // Fetch all products
+    const { data: allProducts, error } = useSWR("/api/all-product?limit=1000", fetcher);
 
-    const { data, error } = useSWR(["/api/all-arrivals", postData], ([url, postData]) => fetcher(url, postData));
+    const filteredProducts = useMemo(() => {
+        if (!allProducts || !Array.isArray(allProducts)) return [];
+        
+        let result = [...allProducts];
+
+        // Search
+        if (searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            result = result.filter((product: any) => 
+                (product.title && product.title.toLowerCase().includes(lowerTerm)) || 
+                (product.category && product.category.toLowerCase().includes(lowerTerm))
+            );
+        }
+
+        // // Category
+        if (selectedCategory && selectedCategory.length > 0) {
+             result = result.filter((product: any) => selectedCategory.includes(product.category));
+        }
+
+       
+
+        return result;
+    }, [allProducts, searchTerm, selectedCategory]);
 
     const handleSortChange = useCallback(
         (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -123,9 +122,9 @@ const ShopFullwidthProducts = ({
     }
 
     // Ensure data has the correct structure
-    const productsData = data?.data || [];
-    const totalItems = data?.totalItems || 0;
-    const totalPages = data?.totalPages || 0;
+    const totalItems = filteredProducts.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <>
@@ -160,38 +159,26 @@ const ShopFullwidthProducts = ({
                             </Row>
                         </div>
                     </Col> */}
-                    {!data ? (
+                    {!allProducts ? (
                         <Spinner />
                     ) : (
                         <>
-                            {/* Mobile: horizontal scroll with 2 columns visible */}
-                            {/* Mobile: horizontal scroll with single column visible */}
-                            <div className="bb-scrollable-row d-flex d-md-none" style={{ overflowX: 'auto', gap: '15px', paddingBottom: '10px', scrollSnapType: 'x mandatory' }}>
-                                {Array.isArray(productsData) && productsData.length > 0 ? (
-                                    productsData.map((items: any, index: number) => (
-                                        <div key={index} style={{ minWidth: '90vw', scrollSnapAlign: 'center' }}>
+                            {/* Unified Grid View for all screen sizes */}
+                            {Array.isArray(paginatedProducts) && paginatedProducts.length > 0 ? (
+                                paginatedProducts.map((items: any, index: number) => (
+                                    <div className={`col-lg-${col} ${colfive} ${width} ${lg} col-md-4 col-6 mb-24 ${isGridView ? "width-100" : ""}`} key={index}>
+                                        <Fade triggerOnce direction='up' duration={1000} delay={200}>
                                             <ProductItemCard data={items} />
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div style={{ textAlign: "center", padding: "20px", width: "100%" }}>No products found.</div>
-                                )}
-                            </div>
-
-                            {/* Desktop/Tablet: keep existing grid */}
-                            <Fade triggerOnce direction='up' duration={1000} delay={200} className={`d-none d-md-block col-lg-${col} ${colfive} ${width} ${lg} col-md-4 col-6 mb-24 bb-product-box pro-bb-content ${isGridView ? "width-100" : ""}`} data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
-                                {Array.isArray(productsData) && productsData.length > 0 ? (
-                                    productsData.map((items: any, index: number) => (
-                                        <ProductItemCard data={items} key={index} />
-                                    ))
-                                ) : (
-                                    <div style={{ textAlign: "center", padding: "20px" }}>No products found.</div>
-                                )}
-                            </Fade>
+                                        </Fade>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ textAlign: "center", padding: "20px", width: "100%" }}>No products found.</div>
+                            )}
                         </>
                     )}
                     <Col sm={12}>
-                        {!Array.isArray(productsData) || productsData.length === 0 ? (
+                        {!Array.isArray(paginatedProducts) || paginatedProducts.length === 0 ? (
                             <div style={{ textAlign: "center" }}>Products not found.</div>
                         ) : (
                             <div className="bb-pro-pagination">

@@ -96,26 +96,29 @@ const NewArrivals = ({
                                 {/* <!-- 1st Product tab start --> */}
                                 <TabPanel className={`tab-pane fade ${selectedIndex === 0 ? "show active" : ""}`}>
                                     <Row>
-                                        <Fade triggerOnce direction='up' duration={1000} delay={200} className="col-xl-3 col-md-4 col-6 mb-24 bb-product-box" data-aos="fade-up"
-                                            data-aos-duration="1000" data-aos-delay="200">
                                             {filterByAll().map((data: any, index: any) => (
-                                                <ProductItemCard data={data} key={index} />
+                                                <div className="col-xl-3 col-md-4 col-6 mb-24" key={index}>
+                                                    <Fade triggerOnce direction='up' duration={1000} delay={200}>
+                                                        <ProductItemCard data={data} />
+                                                    </Fade>
+                                                </div>
                                             ))}
-                                        </Fade>
                                     </Row>
                                 </TabPanel>
                                 {categories.map((cat: any, index: number) => (
                                     <TabPanel key={index} className={`tab-pane fade ${selectedIndex === index + 1 ? "show active" : ""}`}>
                                         <Row>
-                                            <Fade triggerOnce direction="up" duration={1000} delay={200} className="col-xl-3 col-md-4 col-6 mb-24 bb-product-box">
                                                 {filterByCategory(cat.category).length > 0 ? (
                                                     filterByCategory(cat.category).map((product: any, idx: number) => (
-                                                        <ProductItemCard data={product} key={idx} />
+                                                        <div className="col-xl-3 col-md-4 col-6 mb-24" key={idx}>
+                                                            <Fade triggerOnce direction="up" duration={1000} delay={200}>
+                                                                <ProductItemCard data={product} />
+                                                            </Fade>
+                                                        </div>
                                                     ))
                                                 ) : (
                                                     <div className="col-12 text-center">No products found in this category.</div>
                                                 )}
-                                            </Fade>
                                         </Row>
                                     </TabPanel>
                                 ))}

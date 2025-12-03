@@ -16,6 +16,7 @@ import 'rc-dropdown/assets/index.css';
 import useSWR from 'swr';
 import fetcher from '@/components/fetcher/Fetcher';
 import { authStorage } from '@/utils/authStorage';
+import BottomNav from '../BottomNav';
 
 const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -29,6 +30,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [visible, setVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>('All Categories');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     
     // Fetch categories from API
     const { data: categoriesData, error: categoriesError } = useSWR("/api/category", fetcher);
@@ -65,7 +67,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
         setSearchInput("");
 
         // Navigate to shop page to show filtered results
-        router.push("/shop-full-width-col-6");
+        router.push("/shop-full-width-col-4");
     };
 
     const handleVisibleChange = (flag: boolean) => {
@@ -82,7 +84,9 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const handleSubmit = (event: any) => {
         event.preventDefault();
         dispatch(setSearchTerm(searchInput));
-        router.push("/shop-full-width-col-6");
+        setIsSearchOpen(false);
+        router.push("/shop-full-width-col-4");
+        setSearchInput("");
     };
     
     // Sync search input with Redux state when it changes externally
@@ -114,6 +118,10 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     const closeMobileManu = () => {
         setIsMobileMenuOpen(false)
     }
+
+    const toggleSearch = () => {
+        setIsSearchOpen(!isSearchOpen);
+    };
 
     const handleLogout = () => {
         authStorage.clear();
@@ -162,9 +170,33 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                 <div className="container">
                     <Row>
                         <div className='col-12'>
-                            <div className="inner-bottom-header d-flex align-items-center justify-content-between" style={{ minHeight: '80px' }}>
-                                {/* Left: Logo */}
-                                <div className="header-logo me-3" style={{ height: '60px' }}>
+                            <div className="inner-bottom-header d-flex align-items-center justify-content-end position-relative w-100 flex-nowrap" style={{ minHeight: '50px' }}>
+                                
+                                {/* Mobile Menu Icon - Left (Hidden as it's in bottom nav) */}
+                                {/* <div className="d-xl-none cursor-pointer" onClick={openMobileManu}>
+                                    <i className="ri-menu-2-line fs-3 text-dark"></i>
+                                </div> */}
+
+                                {/* Left: Logo (Desktop) */}
+                                <div className="header-logo me-3 d-none d-xl-block" style={{ height: '50px' }}>
+                                    <Link href="/">
+                                        <img 
+                                            src="/assets/img/logo/Thandatti.png" 
+                                            alt="Pattikadai" 
+                                            className="light"
+                                            style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
+                                        />
+                                        <img 
+                                            src="/assets/img/logo/Thandatti.png" 
+                                            alt="Pattikadai" 
+                                            className="dark"
+                                            style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
+                                        />
+                                    </Link>
+                                </div>
+
+                                {/* Center: Logo (Mobile) */}
+                                <div className="header-logo d-block d-xl-none position-absolute top-50 start-50 translate-middle" style={{ height: '45px' }}>
                                     <Link href="/">
                                         <img 
                                             src="/assets/img/logo/Thandatti.png" 
@@ -187,9 +219,18 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                         <i className="ri-home-line fs-5"></i>
                                         <span className="fw-medium">Home</span>
                                     </Link>
-                                    <Link href="/shop-full-width-col-4" className="menu-item text-dark text-decoration-none">
-                                        <span className="fw-medium">All categories</span>
-                                    </Link>
+                                    <Dropdown
+                                        trigger={['click']}
+                                        overlay={menu}
+                                        animation="slide-up"
+                                        onVisibleChange={handleVisibleChange}
+                                        visible={visible}
+                                    >
+                                        <div className="menu-item text-dark text-decoration-none cursor-pointer d-flex align-items-center gap-1">
+                                            <span className="fw-medium">All categories</span>
+                                            <i className="ri-arrow-down-s-line"></i>
+                                        </div>
+                                    </Dropdown>
                                     <Link href="/shop-full-width-col-4" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none position-relative">
                                         <i className="ri-fire-line fs-5"></i>
                                         <span className="fw-medium">Best selling</span>
@@ -210,29 +251,44 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Right: Icons */}
-                                <div className="header-icons d-flex align-items-center gap-4">
-                                    <div className="search-icon cursor-pointer">
+                                <div className="header-icons d-flex align-items-center gap-3 gap-xl-4 ms-auto">
+                                    <div className="search-icon cursor-pointer" onClick={toggleSearch}>
                                         <i className="ri-search-line fs-4 text-dark"></i>
                                     </div>
-                                    <Link href={isAuthenticated ? "/user-profile" : "/login"} className="user-icon text-dark">
-                                        <i className="ri-user-line fs-4"></i>
-                                    </Link>
-                                    <Link href="/wishlist" className="wishlist-icon position-relative text-dark">
-                                        <i className="ri-heart-line fs-4"></i>
-                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white" style={{ fontSize: '10px', padding: '3px 5px', border: '1px solid #fff' }}>
-                                            {wishlistItem.length}
-                                        </span>
-                                    </Link>
                                     <Link onClick={openCart} href="#" className="cart-icon position-relative text-dark">
                                         <i className="ri-shopping-bag-line fs-4"></i>
                                         <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white" style={{ fontSize: '10px', padding: '3px 5px', border: '1px solid #fff' }}>
                                             {cartSlice.length}
                                         </span>
                                     </Link>
-                                    <Link onClick={openMobileManu} href="#" className="bb-toggle-menu d-xl-none text-dark">
-                                        <i className="ri-menu-3-fill fs-4"></i>
+                                    <Link href={isAuthenticated ? "/user-profile" : "/login"} className="user-icon text-dark d-none d-xl-block">
+                                        <i className="ri-user-line fs-4"></i>
+                                    </Link>
+                                    <Link href="/wishlist" className="wishlist-icon position-relative text-dark d-none d-xl-block">
+                                        <i className="ri-heart-line fs-4"></i>
+                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white" style={{ fontSize: '10px', padding: '3px 5px', border: '1px solid #fff' }}>
+                                            {wishlistItem.length}
+                                        </span>
                                     </Link>
                                 </div>
+
+                                {isSearchOpen && (
+                                    <div className="position-absolute start-0 w-100 bg-white p-3 shadow-sm border-top" style={{ top: '100%', zIndex: 1000 }}>
+                                        <form onSubmit={handleSubmit} className="d-flex align-items-center gap-2">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Search for products..."
+                                                value={searchInput}
+                                                onChange={handleSearch}
+                                                autoFocus
+                                            />
+                                            <button type="submit" className="btn btn-dark">
+                                                <i className="ri-search-line"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Row>
@@ -240,6 +296,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
             </div>
             <SidebarCart isCartOpen={isCartOpen} closeCart={closeCart} />
             <MobileMenu activeMainMenu={activeMainMenu} toggleMainMenu={toggleMainMenu} isMobileMenuOpen={isMobileMenuOpen} closeMobileManu={closeMobileManu} />
+            <BottomNav 
+                openMobileManu={openMobileManu} 
+                openCart={openCart} 
+                wishlistCount={wishlistItem.length} 
+                cartCount={cartSlice.length} 
+                isAuthenticated={isAuthenticated} 
+            />
             {/* <Tools /> */}
             <CategoryPopup isPopupOpen={isPopupOpen} closeCategoryPopup={closeCategoryPopup} />
         </>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Table, Button, Form, Modal } from 'react-bootstrap';
 import { adminApi } from '@/utils/adminApi';
 import { productApi, categoryApi } from '@/utils/api';
@@ -83,7 +83,7 @@ const ProductsTab = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async () => {
         try {
             setLoading(true);
             const response = await productApi.getAll({
@@ -110,21 +110,21 @@ const ProductsTab = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchTerm]);
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const cats = await categoryApi.getAll();
             setCategories(Array.isArray(cats) ? cats : []);
         } catch (error: any) {
             console.error('Error fetching categories:', error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchProducts();
         fetchCategories();
-    }, [currentPage, searchTerm]);
+    }, [fetchProducts, fetchCategories]);
 
     const handleAdd = () => {
         setEditingProduct(null);

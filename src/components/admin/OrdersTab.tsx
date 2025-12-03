@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Table, Button, Form, Modal } from 'react-bootstrap';
 import { adminApi } from '@/utils/adminApi';
 import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify';
@@ -56,7 +56,7 @@ const OrdersTab = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [newStatus, setNewStatus] = useState<string>('');
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
             const response = await adminApi.getAllOrders({
@@ -72,11 +72,11 @@ const OrdersTab = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, statusFilter]);
 
     useEffect(() => {
         fetchOrders();
-    }, [currentPage, statusFilter]);
+    }, [fetchOrders]);
 
     const handleViewOrder = (order: Order) => {
         setSelectedOrder(order);

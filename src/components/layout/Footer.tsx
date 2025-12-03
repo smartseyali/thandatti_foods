@@ -58,14 +58,14 @@ const Footer = ({
                                         <img src="/assets/img/logo/Thandatti.png" className="bb-footer-dark-logo" alt="footer logo" />
                                         <p className="bb-footer-detail">Pattikadai is the biggest market of grocery products. Get
                                             your daily needs from our store.</p>
-                                        <div className="bb-app-store">
+                                        {/* <div className="bb-app-store">
                                             <a onClick={(e) => e.preventDefault()} href="#" className="app-img">
                                                 <img src="/assets/img/app/android.png" className="adroid" alt="apple" />
                                             </a>
                                             <a onClick={(e) => e.preventDefault()} href="#" className="app-img">
                                                 <img src="/assets/img/app/apple.png" className="apple" alt="apple" />
                                             </a>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </Col>
                                 <Col lg={2} className="bb-footer-info col-12">
@@ -139,7 +139,7 @@ const Footer = ({
                                         </motion.div>
                                     </div>
                                 </Col>
-                                <Col lg={2} className="bb-footer-service col-12">
+                                {/* <Col lg={2} className="bb-footer-service col-12">
                                     <div className="bb-footer-widget">
                                         <h4 onClick={() => toggleDropdown("account")} className="bb-footer-heading">Account<div className='bb-heading-res'><i className='ri-arrow-down-s-line'></i></div></h4>
                                         <motion.div
@@ -180,7 +180,7 @@ const Footer = ({
                                             </ul>
                                         </motion.div>
                                     </div>
-                                </Col>
+                                </Col> */}
                                 <Col lg={3} className="bb-footer-cont-social col-12">
                                     <div className="bb-footer-contact">
                                         <div className="bb-footer-widget">
@@ -206,25 +206,25 @@ const Footer = ({
                                                         <span className="mt-15px">
                                                             <i className="ri-map-pin-line"></i>
                                                         </span>
-                                                        <p>971 Lajamni, Motavarachha, Surat, Gujarat, Bharat 394101.</p>
+                                                        <p>No.206, V.G.V Garden, Kangeyam Road, Rakkiyapalayam, Tiruppur, Tiruppur, Tamil Nadu, 641606</p>
                                                     </li>
                                                     <li className="bb-footer-link bb-foo-call">
                                                         <span>
                                                             <i className="ri-whatsapp-line"></i>
                                                         </span>
-                                                        <Link href="tel:+009876543210">+00 9876543210</Link>
+                                                        <Link href="tel:+917708092434">+91 7708092434</Link>
                                                     </li>
                                                     <li className="bb-footer-link bb-foo-mail">
                                                         <span>
                                                             <i className="ri-mail-line"></i>
                                                         </span>
-                                                        <Link href="mailto:example@email.com">example@email.com</Link>
+                                                        <Link href="mailto:pattikadaiofficial@gmail.com">pattikadaiofficial@gmail.com</Link>
                                                     </li>
                                                 </ul>
                                             </motion.div>
                                         </div>
                                     </div>
-                                    <div className="bb-footer-social">
+                                    {/* <div className="bb-footer-social">
                                         <div className="bb-footer-widget">
                                             <div className="bb-footer-links bb-footer-dropdown">
                                                 <ul className="align-items-center">
@@ -243,7 +243,7 @@ const Footer = ({
                                                 </ul>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </Col>
                             </Row>
                         </div>

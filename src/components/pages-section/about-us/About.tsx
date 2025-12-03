@@ -10,8 +10,8 @@ const About = () => {
         <>
             <AboutMe />
             <PageServices />
-            <Testimonials />
-            <Team />
+            {/* <Testimonials />
+            <Team /> */}
         </>
     )
 }

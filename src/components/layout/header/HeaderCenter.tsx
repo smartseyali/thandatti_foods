@@ -182,16 +182,16 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Left: Logo (Desktop) */}
-                                <div className="header-logo me-3 d-none d-xl-block" style={{ height: '50px' }}>
+                                <div className="header-logo me-3 d-none d-xl-block" style={{ height: '80px' }}>
                                     <Link href="/">
                                         <img 
-                                            src="/assets/img/logo/Thandatti.png" 
+                                            src="/assets/img/logo/logo.gif" 
                                             alt="Pattikadai" 
                                             className="light"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
                                         />
                                         <img 
-                                            src="/assets/img/logo/Thandatti.png" 
+                                            src="/assets/img/logo/logo.gif" 
                                             alt="Pattikadai" 
                                             className="dark"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
@@ -200,16 +200,16 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Center: Logo (Mobile) */}
-                                <div className="header-logo d-block d-xl-none position-absolute top-50 start-50 translate-middle" style={{ height: '45px' }}>
+                                <div className="header-logo d-block d-xl-none position-absolute top-50 start-50 translate-middle" style={{ height: '80px' }}>
                                     <Link href="/">
                                         <img 
-                                            src="/assets/img/logo/Thandatti.png" 
+                                            src="/assets/img/logo/logo.gif" 
                                             alt="Pattikadai" 
                                             className="light"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
                                         />
                                         <img 
-                                            src="/assets/img/logo/Thandatti.png" 
+                                            src="/assets/img/logo/logo.gif" 
                                             alt="Pattikadai" 
                                             className="dark"
                                             style={{ maxHeight: '100%', width: 'auto', objectFit: 'contain' }}
@@ -260,7 +260,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                     <div className="search-icon cursor-pointer" onClick={toggleSearch}>
                                         <i className="ri-search-line fs-4 text-dark"></i>
                                     </div>
-                                    <Link onClick={openCart} href="#" className="cart-icon position-relative text-dark">
+                                    <Link onClick={openCart} href="#" className="cart-icon position-relative text-dark d-none d-xl-block">
                                         <i className="ri-shopping-bag-line fs-4"></i>
                                         <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white" style={{ fontSize: '10px', padding: '3px 5px', border: '1px solid #fff' }}>
                                             {cartSlice.length}
@@ -269,7 +269,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                     <Link href={isAuthenticated ? "/user-profile" : "/login"} className="user-icon text-dark d-none d-xl-block">
                                         <i className="ri-user-line fs-4"></i>
                                     </Link>
-                                    <Link href="/wishlist" className="wishlist-icon position-relative text-dark d-none d-xl-block">
+                                    <Link href="/wishlist" className="wishlist-icon position-relative text-dark">
                                         <i className="ri-heart-line fs-4"></i>
                                         <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white" style={{ fontSize: '10px', padding: '3px 5px', border: '1px solid #fff' }}>
                                             {wishlistItem.length}

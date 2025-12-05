@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { updateCartItemQuantity } from "@/utils/cartOperations";
 import { showErrorToast } from "../toast-popup/Toastify";
+import { authStorage } from "@/utils/authStorage";
 
 const QuantitySelector = ({
   id,
@@ -39,6 +40,14 @@ const QuantitySelector = ({
         if (itemCartId) {
           await updateCartItemQuantity(dispatch, itemCartId, newQuantity, cartItems);
         } else {
+          // Check if guest user - use product ID as cart ID
+          if (!authStorage.isAuthenticated()) {
+             const guestId = id?.toString();
+             if (guestId) {
+                 await updateCartItemQuantity(dispatch, guestId, newQuantity, cartItems);
+                 return;
+             }
+          }
           console.error('Cart item ID not found for quantity update');
           showErrorToast('Failed to update quantity');
         }

@@ -54,8 +54,8 @@ const Footer = ({
                             <Row className="m-minus-991">
                                 <Col lg={3} className="bb-footer-cat col-12">
                                     <div className="bb-footer-widget bb-footer-company">
-                                        <img src="/assets/img/logo/Thandatti.png" className="bb-footer-logo" alt="footer logo" />
-                                        <img src="/assets/img/logo/Thandatti.png" className="bb-footer-dark-logo" alt="footer logo" />
+                                        <img src="/assets/img/logo/logo.gif" className="bb-footer-logo" alt="footer logo" />
+                                        <img src="/assets/img/logo/logo.gif" className="bb-footer-dark-logo" alt="footer logo" />
                                         <p className="bb-footer-detail">Pattikadai is the biggest market of grocery products. Get
                                             your daily needs from our store.</p>
                                         {/* <div className="bb-app-store">

@@ -20,12 +20,13 @@ const BottomNav: React.FC<BottomNavProps> = ({
         <div className="fixed-bottom bg-white border-top d-xl-none" style={{ zIndex: 1000 }}>
             <div className="d-flex justify-content-around align-items-center py-2">
                 {/* Menu */}
-                <div className="text-center cursor-pointer" onClick={openMobileManu}>
+                {/* Home */}
+                <Link href="/" className="text-center text-decoration-none">
                     <div className="position-relative d-inline-block">
-                        <i className="ri-menu-2-line fs-4 text-dark"></i>
+                        <i className="ri-home-line fs-4 text-dark"></i>
                     </div>
-                    <div className="small text-dark" style={{ fontSize: '10px' }}>Menu</div>
-                </div>
+                    <div className="small text-dark" style={{ fontSize: '10px' }}>Home</div>
+                </Link>
 
                 {/* Login/Profile */}
                 <Link href={isAuthenticated ? "/user-profile" : "/login"} className="text-center text-decoration-none">
@@ -48,18 +49,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
                     <div className="small text-dark" style={{ fontSize: '10px' }}>Cart</div>
                 </div>
 
-                {/* Wishlist */}
-                <Link href="/wishlist" className="text-center text-decoration-none">
-                    <div className="position-relative d-inline-block">
-                        <i className="ri-heart-line fs-4 text-dark"></i>
-                        {wishlistCount > 0 && (
-                            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '8px', padding: '2px 4px' }}>
-                                {wishlistCount}
-                            </span>
-                        )}
-                    </div>
-                    <div className="small text-dark" style={{ fontSize: '10px' }}>Wishlist</div>
-                </Link>
+
             </div>
         </div>
     );

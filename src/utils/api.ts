@@ -699,7 +699,7 @@ export const mapCartItemToFrontend = (cartItem: any) => {
     brand: cartItem.brand_name || '',
     sku: cartItem.sku || '',
     status: cartItem.product_status || 'In Stock',
-    rating: 0,
+    rating: parseFloat(cartItem.rating || cartItem.product?.rating || 0),
     weight: '',
     location: 'In Store,online',
     quantity: parseInt(cartItem.quantity) || 1,

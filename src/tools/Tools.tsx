@@ -6,7 +6,7 @@ const Tools = () => {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [selectedColor, setSelectedColor] = useState("primary");
     const [isRTL, setIsRTL] = useState(false);
-    const [isBox, setIsBox] = useState(false);
+    const [isBox, setIsBox] = useState(true);
 
     // dark mode
     useEffect(() => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import SingleProductSlider from './single-product-slider/SingleProductSlider'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { productApi, mapProductToFrontend, reviewApi } from '@/utils/api';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -110,6 +111,40 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productId]);
+
+    const router = useRouter();
+
+    const handleBuyNow = async () => {
+        if (!product) return;
+        
+        try {
+            const productToAdd = {
+                ...product,
+                // Ensure we use the selected attribute details if available
+                newPrice: selectedPrice || product.newPrice,
+                oldPrice: selectedOldPrice || product.oldPrice,
+            };
+
+            const existingItem = cartSlice?.find((item: any) => item.productId === product.id || item.id === product.id);
+
+            if (!existingItem) {
+                await addItemToCart(dispatch, productToAdd, quantity);
+            } else {
+                // If item exists, update quantity
+                if (existingItem.cartItemId) {
+                    const newQuantity = existingItem.quantity + quantity;
+                    await updateCartItemQuantity(dispatch, existingItem.cartItemId, newQuantity);
+                } else {
+                    // Fallback if cartItemId is missing
+                    await addItemToCart(dispatch, productToAdd, quantity);
+                }
+            }
+            router.push('/checkout');
+        } catch (error: any) {
+            console.error('Error adding to cart for buy now:', error);
+            showErrorToast(error.message || "Failed to process buy now.");
+        }
+    };
 
     const handleAddToCart = async () => {
         if (!product) return;
@@ -377,6 +412,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                 </div>
                                 <div className="buttons">
                                     <button onClick={handleAddToCart} className="bb-btn-2">Add to Cart</button>
+                                    <button onClick={handleBuyNow} className="bb-btn-2" style={{ marginLeft: '10px', backgroundColor: '#333', borderColor: '#333' }}>Buy Now</button>
                                 </div>
                                 <ul className="bb-pro-actions">
                                     <li className="bb-btn-group">

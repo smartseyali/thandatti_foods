@@ -1,11 +1,14 @@
 /* Shop */
 .noUi-horizontal {
     .noUi-handle {
-        &:after, &:before {
+
+        &:after,
+        &:before {
             display: none;
         }
     }
 }
+
 .bnr-details-bg {
     background-color: $bg-box;
     padding: 24px;
@@ -165,12 +168,12 @@ ul.bb-shop-tags {
             background-color: $bg-fff;
             border-bottom: 0;
             border-right: 1px solid $border-eee;
-            border-top-left-radius: $radius-20;
-            border-bottom-left-radius: $radius-20;
+            // border-top-left-radius: $radius-20;
+            // border-bottom-left-radius: $radius-20;
 
             .inner-img {
                 border-top-right-radius: 0;
-                border-bottom-left-radius: $radius-20;
+                // border-bottom-left-radius: $radius-20;
             }
         }
 
@@ -357,10 +360,12 @@ ul.bb-shop-tags {
             &:not(:last-child) {
                 margin-bottom: 14px;
             }
+
             small {
                 width: 100%;
                 color: $primary;
                 text-transform: capitalize;
+
                 &:after {
                     content: "\f2e5";
                     position: absolute;
@@ -578,12 +583,13 @@ ul.bb-shop-tags {
     .tag_active {
         color: #fff;
         background-color: $primary !important;
-      }
+    }
+
     ul {
         display: flex;
         flex-wrap: wrap;
         margin: -5px;
-       
+
 
         li {
             @include ease3;
@@ -592,7 +598,7 @@ ul.bb-shop-tags {
             border: 1px solid $border-eee;
             border-radius: 10px;
             cursor: pointer;
-            
+
 
             a {
                 font-size: 13px;

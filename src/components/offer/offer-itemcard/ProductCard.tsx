@@ -3,12 +3,13 @@ import ItemModal from '@/components/modal/ItemModal';
 import StarRating from '@/components/stars/StarRating';
 import { showErrorToast, showSuccessToast } from '@/components/toast-popup/Toastify';
 import { RootState } from '@/store';
-import { addItem, updateItemQuantity } from '@/store/reducer/cartSlice';
+import { addItemToCart, incrementCartItem } from '@/utils/cartOperations';
 import { addCompare } from '@/store/reducer/compareSlice';
 import { addWishlist } from '@/store/reducer/wishlistSlice';
 import Link from 'next/link';
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
 
 interface Item {
     id: number;
@@ -43,20 +44,25 @@ const ProductCard = ({ data }: any) => {
         setIsModalOpen(false)
     }
 
-    const handleCart = (data: Item) => {
-        const isItemInCart = cartSlice?.some((item: Item) => item.id === data.id);
+    const router = useRouter();
 
-        if (!isItemInCart) {
-            dispatch(addItem({ ...data, quantity: 1 }));
-            showSuccessToast("Item added to cart item");
-        } else {
-            const updatedCartItems = cartSlice.map((item: Item) =>
-                item.id === data.id
-                    ? { ...item, quantity: item.quantity + 1, price: item.newPrice + data.newPrice } // Increment quantity and update price
-                    : item
-            );
-            dispatch(updateItemQuantity(updatedCartItems));
-            showSuccessToast("Item quantity increased in cart");
+    const handleCart = async (data: Item) => {
+        try {
+            await incrementCartItem(dispatch, data, cartSlice || []);
+            showSuccessToast("Item added/updated in cart");
+        } catch (error: any) {
+            console.error('Error adding to cart:', error);
+            showErrorToast(error.message || "Failed to add item to cart.");
+        }
+    };
+
+    const handleBuyNow = async (data: Item) => {
+        try {
+            await incrementCartItem(dispatch, data, cartSlice || []);
+            router.push('/checkout');
+        } catch (error: any) {
+            console.error('Error adding to cart for buy now:', error);
+            showErrorToast(error.message || "Failed to process buy now.");
         }
     };
 
@@ -111,6 +117,11 @@ const ProductCard = ({ data }: any) => {
                         <li className="bb-btn-group">
                             <a onClick={() => handleCart(data)} title="Add To Cart">
                                 <i className="ri-shopping-bag-4-line"></i>
+                            </a>
+                        </li>
+                        <li className="bb-btn-group">
+                            <a onClick={() => handleBuyNow(data)} title="Buy Now">
+                                <i className="ri-shopping-cart-2-line"></i>
                             </a>
                         </li>
                     </ul>

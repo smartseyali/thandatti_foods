@@ -8,11 +8,11 @@ import Link from 'next/link';
 const CategorySlider = () => {
     const categories = [
         { id: 1, image: '/assets/img/category/category-1.jpg', name: 'Thokku' },
-        { id: 2, image: '/assets/img/category/category-2.jpg', name: 'Redi Mix' },
+        { id: 2, image: '/assets/img/category/category-2.jpg', name: 'Mix' },
         { id: 3, image: '/assets/img/category/category-3.jpg', name: 'Podi' },
         { id: 4, image: '/assets/img/category/category-4.jpg', name: 'Malt' },
         { id: 5, image: '/assets/img/category/category-5.jpg', name: 'Soup' },
-        { id: 6, image: '/assets/img/category/category-6.jpg', name: 'Hair wash powder' },
+        // { id: 6, image: '/assets/img/category/category-6.jpg', name: 'Hair wash powder' },
     ];
 
     return (
@@ -21,7 +21,9 @@ const CategorySlider = () => {
                 <div className="row">
                     <div className="col-12">
                         <div className="section-title text-center mb-30">
-                            <h2 className="bb-title">Top <span>Categories</span></h2>
+                            <div className="section-detail">
+                                <h2 className="bb-title">Top <span>Categories</span></h2>
+                            </div>
                         </div>
                     </div>
                     <div className="col-12">
@@ -58,7 +60,7 @@ const CategorySlider = () => {
                             {categories.map((cat) => (
                                 <SwiperSlide key={cat.id}>
                                     <div className="category-slide-item">
-                                        <Link href="/shop-full-width-col-4" className="d-block text-center">
+                                        <Link href={`/category/${cat.name}`} className="d-block text-center">
                                             <div 
                                                 className="category-image-circle mx-auto mb-3"
                                                 style={{
@@ -82,7 +84,7 @@ const CategorySlider = () => {
                                                     }}
                                                 />
                                             </div>
-                                            <h5 className="category-name">{cat.name}</h5>
+                                            <h4 className="category-name" style={{ fontSize: '18px', fontWeight: '700', color: '#3d4750' }}>{cat.name}</h4>
                                         </Link>
                                     </div>
                                 </SwiperSlide>

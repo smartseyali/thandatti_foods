@@ -58,16 +58,15 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
         // Update selected category in Redux
         if (categoryName === 'all') {
             dispatch(setSelectedCategory([]));
+            router.push("/category");
         } else {
-            dispatch(setSelectedCategory([categoryName]));
+            // dispatch(setSelectedCategory([categoryName]));
+             router.push(`/category/${categoryName}`);
         }
         
         // Clear search term to ensure we see all products in the selected category
         dispatch(setSearchTerm(""));
         setSearchInput("");
-
-        // Navigate to shop page to show filtered results
-        router.push("/shop-full-width-col-4");
     };
 
     const handleVisibleChange = (flag: boolean) => {
@@ -83,9 +82,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
 
     const handleSubmit = (event: any) => {
         event.preventDefault();
-        dispatch(setSearchTerm(searchInput));
+        // dispatch(setSearchTerm(searchInput));
         setIsSearchOpen(false);
-        router.push("/shop-full-width-col-4");
+        if (searchInput.trim()) {
+            router.push(`/search/${searchInput}`);
+        } else {
+             router.push("/shop-full-width-col-4");
+        }
         setSearchInput("");
     };
     
@@ -170,12 +173,13 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                 <div className="container">
                     <Row>
                         <div className='col-12'>
-                            <div className="inner-bottom-header d-flex align-items-center justify-content-end position-relative w-100 flex-nowrap" style={{ minHeight: '50px' }}>
+                            <div className="inner-bottom-header d-flex align-items-center position-relative w-100 flex-nowrap" style={{ minHeight: '50px', flexDirection: 'row' }}>
                                 
                                 {/* Mobile Menu Icon - Left (Hidden as it's in bottom nav) */}
-                                {/* <div className="d-xl-none cursor-pointer" onClick={openMobileManu}>
+                                {/* Mobile Menu Icon - Left (Visible on mobile) */}
+                                <div className="d-xl-none cursor-pointer me-3" onClick={openMobileManu}>
                                     <i className="ri-menu-2-line fs-3 text-dark"></i>
-                                </div> */}
+                                </div>
 
                                 {/* Left: Logo (Desktop) */}
                                 <div className="header-logo me-3 d-none d-xl-block" style={{ height: '50px' }}>
@@ -231,17 +235,17 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                             <i className="ri-arrow-down-s-line"></i>
                                         </div>
                                     </Dropdown>
-                                    <Link href="/shop-full-width-col-4" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none position-relative">
+                                    <Link href="/bestselling" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none position-relative">
                                         <i className="ri-fire-line fs-5"></i>
                                         <span className="fw-medium">Best selling</span>
                                         <span className="badge bg-danger position-absolute" style={{ top: '-12px', right: '-25px', fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>HOT</span>
                                     </Link>
-                                    <Link href="/shop-full-width-col-4" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none position-relative">
+                                    <Link href="/specials" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none position-relative">
                                         <i className="ri-heart-line fs-5"></i>
                                         <span className="fw-medium">Pattikadai Special</span>
                                         <span className="badge bg-success position-absolute" style={{ top: '-12px', right: '-25px', fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>BEST</span>
                                     </Link>
-                                    <Link href="/shop-full-width-col-4" className="menu-item text-dark text-decoration-none position-relative">
+                                    <Link href="/combos" className="menu-item text-dark text-decoration-none position-relative">
                                         <span className="fw-medium">Special Combo</span>
                                         <span className="badge bg-danger position-absolute" style={{ top: '-12px', right: '-30px', fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>Offers</span>
                                     </Link>
@@ -251,6 +255,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Right: Icons */}
+                                                                  
                                 <div className="header-icons d-flex align-items-center gap-3 gap-xl-4 ms-auto">
                                     <div className="search-icon cursor-pointer" onClick={toggleSearch}>
                                         <i className="ri-search-line fs-4 text-dark"></i>
@@ -270,6 +275,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                             {wishlistItem.length}
                                         </span>
                                     </Link>
+                                    
                                 </div>
 
                                 {isSearchOpen && (

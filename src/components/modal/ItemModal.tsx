@@ -9,6 +9,7 @@ import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify'
 import ZoomProductImage from '../products-section/zoom-product-img/ZoomProductImage'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation';
 import { addItemToCart, updateCartItemQuantity } from '@/utils/cartOperations'
 
 interface Item {
@@ -36,6 +37,7 @@ const ItemModal = ({
     isModalOpen,
     data
 }: any) => {
+    const router = useRouter();
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const dispatch = useDispatch();
     const [quantity, setQuantity] = useState(1);
@@ -110,6 +112,34 @@ const ItemModal = ({
         }
     };
 
+    const handleBuyNow = async (itemData: Item) => {
+        try {
+            const productToAdd = {
+                ...itemData,
+                newPrice: selectedPrice || itemData.newPrice,
+                oldPrice: selectedOldPrice || itemData.oldPrice,
+            };
+
+            const existingItem = cartSlice?.find((item: any) => item.productId === itemData.id || item.id === itemData.id);
+
+            if (!existingItem) {
+                await addItemToCart(dispatch, productToAdd, quantity);
+            } else {
+                if (existingItem.cartItemId) {
+                    const newQuantity = existingItem.quantity + quantity;
+                    await updateCartItemQuantity(dispatch, existingItem.cartItemId, newQuantity);
+                } else {
+                    await addItemToCart(dispatch, productToAdd, quantity);
+                }
+            }
+            closeItemModal();
+            router.push('/checkout');
+        } catch (error: any) {
+            console.error('Error adding to cart for buy now:', error);
+            showErrorToast(error.message || "Failed to process buy now.");
+        }
+    };
+
     // Calculate display price
     const displayPrice = selectedPrice > 0 ? selectedPrice : (data?.newPrice || 0);
     const displayOldPrice = selectedOldPrice || data?.oldPrice;
@@ -164,6 +194,9 @@ const ItemModal = ({
                                         <div className="bb-quickview-cart">
                                             <button onClick={() => handleCart(data)} type="button" className="bb-btn-1">
                                                 <i className="ri-shopping-bag-line"></i>Add To Cart
+                                            </button>
+                                            <button onClick={() => handleBuyNow(data)} type="button" className="bb-btn-1" style={{ marginLeft: '10px', backgroundColor: '#333', borderColor: '#333' }}>
+                                                <i className="ri-shopping-cart-2-line"></i>Buy Now
                                             </button>
                                         </div>
                                     </div>

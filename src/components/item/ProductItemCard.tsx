@@ -9,6 +9,7 @@ import { addWishlist } from '@/store/reducer/wishlistSlice';
 import ItemModal from '../modal/ItemModal';
 import Link from 'next/link';
 import { addItemToCart, incrementCartItem } from '@/utils/cartOperations';
+import { useRouter } from 'next/navigation';
 
 interface Item {
     id: number;
@@ -29,11 +30,16 @@ interface Item {
 }
 
 const ProductItemCard = ({ data }: any) => {
+    const router = useRouter();
     const dispatch = useDispatch()
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const wishlistItem = useSelector((state: RootState) => state.wishlist?.wishlist);
     const compareItems = useSelector((state: RootState) => state.compare?.compare)
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleProductClick = () => {
+        router.push(`/product/${data.id}`);
+    }
 
     const openItemModal = () => {
         setIsModalOpen(true)
@@ -85,10 +91,20 @@ const ProductItemCard = ({ data }: any) => {
         }
     };
 
+    const handleBuyNow = async (data: Item) => {
+        try {
+            await incrementCartItem(dispatch, data, cartSlice || []);
+            router.push('/checkout');
+        } catch (error: any) {
+            console.error('Error adding to cart for buy now:', error);
+            showErrorToast(error.message || "Failed to process buy now.");
+        }
+    };
+
     return (
         <>
             <div className="bb-pro-box">
-                <div className="bb-pro-img">
+                <div className="bb-pro-img " onClick={handleProductClick} style={{ cursor: 'pointer' }}>
                     <span className="flags">
                         <span>{data.sale}</span>
                     </span>
@@ -130,19 +146,24 @@ const ProductItemCard = ({ data }: any) => {
                                 <i onClick={() => handleCart(data)} className="ri-shopping-bag-4-line"></i>
                             </a>
                         </li>
+                        <li className="bb-btn-group">
+                            <a title="Buy Now">
+                                <i onClick={() => handleBuyNow(data)} className="ri-shopping-cart-2-line"></i>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div className="bb-pro-contact">
                     <div className="bb-pro-subtitle">
-                        <Link href="/shop-full-width-col-4">{data.category}</Link>
+                        <Link href={`/category/${data.category}`}>{data.category}</Link>
                         <StarRating rating={data.rating} />
                     </div>
-                    <h4 className="bb-pro-title"><Link href={`/product/${data.id}`}>{data.title}</Link></h4>
+                    <h4 className="bb-pro-title"><a onClick={handleProductClick} style={{ cursor: 'pointer' }}>{data.title}</a></h4>
                     <div className="bb-price">
                         <div className="inner-price">
                             <span className="new-price">₹{data.newPrice}</span>
                             <span className={data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}>
-                                {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : data.itemLeft}
+                                {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : ""}
                             </span>
                         </div>
                         <span className="last-items">{data.weight}</span>

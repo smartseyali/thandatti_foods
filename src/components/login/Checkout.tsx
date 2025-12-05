@@ -80,11 +80,7 @@ const Checkout = () => {
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
 
-    const options: Option[] = [
-        { value: '250g', tooltip: 'Small' },
-        { value: '500g', tooltip: 'Medium' },
-        { value: '1kg', tooltip: 'Large' },
-    ];
+
 
     const handleClick = (index: any, optionIndex: any) => {
         setActiveIndex({
@@ -661,17 +657,25 @@ const Checkout = () => {
                                                             <StarRating rating={data.rating} />
                                                         </span>
                                                         <div className="inner-price">
-                                                            <span className="new-price">₹{data.newPrice}</span>
-                                                            <span className="old-price">₹{data.oldPrice}</span>
+                                                            <span className="new-price">₹{typeof data.newPrice === 'number' ? data.newPrice.toFixed(2) : data.newPrice}</span>
+                                                            <span className="old-price">{data.oldPrice}</span>
                                                         </div>
                                                         <div className="bb-pro-variation">
                                                             <ul>
-                                                                {options.map((data, optionIndex) => (
-                                                                    <li key={optionIndex} className={activeIndex[index] === optionIndex ? "active" : ""}>
-                                                                        <a onClick={(e) => { e.preventDefault(); handleClick(index, optionIndex) }} href="#" className="bb-opt-sz"
-                                                                            data-tooltip={data.tooltip}>{data.value}</a>
-                                                                    </li>
-                                                                ))}
+                                                                {data.attributes && data.attributes.length > 0 ? (
+                                                                    data.attributes.map((attr: any, attrIndex: number) => (
+                                                                        <li key={attrIndex} className={activeIndex[index] === attrIndex ? "active" : ""}>
+                                                                            <a onClick={(e) => { e.preventDefault(); handleClick(index, attrIndex) }} href="#" className="bb-opt-sz"
+                                                                                title={attr.attributeValue}>{attr.attributeValue}</a>
+                                                                        </li>
+                                                                    ))
+                                                                ) : (
+                                                                    data.weight && (
+                                                                        <li>
+                                                                            <a href="#" className="bb-opt-sz">{data.weight}</a>
+                                                                        </li>
+                                                                    )
+                                                                )}
                                                             </ul>
                                                         </div>
                                                     </div>

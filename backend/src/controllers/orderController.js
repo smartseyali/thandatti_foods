@@ -107,7 +107,7 @@ async function createOrder(req, res, next) {
     }
 
     const deliveryChargeAmount = parseFloat(req.body.deliveryCharge) || 0;
-    const vat = subtotal * 0.18; // 18% VAT (adjust as needed)
+    const vat = 0; // VAT is not included in this calculation to match frontend
     const totalPrice = subtotal + vat + deliveryChargeAmount - discountAmount;
 
     // Determine payment status based on payment method

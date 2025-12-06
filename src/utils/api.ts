@@ -76,15 +76,16 @@ const apiRequest = async (
   };
 
   // For endpoints requiring authentication, token is mandatory
-  if (requireAuth) {
-    if (!token) {
-      throw new Error('Authentication required. Please login.');
-    }
+  // Add Authorization header if token is available, regardless of requireAuth
+  // This supports optional authentication on the backend
+  if (token) {
     headersInit['Authorization'] = `Bearer ${token}`;
   }
-  // For public endpoints, don't send Authorization header at all
-  // This ensures backend public routes work without token checks
-  // Note: Public endpoints should work without any auth header
+
+  // Only throw error if authentication is specifically required and no token exists
+  if (requireAuth && !token) {
+    throw new Error('Authentication required. Please login.');
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -103,7 +104,14 @@ const apiRequest = async (
       
       // Handle 400/404 errors for public endpoints gracefully
       if ((response.status === 400 || response.status === 404) && !requireAuth) {
-        // Public endpoint returned 400/404 - return empty data instead of throwing
+        // If this is a modification request (POST/PUT/DELETE), we shouldn't suppress the error
+        // because the operation clearly failed
+        if (options.method && options.method !== 'GET') {
+          console.error(`Public endpoint ${endpoint} returned ${response.status}. Error: ${error.message}`);
+          throw new Error(error.message || 'Request failed');
+        }
+
+        // Public GET endpoint returned 400/404 - return empty data instead of throwing
         console.warn(`Public endpoint ${endpoint} returned ${response.status}. Error: ${error.message}`);
         // Return empty data structure based on endpoint type
         if (endpoint.includes('/products')) {
@@ -151,6 +159,13 @@ const apiRequest = async (
     }
     // For network errors on public endpoints, return empty data
     if (!requireAuth) {
+      // For non-GET requests (POST, PUT, DELETE), we should throw the error
+      // so the caller knows the operation failed.
+      if (options.method && options.method !== 'GET') {
+        console.error(`API request failed for ${endpoint}:`, error);
+        throw new Error(error.message || 'Request failed');
+      }
+
       console.warn(`Network error for public endpoint ${endpoint}, returning empty data:`, error.message);
       if (endpoint.includes('/products')) {
         return { products: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } };
@@ -333,7 +348,7 @@ export const paymentApi = {
       const response = await apiRequest('/api/payments/create-order', {
         method: 'POST',
         body: JSON.stringify(paymentData),
-      }, true);
+      }, false);
       return response.paymentOrder;
     } catch (error: any) {
       console.error('Error creating payment order:', error);
@@ -350,7 +365,7 @@ export const paymentApi = {
       const response = await apiRequest('/api/payments/verify', {
         method: 'POST',
         body: JSON.stringify(verificationData),
-      }, true);
+      }, false);
       return response;
     } catch (error: any) {
       console.error('Error verifying payment:', error);

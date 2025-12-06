@@ -20,7 +20,9 @@ async function createPaymentOrder(req, res, next) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    if (order.user_id !== req.userId && req.user.role !== 'admin') {
+    // specific check: if order has a user_id, ensure the current user matches it
+    // if order has no user_id (guest), allow it (assuming orderId knowledge is sufficient proof for now)
+    if (order.user_id && (!req.userId || (order.user_id !== req.userId && req.user?.role !== 'admin'))) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -98,7 +100,7 @@ async function verifyPayment(req, res, next) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    if (order.user_id !== req.userId && req.user.role !== 'admin') {
+    if (order.user_id && (!req.userId || (order.user_id !== req.userId && req.user?.role !== 'admin'))) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

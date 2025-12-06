@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // Create payment order
-router.post('/create-order', authenticate, paymentController.createPaymentOrder);
+router.post('/create-order', optionalAuth, paymentController.createPaymentOrder);
 
 // Verify payment
-router.post('/verify', authenticate, paymentController.verifyPayment);
+router.post('/verify', optionalAuth, paymentController.verifyPayment);
 
 // Webhook handlers (no authentication required, but signature verification is done)
 router.post('/webhook/razorpay', paymentController.razorpayWebhook);

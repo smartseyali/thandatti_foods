@@ -15,10 +15,11 @@ import { useLoadOrders } from '@/hooks/useOrders';
 import { login } from '@/store/reducer/loginSlice';
 import { getAttributionForConversion } from '@/utils/attribution';
 import PaymentGateway from '../payment/PaymentGateway';
-import { orderApi, addressApi, deliveryApi } from '@/utils/api';
+import { orderApi, addressApi, deliveryApi, paymentApi } from '@/utils/api';
 import { cartApi } from '@/utils/api';
 import { authStorage } from '@/utils/authStorage';
 import locationsData from '@/data/locations.json';
+import { initiateRazorpayPayment, getPaymentCallbackUrl } from '@/utils/payment';
 
 interface FormValues {
     id: string;
@@ -73,7 +74,7 @@ const Checkout = () => {
     const [selectedAddress, setSelectedAddress] = useState<FormValues | null>(null);
     const [addressVisible, setAddressVisible] = useState<any[]>([]);
     const [activeIndex, setActiveIndex] = useState<{ [key: number]: number }>({});
-    const [paymentMethod, setPaymentMethod] = useState("cod");
+    const [paymentMethod, setPaymentMethod] = useState("razorpay");
     const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [countries, setCountries] = useState<any[]>(locationsData);
@@ -246,8 +247,9 @@ const Checkout = () => {
             setIsCreatingOrder(true);
 
             // Check if user is authenticated
+            // Check if user is authenticated
             const loginUser = typeof window !== 'undefined' 
-                ? authStorage.getUserData()
+                ? (authStorage.getUserData() || {})
                 : {};
 
             if (!loginUser?.token && checkOutMethod !== 'guest') {
@@ -316,74 +318,80 @@ const Checkout = () => {
                 throw new Error("Failed to create order");
             }
 
-            setCreatedOrderId(createdOrder.id);
-
             // Get attribution data for conversion tracking
             const attribution = getAttributionForConversion();
 
-            // Track conversion events with attribution
-            if (typeof window !== 'undefined') {
-                const trackingItems = cartSlice.map((item: any) => ({
-                    item_id: item.id?.toString() || '',
-                    item_name: item.title || '',
-                    item_category: item.category || '',
-                    price: item.newPrice || 0,
-                    quantity: item.quantity || 1,
-                }));
-
-                // Track purchase in Google Analytics
-                if ((window as any).gtag) {
-                    (window as any).gtag('event', 'purchase', {
-                        transaction_id: createdOrder.order_number,
-                        value: total,
-                        currency: 'INR',
-                        items: trackingItems,
-                        source: attribution?.source || 'direct',
-                        medium: attribution?.medium || 'none',
-                        campaign: attribution?.campaign || '',
-                        channel: attribution?.channel || 'Direct',
-                    });
-                }
-
-                // Track purchase in Meta Pixel
-                if ((window as any).fbq) {
-                    (window as any).fbq('track', 'Purchase', {
-                        value: total,
-                        currency: 'INR',
-                        contents: trackingItems,
-                        content_ids: cartSlice.map((item: any) => item.id?.toString() || ''),
-                        content_type: 'product',
-                        num_items: cartSlice.length,
-                        source: attribution?.source || 'direct',
-                        medium: attribution?.medium || 'none',
-                        campaign: attribution?.campaign || '',
-                    });
-                }
-            }
-
             // Handle payment method
-            if (paymentMethod === 'cod') {
-                // For COD, order is created and cart is cleared
-                showSuccessToast("Order placed successfully!");
-                dispatch(clearCart());
+            // Handle payment method - Always Razorpay
+            // Trigger Razorpay Payment directly
+            try {
+                // Create payment order on backend
+                console.log('Creating payment order for:', createdOrder.id);
+                const paymentOrder = await paymentApi.createOrder({
+                    orderId: createdOrder.id,
+                    gateway: 'razorpay',
+                    amount: total,
+                    currency: 'INR',
+                    callbackUrl: getPaymentCallbackUrl('razorpay'),
+                });
                 
-                // Save order ID for guest tracking
-                if (!isAuthenticated) {
-                    sessionStorage.setItem('guest_last_order_id', createdOrder.id);
+                console.log('Payment Order Created:', paymentOrder);
+
+                if (!paymentOrder || !paymentOrder.orderId) {
+                    throw new Error('Failed to create payment order');
                 }
 
-                router.push("/orders");
-            } else {
+                // Initialize Razorpay payment
+                await initiateRazorpayPayment({
+                    orderId: paymentOrder.orderId,
+                    amount: paymentOrder.amount,
+                    currency: paymentOrder.currency,
+                    keyId: paymentOrder.keyId,
+                    name: 'Pattikadai',
+                    description: `Order Payment for Order #${createdOrder.order_number}`,
+                    prefill: {
+                        email: loginUser.email || '',
+                        contact: loginUser.phoneNumber || '',
+                    },
+                    handler: async (response: any) => {
+                        try {
+                            // Verify payment on backend
+                            const verificationResult = await paymentApi.verifyPayment({
+                                orderId: createdOrder.id,
+                                gateway: 'razorpay',
+                                paymentData: {
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                },
+                            });
 
-                // For payment gateways, the PaymentGateway component will handle the payment
-                showSuccessToast("Order created. Please complete the payment.");
-                // PaymentGateway component will handle the rest
+                            if (verificationResult.success) {
+                                handlePaymentSuccess(createdOrder.id);
+                            } else {
+                                throw new Error('Payment verification failed');
+                            }
+                        } catch (error: any) {
+                            console.error('Payment verification error:', error);
+                            showErrorToast(error.message || 'Payment verification failed');
+                        }
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            setIsCreatingOrder(false); // Re-enable button
+                            showErrorToast('Payment cancelled');
+                        },
+                    },
+                });
+            } catch (error: any) {
+                console.error('Razorpay init error:', error);
+                showErrorToast(error.message || "Failed to initialize payment.");
+                setIsCreatingOrder(false);
             }
 
         } catch (error: any) {
             console.error('Checkout error:', error);
             showErrorToast(error.message || "Failed to place order. Please try again.");
-        } finally {
             setIsCreatingOrder(false);
         }
     }
@@ -391,14 +399,17 @@ const Checkout = () => {
     const handlePaymentSuccess = (paymentId: string) => {
         showSuccessToast("Payment successful! Order placed.");
         dispatch(clearCart());
-        if (!isAuthenticated && createdOrderId) {
-            sessionStorage.setItem('guest_last_order_id', createdOrderId);
+        // Since we might be inside the handler where createdOrderId state isn't set yet if we skipped it
+        // We use the passed paymentId (which acts as orderId here)
+        if (!isAuthenticated && paymentId) {
+            sessionStorage.setItem('guest_last_order_id', paymentId);
         }
         router.push("/orders");
     };
 
     const handlePaymentError = (errorMessage: string) => {
         showErrorToast(errorMessage || "Payment failed. Please try again.");
+        setIsCreatingOrder(false);
     };
 
     const handleDeliveryChange = (e: any) => {
@@ -715,77 +726,7 @@ const Checkout = () => {
                                         </div>
                                     </div>
                                 </Fade>
-                                <Fade triggerOnce direction='up' duration={1000} delay={600}  >
-                                    <div className="checkout-items">
-                                        {createdOrderId && (paymentMethod === 'razorpay' || paymentMethod === 'phonepe') ? (
-                                            <div>
-                                                <div className="sub-title">
-                                                    <h4>Complete Payment</h4>
-                                                </div>
-                                                <PaymentGateway
-                                                    orderId={createdOrderId}
-                                                    amount={total}
-                                                    currency="INR"
-                                                    onPaymentSuccess={handlePaymentSuccess}
-                                                    onPaymentError={handlePaymentError}
-                                                    selectedMethod={paymentMethod}
-                                                    onMethodChange={setPaymentMethod}
-                                                />
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="sub-title">
-                                                    <h4>Payment Method</h4>
-                                                </div>
-                                                <div className="checkout-method">
-                                                    <span className="details">Please select your preferred payment method.</span>
-                                                    <div className="bb-del-option">
-                                                        <div className="inner-del">
-                                                            <div className="radio-itens">
-                                                                <input
-                                                                    type="radio"
-                                                                    id="Cash1"
-                                                                    name="payment-method"
-                                                                    checked={paymentMethod === "cod"}
-                                                                    onChange={() => setPaymentMethod("cod")}
-                                                                />
-                                                                <label htmlFor="Cash1">Cash On Delivery</label>
-                                                            </div>
-                                                        </div>
-                                                        <div className="inner-del">
-                                                            <div className="radio-itens">
-                                                                <input
-                                                                    type="radio"
-                                                                    id="razorpay1"
-                                                                    name="payment-method"
-                                                                    checked={paymentMethod === "razorpay"}
-                                                                    onChange={() => setPaymentMethod("razorpay")}
-                                                                />
-                                                                <label htmlFor="razorpay1">Razorpay</label>
-                                                            </div>
-                                                        </div>
-                                                        <div className="inner-del">
-                                                            <div className="radio-itens">
-                                                                <input
-                                                                    type="radio"
-                                                                    id="phonepe1"
-                                                                    name="payment-method"
-                                                                    checked={paymentMethod === "phonepe"}
-                                                                    onChange={() => setPaymentMethod("phonepe")}
-                                                                />
-                                                                <label htmlFor="phonepe1">PhonePe</label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="about-order">
-                                                    <h5>Add Comments About Your Order</h5>
-                                                    <textarea name="your-commemt" placeholder="Comments"></textarea>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </Fade>
+                                    {/* Payment Method section removed as per requirement */}
                             </div>
                         </Col>
                         <Col lg={8} sm={12} className="mb-24">

@@ -25,6 +25,17 @@ const Header = () => {
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
           }
         }
+        @media (min-width: 1200px) {
+          .bb-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+          }
+        }
       `}</style>
       {/* <HeaderTop /> */}
       <HeaderCenter wishlistItem={wishlistItem} cartSlice={cartSlice} />

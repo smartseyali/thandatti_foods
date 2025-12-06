@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import "@/styles/custom.css";
 import Providers from "@/store/Provider";
 import Layout from "@/components/layout";
 

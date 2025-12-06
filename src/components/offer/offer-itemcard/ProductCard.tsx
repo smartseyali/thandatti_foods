@@ -108,12 +108,7 @@ const ProductCard = ({ data }: any) => {
                                 <i className="ri-heart-line"></i>
                             </a>
                         </li>
-                        <li className="bb-btn-group">
-                            <a onClick={openItemModal} data-link-action="quickview" title="Quick View"
-                                data-bs-toggle="modal" data-bs-target="#bry_quickview_modal">
-                                <i className="ri-eye-line"></i>
-                            </a>
-                        </li>
+
                         <li className="bb-btn-group">
                             <a onClick={() => handleCart(data)} title="Add To Cart">
                                 <i className="ri-shopping-bag-4-line"></i>

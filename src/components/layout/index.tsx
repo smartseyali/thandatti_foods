@@ -135,6 +135,7 @@ const Layout = ({ children }: any) => {
       <Toastify />
       {!isAdminRoute && <Header />}
       {!isAdminRoute && <div className="d-block d-xl-none" style={{ height: '70px' }}></div>}
+      {!isAdminRoute && <div className="d-none d-xl-block" style={{ height: '125px' }}></div>}
       {loading && <Loader />}
       {children}
       {!isAdminRoute && <Footer />}

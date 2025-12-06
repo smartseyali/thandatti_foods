@@ -130,33 +130,33 @@ const ProductItemCard = ({ data }: any) => {
                     </div>
                     <ul className="bb-pro-actions">
                         <li className="bb-btn-group">
-                            <a onClick={() => handleWishlist(data)} title="Wishlist">
-                                <i className="ri-heart-line"></i>
+                            <a onClick={(e) => { e.stopPropagation(); handleWishlist(data); }} title="Wishlist">
+                                <i className={`ri-heart-${wishlistItem.some((item: any) => item.id === data.id) ? 'fill' : 'line'}`}></i>
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a onClick={openItemModal} data-link-action="quickview"
-                                title="Quick View" data-bs-toggle="modal"
-                                data-bs-target="#bry_quickview_modal">
-                                <i className="ri-eye-line"></i>
+                            <a onClick={(e) => { e.stopPropagation(); handleCart(data); }} title="Add To Cart">
+                                <i className="ri-shopping-bag-4-line"></i>
                             </a>
                         </li>
                         <li className="bb-btn-group">
-                            <a title="Add To Cart">
-                                <i onClick={() => handleCart(data)} className="ri-shopping-bag-4-line"></i>
+                            <a onClick={(e) => { e.stopPropagation(); handleBuyNow(data); }} title="Buy Now">
+                                <i className="ri-shopping-cart-2-line"></i>
                             </a>
                         </li>
-                        <li className="bb-btn-group">
-                            <a title="Buy Now">
-                                <i onClick={() => handleBuyNow(data)} className="ri-shopping-cart-2-line"></i>
-                            </a>
-                        </li>
+
                     </ul>
                 </div>
                 <div className="bb-pro-contact">
-                    <div className="bb-pro-subtitle">
-                        <Link href={`/category/${data.category}`}>{data.category}</Link>
-                        <StarRating rating={data.rating} />
+                    <div className="product-meta-row">
+                        <span className="meta-badge meta-category">{data.category}</span>
+                        <span className="meta-badge meta-weight">{data.weight}</span>
+                        <div className="meta-badge meta-rating">
+                            <i className="ri-star-fill"></i> {data.rating || 4.83}
+                            <span className="meta-separator">|</span>
+                            <i className="ri-verified-badge-fill verified-icon"></i>
+                            <span className="review-count">({data.reviews || 851})</span>
+                        </div>
                     </div>
                     <h4 className="bb-pro-title"><a onClick={handleProductClick} style={{ cursor: 'pointer' }}>{data.title}</a></h4>
                     <div className="bb-price">
@@ -166,10 +166,10 @@ const ProductItemCard = ({ data }: any) => {
                                 {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : ""}
                             </span>
                         </div>
-                        <span className="last-items">{data.weight}</span>
                     </div>
                 </div>
             </div>
+
             <ItemModal data={data} isModalOpen={isModalOpen} closeItemModal={closeItemModal} />
         </>
     )

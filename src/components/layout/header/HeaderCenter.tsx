@@ -170,7 +170,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     return (
         <>
             <div className="bottom-header">
-                <div className="container">
+                <div className="container-fluid">
                     <Row>
                         <div className='col-12'>
                             <div className="inner-bottom-header d-flex align-items-center position-relative w-100 flex-nowrap" style={{ minHeight: '50px', flexDirection: 'row' }}>
@@ -218,7 +218,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Center: Navigation Menu */}
-                                <div className="main-menu d-none d-xl-flex align-items-center gap-4">
+                                <div className="main-menu d-none d-xl-flex align-items-center gap-4 position-absolute top-50 start-50 translate-middle">
                                     <Link href="/" className="menu-item d-flex align-items-center gap-2 text-dark text-decoration-none">
                                         <i className="ri-home-line fs-5"></i>
                                         <span className="fw-medium">Home</span>
@@ -256,7 +256,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
 
                                 {/* Right: Icons */}
                                                                   
-                                <div className="header-icons d-flex align-items-center gap-3 gap-xl-4 ms-auto">
+                                <div className="header-icons d-flex align-items-center gap-2 gap-xl-4 ms-auto">
                                     <div className="search-icon cursor-pointer" onClick={toggleSearch}>
                                         <i className="ri-search-line fs-4 text-dark"></i>
                                     </div>

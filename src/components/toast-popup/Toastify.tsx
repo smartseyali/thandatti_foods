@@ -6,6 +6,7 @@ const Toastify = () => {
     <>
       <ToastContainer
         position="top-right"
+        autoClose={750}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick

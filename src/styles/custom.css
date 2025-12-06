@@ -8,3 +8,182 @@
     width: auto;
     object-fit: contain;
 }
+
+/* Prevent menu items from wrapping */
+.main-menu .menu-item {
+    white-space: nowrap;
+}
+
+/* Product Card Updates */
+.bb-pro-img {
+    position: relative;
+}
+
+/* Shared Wishlist Icon Styles */
+.wishlist-icon {
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+    color: #333;
+}
+
+/* Product Card Specific Positioning */
+.bb-pro-img .wishlist-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
+    font-size: 20px;
+}
+
+.wishlist-icon:hover {
+    transform: scale(1.1);
+    color: #ff4d4d;
+}
+
+.product-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    /* Equal spacing between badges */
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.meta-badge {
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+
+}
+
+.meta-category {
+    background-color: #f0f0f0;
+    color: #555;
+    flex: 1;
+    /* Distribute space */
+    text-align: center;
+}
+
+.meta-weight {
+    background-color: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffcc80;
+    flex: 1;
+    text-align: center;
+}
+
+.meta-rating {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    flex: 1.2;
+    /* Slightly wider for content */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.meta-rating i {
+    color: #fb8c00;
+    /* Star color */
+    font-size: 11px;
+}
+
+.meta-separator {
+    margin: 0 3px;
+    color: #aaa;
+}
+
+.verified-icon {
+    color: #1976d2;
+    font-size: 12px;
+}
+
+.review-count {
+    color: #555;
+    font-weight: 500;
+}
+
+.product-card-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-sky-blue {
+    flex: 1;
+    background-color: #87CEEB;
+    /* Sky Blue */
+    color: #fff;
+    border: none;
+    padding: 8px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: opacity 0.2s;
+}
+
+.btn-sky-blue:hover {
+    opacity: 0.9;
+}
+
+/* Mobile Responsiveness for Badges */
+@media (max-width: 576px) {
+    .product-meta-row {
+        gap: 3px;
+        font-size: 10px;
+        flex-wrap: wrap;
+        /* Allow wrapping if absolutely necessary, or keep nowrap and scroll? prefer wrap or shrink */
+        justify-content: center;
+    }
+
+    .meta-badge {
+        padding: 2px 4px;
+        flex: 1 1 auto;
+        /* Allow shrinking/growing */
+        min-width: min-content;
+    }
+
+    .meta-rating {
+        gap: 2px;
+    }
+
+    .review-count {
+        display: none;
+        /* Hide review count on very small screens to save space if needed, or keep it */
+    }
+
+    /* Show review count if space permits, but maybe hide the parens/text if too small? 
+       Let's keep it simple first: just tighten spacing. 
+    */
+    .review-count {
+        display: inline-block;
+        /* Reset if I decide to hide */
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 400px) {
+    .product-meta-row {
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        flex: 1 0 45%;
+        /* 2 per row on very small screens? or just let them flow */
+        margin-bottom: 2px;
+    }
+}

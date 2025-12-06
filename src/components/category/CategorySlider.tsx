@@ -64,8 +64,8 @@ const CategorySlider = () => {
                                             <div 
                                                 className="category-image-circle mx-auto mb-3"
                                                 style={{
-                                                    width: '150px',
-                                                    height: '150px',
+                                                    width: '125px',
+                                                    height: '125px',
                                                     borderRadius: '50%',
                                                     overflow: 'hidden',
                                                     border: '2px solid #eee',

@@ -47,7 +47,8 @@ const BannerTwo = () => {
 
     const images = [
         '/assets/img/banner-two/banner.jpg',
-        '/assets/img/banner-two/banner1.jpg'
+        '/assets/img/banner-two/banner1.jpg',
+        '/assets/img/banner-two/banner3.jpg'
     ];
 
     return (

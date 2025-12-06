@@ -4,6 +4,7 @@ import { RootState } from '@/store';
 import { login, logout, setUserData } from '@/store/reducer/loginSlice';
 import Tools from '@/tools/Tools';
 import { useRouter } from 'next/navigation';
+import { setCartOpen } from '@/store/reducer/cartSlice';
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm, setSelectedCategory } from "../../../store/reducer/filterReducer"
@@ -19,7 +20,7 @@ import { authStorage } from '@/utils/authStorage';
 import BottomNav from '../BottomNav';
 
 const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
-    const [isCartOpen, setIsCartOpen] = useState(false);
+    const isCartOpen = useSelector((state: RootState) => state.cart.isCartOpen);
     const { searchTerm, selectedCategory } = useSelector((state: RootState) => state.filter)
     const [searchInput, setSearchInput] = useState(searchTerm || "");
     const dispatch = useDispatch()
@@ -107,11 +108,11 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
     }, [selectedCategory]);
 
     const openCart = () => {
-        setIsCartOpen(true);
+        dispatch(setCartOpen(true));
     };
 
     const closeCart = () => {
-        setIsCartOpen(false);
+        dispatch(setCartOpen(false));
     };
 
     const openMobileManu = () => {

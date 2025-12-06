@@ -15,7 +15,7 @@ const Wishlist = () => {
                     {wishlistItem.length === 0 ? (<div style={{ textAlign: "center" }}>Your wishlist is empty</div>) : (
                         <>
                             {wishlistItem.map((data: any, index: number) => (
-                                <Col lg={3} md={6} sm={12} key={index} className="mb-24 bb-wishlist">
+                                <Col lg={3} md={4} xs={6} key={index} className="mb-24 bb-wishlist">
                                     <WishlistItemCard data={data} />
                                 </Col>
                             ))}

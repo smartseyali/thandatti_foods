@@ -4,6 +4,7 @@ import StarRating from '@/components/stars/StarRating';
 import { showErrorToast, showSuccessToast } from '@/components/toast-popup/Toastify';
 import { RootState } from '@/store';
 import { addItemToCart, incrementCartItem } from '@/utils/cartOperations';
+import { setCartOpen } from '@/store/reducer/cartSlice';
 import { addCompare } from '@/store/reducer/compareSlice';
 import { addWishlist } from '@/store/reducer/wishlistSlice';
 import Link from 'next/link';
@@ -50,6 +51,7 @@ const ProductCard = ({ data }: any) => {
         try {
             await incrementCartItem(dispatch, data, cartSlice || []);
             showSuccessToast("Item added/updated in cart");
+            dispatch(setCartOpen(true));
         } catch (error: any) {
             console.error('Error adding to cart:', error);
             showErrorToast(error.message || "Failed to add item to cart.");

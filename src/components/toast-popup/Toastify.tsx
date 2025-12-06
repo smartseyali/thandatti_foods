@@ -24,7 +24,7 @@ export const showToast = (message: string, options?: ToastOptions) => {
 };
 
 export const showSuccessToast = (message: string, options?: ToastOptions) => {
-  toast.success(message, options);
+  // toast.success(message, options);
 };
 
 export const showErrorToast = (message: string, options?: ToastOptions) => {

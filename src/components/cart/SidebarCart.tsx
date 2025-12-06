@@ -76,8 +76,8 @@ const SidebarCart = ({
     }
     return (
         <>
-            <div onClick={closeCart} style={{ display: isCartOpen ? "block" : "none" }} className="bb-side-cart-overlay"></div>
-            <div className={`bb-side-cart ${isCartOpen ? "bb-open-cart" : ""}`}>
+            <div onClick={closeCart} style={{ display: isCartOpen ? "block" : "none", zIndex: 1999 }} className="bb-side-cart-overlay"></div>
+            <div className={`bb-side-cart ${isCartOpen ? "bb-open-cart" : ""}`} style={{ zIndex: 2000 }}>
                 <Row className="row h-full">
                     <Col md={5} className="col-12 d-none-767">
                         <div className="bb-top-contact">
@@ -94,14 +94,14 @@ const SidebarCart = ({
                         </div>
                     </Col>
                     <Col md={7} className="col-12">
-                        <div className="bb-inner-cart">
-                            <div className="bb-top-contact">
+                        <div className="bb-inner-cart" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <div className="bb-top-contact" style={{ flexShrink: 0 }}>
                                 <div className="bb-cart-title">
                                     <h4>My cart</h4>
                                     <a onClick={closeCart} className="bb-cart-close" title="Close Cart"></a>
                                 </div>
                             </div>
-                            <div className="bb-cart-box item">
+                            <div className="bb-cart-box item" style={{ flex: 1, overflowY: 'auto' }}>
                                 {cartSlice.length === 0 ? (<div>Your cart is empty</div>) : (
                                     <ul className="bb-cart-items">
                                         {cartSlice.map((data: any, index: any) => (
@@ -122,7 +122,7 @@ const SidebarCart = ({
                                     </ul>
                                 )}
                             </div>
-                            <div className="bb-bottom-cart">
+                            <div className="bb-bottom-cart" style={{ flexShrink: 0 }}>
                                 {cartSlice.length ? (
                                     <div className="cart-sub-total">
                                         <table className="table cart-table">

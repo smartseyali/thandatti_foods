@@ -159,10 +159,12 @@ const apiRequest = async (
     }
     // For network errors on public endpoints, return empty data
     if (!requireAuth) {
-      // For non-GET requests (POST, PUT, DELETE), we should throw the error
-      // so the caller knows the operation failed.
+      // For non-GET requests (POST, PUT, DELETE), we should usually throw the error
+      // so the caller knows the operation failed. However, for public endpoints that might
+      // fail due to network issues (like logging or analytics), we might want to be lenient.
       if (options.method && options.method !== 'GET') {
-        console.error(`API request failed for ${endpoint}:`, error);
+        console.warn(`API request failed for public ${endpoint} (${options.method}):`, error.message);
+        // We still throw here because a failed POST/PUT/DELETE usually implies a user action failed
         throw new Error(error.message || 'Request failed');
       }
 

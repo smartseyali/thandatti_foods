@@ -7,6 +7,7 @@ import { productApi, mapProductToFrontend, reviewApi } from '@/utils/api';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { addItemToCart, updateCartItemQuantity } from '@/utils/cartOperations';
+import { setCartOpen } from '@/store/reducer/cartSlice';
 import { showSuccessToast, showErrorToast } from '@/components/toast-popup/Toastify';
 import { addWishlist } from '@/store/reducer/wishlistSlice';
 import ItemModal from '@/components/modal/ItemModal';
@@ -174,6 +175,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                     showSuccessToast("Item added to cart");
                 }
             }
+            dispatch(setCartOpen(true));
         } catch (error: any) {
             console.error('Error adding to cart:', error);
             showErrorToast(error.message || "Failed to add item to cart.");

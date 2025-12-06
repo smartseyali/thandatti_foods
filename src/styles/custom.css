@@ -140,39 +140,153 @@
     opacity: 0.9;
 }
 
+/* Custom Add to Cart Button */
+.add-to-cart-btn-custom {
+    width: 100%;
+    background: linear-gradient(90deg, #F59E0B 0%, #F97316 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+    transition: all 0.3s ease;
+}
+
+.add-to-cart-btn-custom:hover {
+    transform: translateY(-1px);
+}
+
+.add-to-cart-btn-custom img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
 /* Mobile Responsiveness for Badges */
 @media (max-width: 576px) {
+
+    /* Global Typography Reductions for Mobile */
+    body,
+    p,
+    li,
+    a,
+    span,
+    div,
+    input,
+    textarea,
+    button,
+    select {
+        font-size: 13px;
+        /* Base decrease from 15px */
+    }
+
+    h1,
+    .h1 {
+        font-size: 22px !important;
+    }
+
+    h2,
+    .h2 {
+        font-size: 20px !important;
+    }
+
+    h3,
+    .h3 {
+        font-size: 18px !important;
+    }
+
+    h4,
+    .h4 {
+        font-size: 16px !important;
+    }
+
+    h5,
+    .h5 {
+        font-size: 14px !important;
+    }
+
+    h6,
+    .h6 {
+        font-size: 13px !important;
+    }
+
+    /* Section Titles */
+    .section-title .section-detail h2 {
+        font-size: 20px !important;
+        line-height: 1.3;
+    }
+
+    .section-title .section-detail p {
+        font-size: 12px !important;
+    }
+
+    /* Product Card specific overrides */
     .product-meta-row {
         gap: 3px;
         font-size: 10px;
         flex-wrap: wrap;
-        /* Allow wrapping if absolutely necessary, or keep nowrap and scroll? prefer wrap or shrink */
         justify-content: center;
     }
 
     .meta-badge {
         padding: 2px 4px;
         flex: 1 1 auto;
-        /* Allow shrinking/growing */
         min-width: min-content;
+        font-size: 9px !important;
     }
 
     .meta-rating {
         gap: 2px;
     }
 
-    .review-count {
-        display: none;
-        /* Hide review count on very small screens to save space if needed, or keep it */
+    .meta-rating i {
+        font-size: 9px;
     }
 
-    /* Show review count if space permits, but maybe hide the parens/text if too small? 
-       Let's keep it simple first: just tighten spacing. 
-    */
     .review-count {
         display: inline-block;
-        /* Reset if I decide to hide */
         font-size: 9px;
+    }
+
+    .add-to-cart-btn-custom {
+        padding: 5px 10px;
+        font-size: 11px;
+        gap: 5px;
+        height: 32px;
+    }
+
+    .add-to-cart-btn-custom img {
+        width: 16px;
+        height: 16px;
+    }
+
+    .bb-pro-title a {
+        font-size: 13px !important;
+        line-height: 1.2;
+    }
+
+    .new-price {
+        font-size: 14px !important;
+    }
+
+    .old-price {
+        font-size: 11px !important;
+    }
+
+    .bb-pro-contact {
+        padding: 8px !important;
+    }
+
+    /* Adjust specific banner or header text if necessary */
+    .hero-title {
+        font-size: 24px !important;
     }
 }
 
@@ -183,7 +297,6 @@
 
     .meta-badge {
         flex: 1 0 45%;
-        /* 2 per row on very small screens? or just let them flow */
         margin-bottom: 2px;
     }
 }

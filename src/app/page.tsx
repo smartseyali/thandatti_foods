@@ -23,7 +23,7 @@ export default function Home() {
       <BannerOne />
       <NewArrivals />
       <QuinnShoppableVideo />
-      <Services />
+      {/* <Services /> */}
       {/* <TopVendor /> */}
       {/* <Testimonials /> */}
       {/* <BlogSlider /> */}

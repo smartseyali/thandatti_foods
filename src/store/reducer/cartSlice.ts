@@ -22,11 +22,13 @@ interface Item {
 export interface CounterState {
     items: Item[];
     orders: object[];
+    isCartOpen: boolean;
 }
 
 const initialState: CounterState = {
     items: [],
     orders: [],
+    isCartOpen: false,
 };
 
 export const cartSlice = createSlice({
@@ -73,6 +75,9 @@ export const cartSlice = createSlice({
             state.orders = action.payload;
             // No localStorage - orders are stored in database via API
         },
+        setCartOpen(state, action: PayloadAction<boolean>) {
+            state.isCartOpen = action.payload;
+        },
     },
 });
 
@@ -84,7 +89,8 @@ export const {
     updateQuantity,
     updateItemQuantity,
     addOrder,
-    setOrders
+    setOrders,
+    setCartOpen
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

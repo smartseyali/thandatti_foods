@@ -17,7 +17,7 @@ const SpecialsPage = () => {
   return (
     <>
       <Breadcrumb title={"Pattikadai Special"} />
-      <ShopFullwidth col={3} itemsPerPage={1000} />
+      <ShopFullwidth col={3} itemsPerPage={1000} filterType="special" />
     </>
   )
 }

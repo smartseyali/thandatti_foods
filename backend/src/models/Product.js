@@ -5,7 +5,7 @@ class Product {
     const {
       title, sku, description, detailedDescription, productDetails, productInformation,
       categoryId, brandId, oldPrice, newPrice, weight, stockQuantity, itemLeft, 
-      status, saleTag, location, primaryImage
+      status, saleTag, location, primaryImage, isSpecial, isCombo
     } = productData;
     
     // Check if new columns exist by querying information_schema
@@ -16,12 +16,11 @@ class Product {
         FROM information_schema.columns 
         WHERE table_schema = 'public' 
         AND table_name = 'products' 
-        AND column_name IN ('detailed_description', 'product_details', 'product_information')
+        AND column_name IN ('detailed_description', 'is_special')
       `);
-      // Check if all three columns exist (or at least one)
+      // Check if critical new columns exist
       hasNewColumns = checkQuery.rows.length >= 1;
     } catch (e) {
-      // If check fails, assume columns don't exist
       console.warn('Error checking for new product columns:', e.message);
       hasNewColumns = false;
     }
@@ -29,14 +28,14 @@ class Product {
     let query, values;
     
     if (hasNewColumns) {
-      // Use query with new columns
+      // Use query with all new columns including is_special/is_combo
       query = `
         INSERT INTO products (
           title, sku, description, detailed_description, product_details, product_information,
           category_id, brand_id, old_price, new_price, weight, stock_quantity, item_left,
-          status, sale_tag, location, primary_image
+          status, sale_tag, location, primary_image, is_special, is_combo
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         RETURNING *
       `;
       values = [
@@ -44,7 +43,7 @@ class Product {
         typeof productDetails === 'object' ? JSON.stringify(productDetails) : (productDetails || null),
         typeof productInformation === 'object' ? JSON.stringify(productInformation) : (productInformation || null),
         categoryId, brandId, oldPrice, newPrice, weight, stockQuantity, itemLeft,
-        status || 'In Stock', saleTag, location, primaryImage
+        status || 'In Stock', saleTag, location, primaryImage, isSpecial || false, isCombo || false
       ];
     } else {
       // Use query without new columns (for backward compatibility)
@@ -178,7 +177,7 @@ class Product {
     const {
       title, sku, description, detailedDescription, productDetails, productInformation,
       categoryId, brandId, oldPrice, newPrice, weight, stockQuantity, itemLeft,
-      status, saleTag, location, primaryImage
+      status, saleTag, location, primaryImage, isSpecial, isCombo
     } = productData;
     
     // Check if new columns exist
@@ -189,7 +188,7 @@ class Product {
         FROM information_schema.columns 
         WHERE table_schema = 'public' 
         AND table_name = 'products' 
-        AND column_name IN ('detailed_description', 'product_details', 'product_information')
+        AND column_name IN ('detailed_description', 'is_special')
       `);
       // Check if at least one column exists
       hasNewColumns = checkQuery.rows.length >= 1;
@@ -210,7 +209,7 @@ class Product {
     
     try {
       if (hasNewColumns) {
-        // Use query with new columns
+        // Use query with new columns including is_special/is_combo
         query = `
           UPDATE products 
           SET title = COALESCE($1, title),
@@ -230,14 +229,16 @@ class Product {
               sale_tag = COALESCE($15, sale_tag),
               location = COALESCE($16, location),
               primary_image = COALESCE($17, primary_image),
+              is_special = COALESCE($18, is_special),
+              is_combo = COALESCE($19, is_combo),
               updated_at = current_timestamp
-          WHERE id = $18
+          WHERE id = $20
           RETURNING *
         `;
         values = [
           title, sku, description, detailedDescription, productDetailsStr, productInformationStr,
           categoryId, brandId, oldPrice, newPrice, weight, stockQuantity, itemLeft,
-          status, saleTag, location, primaryImage, id
+          status, saleTag, location, primaryImage, isSpecial, isCombo, id
         ];
       } else {
         // Use query without new columns (for backward compatibility)

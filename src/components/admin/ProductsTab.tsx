@@ -48,6 +48,8 @@ interface Product {
     status: string;
     sale_tag: string;
     location: string;
+    is_special?: boolean;
+    is_combo?: boolean;
     primary_image: string;
     images?: any[];
     attributes?: ProductAttribute[];
@@ -72,6 +74,8 @@ const ProductsTab = () => {
         status: 'In Stock',
         sale_tag: '',
         location: 'In Store,online',
+        is_special: false,
+        is_combo: false,
         primary_image: '',
     });
     const [productImages, setProductImages] = useState<ImageItem[]>([]);
@@ -141,6 +145,8 @@ const ProductsTab = () => {
             status: 'In Stock',
             sale_tag: '',
             location: 'In Store,online',
+            is_special: false,
+            is_combo: false,
             primary_image: '',
         });
         setProductImages([]);
@@ -166,6 +172,8 @@ const ProductsTab = () => {
             status: product.status,
             sale_tag: product.sale_tag,
             location: product.location,
+            is_special: product.is_special || false,
+            is_combo: product.is_combo || false,
             primary_image: product.primary_image,
         });
         
@@ -297,6 +305,8 @@ const ProductsTab = () => {
                 status: formData.status || 'In Stock',
                 saleTag: formData.sale_tag || '',
                 location: formData.location || 'In Store,online',
+                isSpecial: formData.is_special || false,
+                isCombo: formData.is_combo || false,
             };
 
             // Add product details and information (as JSON strings)
@@ -625,6 +635,28 @@ const ProductsTab = () => {
                                 placeholder="e.g., -20%"
                             />
                         </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Check
+                                        type="checkbox"
+                                        label="Special Product"
+                                        checked={formData.is_special}
+                                        onChange={(e) => setFormData({ ...formData, is_special: e.target.checked })}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Check
+                                        type="checkbox"
+                                        label="Combo Product"
+                                        checked={formData.is_combo}
+                                        onChange={(e) => setFormData({ ...formData, is_combo: e.target.checked })}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="secondary" onClick={() => {

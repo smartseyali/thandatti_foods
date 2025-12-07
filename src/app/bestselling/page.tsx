@@ -7,7 +7,7 @@ const BestSellingPage = () => {
   return (
     <>
       <Breadcrumb title={"Best Selling"} />
-      <ShopFullwidth col={3} itemsPerPage={1000} />
+      <ShopFullwidth col={3} itemsPerPage={1000} filterType="bestselling" />
     </>
   )
 }

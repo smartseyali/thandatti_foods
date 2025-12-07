@@ -17,14 +17,19 @@ const ShopFullwidthProducts = ({
     colfive = '',
     width = '',
     itemsPerPage = 12,
+    filterType,
 }: any) => {
     const dispatch = useDispatch();
     const [currentPage, setCurrentPage] = useState(1);
     const [isGridView, setIsGridView] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { selectedCategory, selectedColor, selectedTags, selectedWeight, sortOption, maxPrice, minPrice, range, searchTerm } = useSelector((state: RootState) => state.filter)
-    // Fetch all products
-    const { data: allProducts, error } = useSWR("/api/all-product?limit=1000", fetcher);
+    
+    // Choose endpoint based on filterType
+    const endpoint = filterType === 'bestselling' ? "/api/bestselling" : "/api/all-product?limit=1000";
+    
+    // Fetch products
+    const { data: allProducts, error } = useSWR(endpoint, fetcher);
 
     const filteredProducts = useMemo(() => {
         if (!allProducts || !Array.isArray(allProducts)) return [];
@@ -40,15 +45,19 @@ const ShopFullwidthProducts = ({
             );
         }
 
-        // // Category
         if (selectedCategory && selectedCategory.length > 0) {
              result = result.filter((product: any) => selectedCategory.includes(product.category));
         }
 
-       
+        // Filter based on filterType
+        if (filterType === 'special') {
+             result = result.filter((product: any) => product.isSpecial);
+        } else if (filterType === 'combo') {
+             result = result.filter((product: any) => product.isCombo);
+        }
 
         return result;
-    }, [allProducts, searchTerm, selectedCategory]);
+    }, [allProducts, searchTerm, selectedCategory, filterType]);
 
     const handleSortChange = useCallback(
         (event: React.ChangeEvent<HTMLSelectElement>) => {

@@ -696,6 +696,8 @@ export const mapProductToFrontend = (product: any, images?: any[]) => {
       displayOrder: attr.display_order || attr.displayOrder || 0,
     })),
     reviews: product.reviews || [],
+    isSpecial: product.is_special || product.isSpecial || false,
+    isCombo: product.is_combo || product.isCombo || false,
   };
 };
 

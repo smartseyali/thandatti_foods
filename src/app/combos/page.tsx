@@ -17,7 +17,7 @@ const CombosPage = () => {
   return (
     <>
       <Breadcrumb title={"Special Combo"} />
-      <ShopFullwidth col={3} itemsPerPage={1000} />
+      <ShopFullwidth col={3} itemsPerPage={1000} filterType="combo" />
     </>
   )
 }

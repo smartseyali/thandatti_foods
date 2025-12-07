@@ -9,13 +9,14 @@ const ShopFullwidth = ({
     width,
     itemsPerPage,
     lg,
+    ...props
 }: any) => {
     return (
         <section className="section-shop padding-b-50">
             <div className="container">
                 <Row>
                     <Col sm={12}>
-                        <ShopFullwidthProducts lg={lg} width={width} colfive={colfive} col={col} itemsPerPage={itemsPerPage} />
+                        <ShopFullwidthProducts lg={lg} width={width} colfive={colfive} col={col} itemsPerPage={itemsPerPage} filterType={props.filterType} />
                     </Col>
                 </Row>
             </div>

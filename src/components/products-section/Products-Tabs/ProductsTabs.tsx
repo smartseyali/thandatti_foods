@@ -267,10 +267,23 @@ const ProductsTabs = ({ productId, onReviewCreated }: { productId?: string; onRe
                     <TabPanel className={`tab-pane fade ${selectedIndex == 0 ? "show active" : ""}`} id="detail">
                         <div className="bb-inner-tabs">
                             <div className="bb-details">
-                                <p>
-                                    {product?.detailedDescription || product?.detailed_description || product?.description || 
-                                    "No detailed description available for this product."}
-                                </p>
+                                <div>
+                                    {(() => {
+                                        const desc = product?.detailedDescription || product?.detailed_description || product?.description || "No detailed description available for this product.";
+                                        if (desc && desc.includes('•')) {
+                                            return (
+                                                <ul style={{ listStyleType: 'disc', paddingLeft: '20px' }}>
+                                                    {desc.split('•').filter((item: string) => item.trim()).map((item: string, index: number) => (
+                                                        <li key={index} style={{ marginBottom: '8px' }}>{item.trim()}</li>
+                                                    ))}
+                                                </ul>
+                                            );
+                                        }
+                                        return desc.split('\n').map((item: string, index: number) => (
+                                            <p key={index} style={{ marginBottom: '10px' }}>{item}</p>
+                                        ));
+                                    })()}
+                                </div>
                                 {(() => {
                                     const productDetails = product?.productDetails || product?.product_details;
                                     if (!productDetails) return null;

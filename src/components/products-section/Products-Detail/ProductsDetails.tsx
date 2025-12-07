@@ -343,7 +343,19 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                             </div>
                             {/* Detailed Description below rating (from database) */}
                             {displayDescription && (
-                                <p style={{ marginTop: '10px', marginBottom: '15px' }}>{displayDescription}</p>
+                                <div style={{ marginTop: '10px', marginBottom: '15px' }}>
+                                    {displayDescription.includes('•') ? (
+                                        <ul style={{ listStyleType: 'disc', paddingLeft: '20px' }}>
+                                            {displayDescription.split('•').filter((item: string) => item.trim()).map((item: string, index: number) => (
+                                                <li key={index} style={{ marginBottom: '5px' }}>{item.trim()}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        displayDescription.split('\n').map((item: string, index: number) => (
+                                            <p key={index} style={{ marginBottom: '5px' }}>{item}</p>
+                                        ))
+                                    )}
+                                </div>
                             )}
                             <div className="bb-single-price-wrap">
                                 <div className="bb-single-price">

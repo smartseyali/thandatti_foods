@@ -11,8 +11,8 @@ import Providers from "@/store/Provider";
 import Layout from "@/components/layout";
 
 export const metadata: Metadata = {
-  title: "Pattikadai - Online Store",
-  description: "Pattikadai: Your one-stop online store for a wide variety of products, from fresh and organic food products. Shop conveniently and discover quality goods.",
+  title: "Pattikadai - Organic Food Store",
+  description: "Authentic Tradition, Crafted by Grandma's Hands. Patti Kadai—an online home for pure, healthy, preservative-free country foods inspired by traditional cooking.",
 
   icons: {
     icon: "/assets/img/favicon/favicon.png",

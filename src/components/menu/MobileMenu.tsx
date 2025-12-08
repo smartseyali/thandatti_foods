@@ -120,16 +120,13 @@ const MobileMenu = ({
                             <div className="header-top-social">
                                 <ul className="mb-0">
                                     <li className="list-inline-item">
-                                        <Link href="#"><i className="ri-facebook-fill"></i></Link>
+                                        <Link href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr"><i className="ri-facebook-fill"></i></Link>
                                     </li>
                                     <li className="list-inline-item">
-                                        <Link href="#"><i className="ri-twitter-fill"></i></Link>
+                                        <Link href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1"><i className="ri-instagram-line"></i></Link>
                                     </li>
                                     <li className="list-inline-item">
-                                        <Link href="#"><i className="ri-instagram-line"></i></Link>
-                                    </li>
-                                    <li className="list-inline-item">
-                                        <Link href="#"><i className="ri-linkedin-fill"></i></Link>
+                                        <Link href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3"><i className="ri-youtube-fill"></i></Link>
                                     </li>
                                 </ul>
                             </div>

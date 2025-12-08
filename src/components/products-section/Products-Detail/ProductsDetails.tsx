@@ -10,14 +10,14 @@ import { addItemToCart, updateCartItemQuantity } from '@/utils/cartOperations';
 import { setCartOpen } from '@/store/reducer/cartSlice';
 import { showSuccessToast, showErrorToast } from '@/components/toast-popup/Toastify';
 import { addWishlist } from '@/store/reducer/wishlistSlice';
-import ItemModal from '@/components/modal/ItemModal';
+
 
 const ProductsDetails = ({ productId }: { productId?: string }) => {
     const dispatch = useDispatch();
     const cartSlice = useSelector((state: RootState) => state.cart?.items);
     const wishlistItem = useSelector((state: RootState) => state.wishlist?.wishlist);
     const [activeIndex, setActiveIndex] = useState<number>(0);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
 
     const [quantity, setQuantity] = useState(1);
     const [product, setProduct] = useState<any>(null);
@@ -195,13 +195,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
         }
     };
 
-    const openItemModal = () => {
-        setIsModalOpen(true);
-    }
 
-    const closeItemModal = () => {
-        setIsModalOpen(false);
-    }
 
     const handleActiveTab = (index: any) => {
         setActiveIndex(index);
@@ -434,19 +428,14 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                             <i className="ri-heart-line"></i>
                                         </a>
                                     </li>
-                                    <li className="bb-btn-group">
-                                        <a onClick={(e) => { e.preventDefault(); openItemModal(); }} href="#" data-link-action="quickview" title="Quick view" data-bs-toggle="modal"
-                                            data-bs-target="#bry_quickview_modal">
-                                            <i className="ri-eye-line"></i>
-                                        </a>
-                                    </li>
+
                                 </ul>
                             </div>
                         </div>
                     </Col>
                 </Row>
             </div>
-            {product && <ItemModal data={product} isModalOpen={isModalOpen} closeItemModal={closeItemModal} />}
+
         </>
     )
 }

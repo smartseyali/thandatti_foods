@@ -224,26 +224,23 @@ const Footer = ({
                                             </motion.div>
                                         </div>
                                     </div>
-                                    {/* <div className="bb-footer-social">
+                                    <div className="bb-footer-social">
                                         <div className="bb-footer-widget">
                                             <div className="bb-footer-links bb-footer-dropdown">
                                                 <ul className="align-items-center">
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="#"><i className="ri-facebook-fill"></i></a>
+                                                        <a onClick={(e) => e.preventDefault()} href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr"><i className="ri-facebook-fill"></i></a>
                                                     </li>
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="#"><i className="ri-twitter-fill"></i></a>
+                                                        <a onClick={(e) => e.preventDefault()} href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3"><i className="ri-youtube-fill"></i></a>
                                                     </li>
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="#"><i className="ri-linkedin-fill"></i></a>
-                                                    </li>
-                                                    <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="#"><i className="ri-instagram-line"></i></a>
+                                                        <a onClick={(e) => e.preventDefault()} href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1"><i className="ri-instagram-line"></i></a>
                                                     </li>
                                                 </ul>
                                             </div>
                                         </div>
-                                    </div> */}
+                                    </div>
                                 </Col>
                             </Row>
                         </div>

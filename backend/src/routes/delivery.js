@@ -9,4 +9,9 @@ router.post('/calculate', optionalAuth, deliveryController.calculateDeliveryChar
 // Admin route to get all configurations
 router.get('/charges', authenticate, requireRole('admin'), deliveryController.getDeliveryCharges);
 
+// Admin routes for managing charges
+router.post('/charges', authenticate, requireRole('admin'), deliveryController.createDeliveryCharge);
+router.put('/charges/:id', authenticate, requireRole('admin'), deliveryController.updateDeliveryCharge);
+router.delete('/charges/:id', authenticate, requireRole('admin'), deliveryController.deleteDeliveryCharge);
+
 module.exports = router;

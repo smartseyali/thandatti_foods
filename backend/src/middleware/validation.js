@@ -30,7 +30,7 @@ const validateRegister = [
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  body('email').optional().isEmail().normalizeEmail(),
+  body('email').notEmpty().withMessage('Email is required').isEmail().withMessage('Invalid email format').normalizeEmail(),
   handleValidationErrors,
 ];
 

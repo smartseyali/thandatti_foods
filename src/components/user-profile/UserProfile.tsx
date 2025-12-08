@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { useSelector } from 'react-redux'
+import { authApi } from '@/utils/authApi'
 import { getUserData, RegistrationData } from '@/utils/userData'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link'
@@ -14,33 +15,74 @@ const UserProfile = () => {
     const [userData, setUserData] = useState<RegistrationData | null>(null);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            // First try to get from Redux store
-            if (user) {
-                const data: RegistrationData = {
-                    uid: user.id || user.uid,
-                    firstName: user.firstName || '',
-                    lastName: user.lastName || '',
-                    email: user.email || '',
-                    phoneNumber: user.phoneNumber || '',
-                    address: user.address || '',
-                    city: user.city || '',
-                    postCode: user.postCode || '',
-                    country: user.country || '',
-                    state: user.state || '',
-                    profilePhoto: user.profilePhoto || '',
-                    description: user.description || '',
-                    shippingAddress: user.shippingAddress || '',
-                };
-                setUserData(data);
-            } else {
-                // Fallback to authStorage
-                const data = getUserData();
-                if (data) {
-                    setUserData(data);
+        const fetchUserData = async () => {
+            if (isAuthenticated) {
+                try {
+                    // Fetch latest user data from API
+                    const apiUser = await authApi.getCurrentUser();
+                    
+                    if (apiUser) {
+                        const data: RegistrationData = {
+                            uid: apiUser.id,
+                            firstName: apiUser.first_name || apiUser.firstName || '',
+                            lastName: apiUser.last_name || apiUser.lastName || '',
+                            email: apiUser.email || '',
+                            phoneNumber: apiUser.phone_number || apiUser.phoneNumber || '',
+                            address: apiUser.address || '',
+                            city: apiUser.city || '',
+                            postCode: apiUser.postal_code || apiUser.postCode || '',
+                            country: apiUser.country || '',
+                            state: apiUser.state || '',
+                            profilePhoto: apiUser.profile_photo || apiUser.profilePhoto || '',
+                            description: apiUser.description || '',
+                            shippingAddress: apiUser.shipping_address || apiUser.shippingAddress || '',
+                        };
+                        setUserData(data);
+                    } else if (user) {
+                        // Fallback to Redux store
+                        const data: RegistrationData = {
+                            uid: user.id || user.uid,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                            email: user.email || '',
+                            phoneNumber: user.phoneNumber || '',
+                            address: user.address || '',
+                            city: user.city || '',
+                            postCode: user.postCode || '',
+                            country: user.country || '',
+                            state: user.state || '',
+                            profilePhoto: user.profilePhoto || '',
+                            description: user.description || '',
+                            shippingAddress: user.shippingAddress || '',
+                        };
+                        setUserData(data);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user data:", error);
+                    // Fallback to Redux if API fails
+                    if (user) {
+                        const data: RegistrationData = {
+                            uid: user.id || user.uid,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                            email: user.email || '',
+                            phoneNumber: user.phoneNumber || '',
+                            address: user.address || '',
+                            city: user.city || '',
+                            postCode: user.postCode || '',
+                            country: user.country || '',
+                            state: user.state || '',
+                            profilePhoto: user.profilePhoto || '',
+                            description: user.description || '',
+                            shippingAddress: user.shippingAddress || '',
+                        };
+                        setUserData(data);
+                    }
                 }
             }
-        }
+        };
+
+        fetchUserData();
     }, [isAuthenticated, user, router]);
 
     const handleSubmit = (e: any) => {
@@ -93,8 +135,7 @@ const UserProfile = () => {
                                             </div>
                                             <div className="v-detail">
                                                 <h5>{userData?.firstName} {userData?.lastName} </h5>
-                                                <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                                                    Standard dummy text ever since the 1500s.</p>
+                                                <p>{userData?.description || 'No description available'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -123,9 +164,9 @@ const UserProfile = () => {
                                         </Col>
                                         <Col md={6} sm={12} className="mb-24">
                                             <div className="bb-vendor-detail-block">
-                                                <h6>Contact nubmer</h6>
+                                                <h6>Contact Number</h6>
                                                 <ul>
-                                                    <li><strong>Phone Nubmer : </strong>(123) {userData?.phoneNumber}</li>
+                                                    <li><strong>Phone Number : </strong>{userData?.phoneNumber}</li>
                                                 </ul>
                                             </div>
                                         </Col>
@@ -133,7 +174,7 @@ const UserProfile = () => {
                                             <div className="bb-vendor-detail-block">
                                                 <h6>Address</h6>
                                                 <ul>
-                                                    <li><strong>Home : </strong>123, {userData?.address}.</li>
+                                                    <li><strong>Home : </strong>{userData?.address ? `${userData.address}, ${userData.city}, ${userData.state}, ${userData.postCode}, ${userData.country}` : 'Not Provided'}</li>
                                                 </ul>
                                             </div>
                                         </Col>
@@ -141,7 +182,7 @@ const UserProfile = () => {
                                             <div className="bb-vendor-detail-block">
                                                 <h6>Shipping Address</h6>
                                                 <ul>
-                                                    <li><strong>Office : </strong>123, {userData?.shippingAddress}</li>
+                                                    <li><strong>Office : </strong>{userData?.shippingAddress || 'Not Provided'}</li>
                                                 </ul>
                                             </div>
                                         </Col>

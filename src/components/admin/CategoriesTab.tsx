@@ -284,13 +284,49 @@ const CategoriesTab = () => {
                             </Col>
                             <Col md={12}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Image URL</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        value={formData.image}
-                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                        placeholder="https://example.com/image.jpg"
-                                    />
+                                    <Form.Label>Category Image</Form.Label>
+                                    <div className="d-flex gap-2 mb-2">
+                                        <Form.Control
+                                            type="text"
+                                            value={formData.image}
+                                            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                            placeholder="Image URL or Upload Image"
+                                        />
+                                        <div className="position-relative">
+                                            <Button variant="outline-primary" className="text-nowrap">
+                                                <i className="ri-upload-cloud-line me-1"></i> Upload
+                                            </Button>
+                                            <Form.Control
+                                                type="file"
+                                                accept="image/*"
+                                                className="position-absolute top-0 start-0 opacity-0 w-100 h-100"
+                                                style={{ cursor: 'pointer' }}
+                                                onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                                                    const files = e.target.files;
+                                                    if (files && files.length > 0) {
+                                                        const file = files[0];
+                                                        const formDataUpload = new FormData();
+                                                        formDataUpload.append('image', file);
+
+                                                        try {
+                                                            const response = await adminApi.uploadImage(formDataUpload);
+                                                            // Construct full URL if returned path is relative
+                                                            const imagePath = response.imagePath;
+                                                            const fullUrl = imagePath.startsWith('http') 
+                                                                ? imagePath 
+                                                                : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com'}${imagePath}`;
+                                                            
+                                                            setFormData(prev => ({ ...prev, image: fullUrl }));
+                                                            showSuccessToast('Image uploaded successfully');
+                                                        } catch (error: any) {
+                                                            console.error('Upload failed:', error);
+                                                            showErrorToast(error.message || 'Image upload failed');
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </Form.Group>
                             </Col>
                         </Row>

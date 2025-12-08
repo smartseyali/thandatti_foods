@@ -219,11 +219,19 @@ export const adminApi = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let error: any;
+        let message = `Upload failed (${response.status})`;
+        
         try {
-          error = JSON.parse(errorText);
-        } catch {
-          error = { message: errorText || 'Upload failed' };
+          if (errorText && errorText.startsWith('{')) {
+            const json = JSON.parse(errorText);
+            if (json && json.message) {
+              message = json.message;
+            }
+          } else if (errorText) {
+             message = errorText.substring(0, 200);
+          }
+        } catch (e) {
+          // ignore parsing error
         }
         
         if (response.status === 401) {
@@ -231,15 +239,7 @@ export const adminApi = {
           throw new Error('Authentication required. Please login again.');
         }
         
-        if (response.status === 403) {
-          throw new Error('Access denied. Admin privileges required.');
-        }
-        
-        if (response.status === 404) {
-          throw new Error('Upload endpoint not found. Please ensure the backend server is running and has been restarted after adding the upload route.');
-        }
-        
-        throw new Error(error.message || `Upload failed (${response.status})`);
+        throw new Error(message);
       }
 
       return response.json();
@@ -272,11 +272,19 @@ export const adminApi = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let error: any;
+        let message = `Upload failed (${response.status})`;
+        
         try {
-          error = JSON.parse(errorText);
-        } catch {
-          error = { message: errorText || 'Upload failed' };
+          if (errorText && errorText.startsWith('{')) {
+            const json = JSON.parse(errorText);
+            if (json && json.message) {
+              message = json.message;
+            }
+          } else if (errorText) {
+             message = errorText.substring(0, 200);
+          }
+        } catch (e) {
+          // ignore parsing error
         }
         
         if (response.status === 401) {
@@ -284,11 +292,7 @@ export const adminApi = {
           throw new Error('Authentication required. Please login again.');
         }
         
-        if (response.status === 403) {
-          throw new Error('Access denied. Admin privileges required.');
-        }
-        
-        throw new Error(error.message || `Upload failed (${response.status})`);
+        throw new Error(message);
       }
 
       return response.json();
@@ -298,6 +302,55 @@ export const adminApi = {
       }
       console.error('Multiple image upload failed:', error);
       throw new Error(error.message || 'Upload failed');
+    }
+  },
+
+  // Delivery Management
+  getDeliveryCharges: async () => {
+    try {
+      const response = await adminApiRequest('/api/delivery/charges');
+      return response;
+    } catch (error: any) {
+      console.error('Error fetching delivery charges:', error);
+      throw error;
+    }
+  },
+
+  createDeliveryCharge: async (data: any) => {
+    try {
+      const response = await adminApiRequest('/api/delivery/charges', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response.charge;
+    } catch (error: any) {
+      console.error('Error creating delivery charge:', error);
+      throw error;
+    }
+  },
+
+  updateDeliveryCharge: async (id: string, data: any) => {
+    try {
+      const response = await adminApiRequest(`/api/delivery/charges/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return response.charge;
+    } catch (error: any) {
+      console.error('Error updating delivery charge:', error);
+      throw error;
+    }
+  },
+
+  deleteDeliveryCharge: async (id: string) => {
+    try {
+      await adminApiRequest(`/api/delivery/charges/${id}`, {
+        method: 'DELETE',
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting delivery charge:', error);
+      throw error;
     }
   },
 };

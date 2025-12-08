@@ -14,6 +14,7 @@ import locationsData from '@/data/locations.json';
 interface FormValues {
     firstName: string;
     lastName: string;
+    email: string;
     password: string;
     phoneNumber: string;
     address: string;
@@ -43,6 +44,7 @@ const Register = () => {
             .min(10, "Phone number must be at least 10 digits")
             .matches(/^[0-9]+$/, "Phone number must contain only digits")
             .required("Phone Number is required"),
+        email: yup.string().email("Invalid email").required("Email is required"),
         address: yup.string().required("Address is required"),
         postCode: yup.string().min(6, "Post Code must be at least 6 characters").required("Post Code is required"),
         country: yup.string().required("Country is required"),
@@ -53,6 +55,7 @@ const Register = () => {
     const initialValues: FormValues = {
         firstName: "" as string,
         lastName: "" as string,
+        email: "" as string,
         phoneNumber: "" as string,
         address: "" as string,
         city: "" as string,
@@ -76,6 +79,7 @@ const Register = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    email: values.email,
                     phoneNumber: values.phoneNumber,
                     password: values.password,
                     firstName: values.firstName,
@@ -198,6 +202,18 @@ const Register = () => {
                                                                 <Form.Control value={values.lastName || ""} onChange={handleChange} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last name" required />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.lastName}
+                                                                </Form.Control.Feedback>
+                                                            </InputGroup>
+                                                        </Form.Group>
+                                                    </div>
+                                                    
+                                                    <div className="bb-register-wrap bb-register-width-100">
+                                                        <label>Email*</label>
+                                                        <Form.Group>
+                                                            <InputGroup>
+                                                                <Form.Control value={values.email || ""} onChange={handleChange} isInvalid={!!errors.email} type="email" name="email" placeholder="Enter your email" required />
+                                                                <Form.Control.Feedback type="invalid">
+                                                                    {errors.email}
                                                                 </Form.Control.Feedback>
                                                             </InputGroup>
                                                         </Form.Group>

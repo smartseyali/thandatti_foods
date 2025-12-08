@@ -112,7 +112,7 @@ const uploadImage = (req, res, next) => {
     'content-length': req.headers['content-length'],
     'authorization': req.headers['authorization'] ? 'Present' : 'Missing'
   });
-  console.log('Request body keys:', Object.keys(req.body));
+  console.log('Request body keys:', req.body ? Object.keys(req.body) : 'undefined');
   console.log('Request files:', req.files);
   console.log('Request file (before multer):', req.file);
   

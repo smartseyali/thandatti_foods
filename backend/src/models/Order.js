@@ -5,7 +5,7 @@ class Order {
     const {
       userId, shippingAddressId, billingAddressId, shippingMethod,
       totalItems, subtotal, discountAmount, vat, totalPrice, couponCode,
-      paymentMethod, paymentStatus
+      paymentMethod, paymentStatus, email
     } = orderData;
     
     // Generate unique order number
@@ -14,14 +14,14 @@ class Order {
     const query = `
       INSERT INTO orders (order_number, user_id, shipping_address_id, billing_address_id,
                          shipping_method, total_items, subtotal, discount_amount, vat,
-                         total_price, coupon_code, payment_method, payment_status, delivery_charge)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                         total_price, coupon_code, payment_method, payment_status, delivery_charge, email)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
     const values = [orderNumber, userId, shippingAddressId, billingAddressId,
                    shippingMethod || 'free', totalItems, subtotal, discountAmount || 0,
                    vat || 0, totalPrice, couponCode, paymentMethod, paymentStatus || 'pending',
-                   orderData.deliveryCharge || 0];
+                   orderData.deliveryCharge || 0, email];
     const result = await pool.query(query, values);
     return result.rows[0];
   }

@@ -26,6 +26,7 @@ interface FormValues {
     firstName: string;
     lastName: string;
     address: string;
+    email: string;
     postCode: string;
     country: string;
     state: string;
@@ -55,6 +56,7 @@ interface Option {
 
 const Checkout = () => {
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
+    const userEmail = useSelector((state: RootState) => state.login.user?.email);
     const [registrations, setRegistrations] = useState<Registration[]>([]);
     const router = useRouter()
     const dispatch = useDispatch()
@@ -64,7 +66,7 @@ const Checkout = () => {
     const [deliveryCharge, setDeliveryCharge] = useState(0);
 
     const [discount, setDiscount] = useState(0);
-    const [selectedMethod, setSelectedMethod] = useState("free");
+    const [selectedMethod, setSelectedMethod] = useState("standard");
     const [checkOutMethod, setCheckOutMethod] = useState("guest");
     const [billingAddressMethod, setBillingAddressMethod] = useState("new");
     const [loginVisible, setLoginVisible] = useState(false);
@@ -80,8 +82,10 @@ const Checkout = () => {
     const [countries, setCountries] = useState<any[]>(locationsData);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
+    const [guestEmail, setGuestEmail] = useState("");
 
-
+    // New state for dynamic delivery calculation
+    const [currentDataForDelivery, setCurrentDataForDelivery] = useState<string>("");
 
     const handleClick = (index: any, optionIndex: any) => {
         setActiveIndex({
@@ -111,17 +115,17 @@ const Checkout = () => {
         setSubTotal(subtotal);
     }, [cartSlice]);
 
-    // Calculate delivery charge when address or cart changes
+    // Calculate delivery charge when state (from address or form) or cart changes
     useEffect(() => {
         const calculateDelivery = async () => {
-            if (selectedAddress && selectedAddress.state && cartSlice.length > 0) {
+            if (currentDataForDelivery && cartSlice.length > 0) {
                 const items = cartSlice.map((item: any) => ({
                     attributeValue: item.weight || '250g', // Default fallback if missing
                     quantity: item.quantity
                 }));
 
                 const charge = await deliveryApi.calculate({
-                    state: selectedAddress.state,
+                    state: currentDataForDelivery,
                     items: items
                 });
                 setDeliveryCharge(charge);
@@ -130,7 +134,7 @@ const Checkout = () => {
             }
         };
         calculateDelivery();
-    }, [selectedAddress, cartSlice]);
+    }, [currentDataForDelivery, cartSlice]);
 
     const discountAmount = subTotal * (discount / 100);
     const total = subTotal + deliveryCharge - discountAmount;
@@ -152,6 +156,7 @@ const Checkout = () => {
                         country: addr.country_name || addr.country || '',
                         state: addr.state_name || addr.state || '',
                         is_default: addr.is_default || false,
+                        email: userEmail || '',
                     }));
                     setAddressVisible(mappedAddresses);
 
@@ -159,6 +164,7 @@ const Checkout = () => {
                     if (mappedAddresses.length > 0 && !selectedAddress) {
                         const defaultAddress = mappedAddresses.find((addr: any) => addr.is_default) || mappedAddresses[0];
                         setSelectedAddress(defaultAddress);
+                        setCurrentDataForDelivery(defaultAddress.state);
                         setBillingAddressMethod("use");
                     }
                 } catch (error) {
@@ -178,8 +184,10 @@ const Checkout = () => {
     useEffect(() => {
         if (selectedAddress) {
             setBillingAddressMethod("use");
+            setCurrentDataForDelivery(selectedAddress.state);
         } else {
             setBillingAddressMethod("new");
+            setCurrentDataForDelivery("");
         }
     }, [selectedAddress]);
 
@@ -308,7 +316,8 @@ const Checkout = () => {
                 items: items,
                 couponCode: discount > 0 ? 'COUPON' : null,
                 paymentMethod: paymentMethod,
-                deliveryCharge: deliveryCharge // Pass delivery charge to backend
+                deliveryCharge: deliveryCharge, // Pass delivery charge to backend
+                email: isAuthenticated ? loginUser.email : guestEmail,
             };
 
             const orderResponse = await orderApi.create(orderData, !isAuthenticated);
@@ -350,7 +359,7 @@ const Checkout = () => {
                     name: 'Pattikadai',
                     description: `Order Payment for Order #${createdOrder.order_number}`,
                     prefill: {
-                        email: loginUser.email || '',
+                        email: loginUser.email || guestEmail || '',
                         contact: loginUser.phoneNumber || '',
                     },
                     handler: async (response: any) => {
@@ -411,10 +420,6 @@ const Checkout = () => {
         showErrorToast(errorMessage || "Payment failed. Please try again.");
         setIsCreatingOrder(false);
     };
-
-    const handleDeliveryChange = (e: any) => {
-        setSelectedMethod(e.target.value);
-    }
 
     const handleCheckOutChange = (e: any) => {
         setCheckOutMethod(e.target.value);
@@ -477,6 +482,7 @@ const Checkout = () => {
     const schema = yup.object().shape({
         firstName: yup.string().required("First Name is required"),
         lastName: yup.string().required("Last Name is required"),
+        email: yup.string().email("Invalid email").required("Email is required"),
         address: yup.string().required("Address is required"),
         city: yup.string().required("City is required"),
         postCode: yup.string().required("Post Code is required"),
@@ -488,6 +494,7 @@ const Checkout = () => {
         id: "",
         firstName: "",
         lastName: "",
+        email: "",
         address: "",
         city: "",
         postCode: "",
@@ -518,6 +525,8 @@ const Checkout = () => {
                 isDefault: addressVisible.length === 0, // Set as default if it's the first address
                 addressType: 'billing',
             };
+            
+            setGuestEmail(values.email);
 
             const createdAddress = await addressApi.create(addressData, !isAuthenticated);
             
@@ -535,6 +544,7 @@ const Checkout = () => {
                 postCode: createdAddress.postal_code || createdAddress.postalCode,
                 country: createdAddress.country_name || createdAddress.country,
                 state: createdAddress.state_name || createdAddress.state,
+                email: values.email,
             };
 
             const updatedAddresses = [...addressVisible, newAddress];
@@ -695,38 +705,12 @@ const Checkout = () => {
                                         </div>
                                     </div>
                                 </Fade>
-                                <Fade triggerOnce direction='up' duration={1000} delay={400} >
                                     <div className="checkout-items" >
-                                        <div className="checkout-method">
-                                            <div className="sub-title">
-                                                <h4>Delivery Method</h4>
-                                            </div>
-                                            <span className="details">Please select the preferred shipping method to use on this
-                                                order.</span>
-                                            <div className="bb-del-option">
-                                                <div className="inner-del">
-                                                    <span className="bb-del-head">Free Shipping</span>
-                                                    <div className="radio-itens">
-                                                        <input checked={selectedMethod === "free"} onChange={handleDeliveryChange} value="free" type="radio" id="rate1" name="rate" />
-                                                        <label htmlFor="rate1">Rate - ₹0 .00</label>
-                                                    </div>
-                                                </div>
-                                                <div className="inner-del mb-24">
-                                                    <span className="bb-del-head">Flat Rate</span>
-                                                    <div className="radio-itens">
-                                                        <input checked={selectedMethod === "flat"} onChange={handleDeliveryChange} value="flat" type="radio" id="rate2" name="rate" />
-                                                        <label htmlFor="rate2">Rate - ₹5.00</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="about-order ">
-                                                <h5>Add Comments About Your Order</h5>
-                                                <textarea name="your-commemt" placeholder="Comments"></textarea>
-                                            </div>
+                                        <div className="about-order ">
+                                            <h5>Add Comments About Your Order</h5>
+                                            <textarea name="your-commemt" placeholder="Comments"></textarea>
                                         </div>
                                     </div>
-                                </Fade>
-                                    {/* Payment Method section removed as per requirement */}
                             </div>
                         </Col>
                         <Col lg={8} sm={12} className="mb-24">
@@ -859,6 +843,9 @@ const Checkout = () => {
                                                             
                                                             const stateData = states.find(s => s.name === selectedState);
                                                             setCities(stateData ? stateData.cities : []);
+                                                            
+                                                            // Calculate delivery charge dynamically
+                                                            setCurrentDataForDelivery(selectedState);
                                                         };
 
                                                         return (
@@ -882,6 +869,17 @@ const Checkout = () => {
                                                                                 <Form.Control onChange={handleChange} value={values.lastName} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last Name" />
                                                                                 <Form.Control.Feedback type="invalid">
                                                                                     {errors.lastName}
+                                                                                </Form.Control.Feedback>
+                                                                            </InputGroup>
+                                                                        </Form.Group>
+                                                                    </Col>
+                                                                    <Col sm={12}>
+                                                                        <Form.Group className="input-item">
+                                                                            <label>Email *</label>
+                                                                            <InputGroup>
+                                                                                <Form.Control onChange={handleChange} value={values.email} isInvalid={!!errors.email} type="email" name="email" placeholder="Enter your Email" />
+                                                                                <Form.Control.Feedback type="invalid">
+                                                                                    {errors.email}
                                                                                 </Form.Control.Feedback>
                                                                             </InputGroup>
                                                                         </Form.Group>

@@ -58,7 +58,7 @@ async function calculateDeliveryCharge(req, res, next) {
 async function getDeliveryCharges(req, res, next) {
   try {
     const result = await db.query(`
-      SELECT dc.id, s.name as state_name, dc.attribute_value, dc.amount 
+      SELECT dc.id, dc.state_id, s.name as state_name, dc.attribute_value, dc.amount 
       FROM delivery_charges dc
       JOIN states s ON dc.state_id = s.id
       ORDER BY s.name, dc.attribute_value
@@ -69,7 +69,70 @@ async function getDeliveryCharges(req, res, next) {
   }
 }
 
+async function createDeliveryCharge(req, res, next) {
+  try {
+    const { state_id, attribute_value, amount } = req.body;
+
+    if (!state_id || !attribute_value || amount === undefined) {
+      return res.status(400).json({ message: 'State, attribute value, and amount are required' });
+    }
+
+    const result = await db.query(
+      'INSERT INTO delivery_charges (state_id, attribute_value, amount) VALUES ($1, $2, $3) RETURNING *',
+      [state_id, attribute_value, amount]
+    );
+
+    res.status(201).json({ message: 'Delivery charge created successfully', charge: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') { // Unique violation
+        return res.status(409).json({ message: 'A delivery charge for this state and attribute value already exists' });
+    }
+    next(error);
+  }
+}
+
+async function updateDeliveryCharge(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { state_id, attribute_value, amount } = req.body;
+
+    const result = await db.query(
+      'UPDATE delivery_charges SET state_id = COALESCE($1, state_id), attribute_value = COALESCE($2, attribute_value), amount = COALESCE($3, amount), updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+      [state_id, attribute_value, amount, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Delivery charge not found' });
+    }
+
+    res.json({ message: 'Delivery charge updated successfully', charge: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+        return res.status(409).json({ message: 'A delivery charge for this state and attribute value already exists' });
+    }
+    next(error);
+  }
+}
+
+async function deleteDeliveryCharge(req, res, next) {
+  try {
+    const { id } = req.params;
+    const result = await db.query('DELETE FROM delivery_charges WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Delivery charge not found' });
+    }
+
+    res.json({ message: 'Delivery charge deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   calculateDeliveryCharge,
-  getDeliveryCharges
+  getDeliveryCharges,
+  createDeliveryCharge,
+  updateDeliveryCharge,
+  deleteDeliveryCharge
 };

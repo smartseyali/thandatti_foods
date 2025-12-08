@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
+const { sendOrderConfirmation, sendOrderStatusUpdate } = require('../services/emailService');
 
 async function getUserOrders(req, res, next) {
   try {
@@ -76,6 +77,7 @@ async function createOrder(req, res, next) {
       items,
       couponCode,
       paymentMethod,
+      email,
     } = req.body;
 
     // Calculate totals
@@ -137,6 +139,7 @@ async function createOrder(req, res, next) {
       paymentMethod,
       paymentStatus,
       deliveryCharge: deliveryChargeAmount,
+      email: email || (req.user ? req.user.email : null),
     };
 
     const order = await Order.create(orderData);
@@ -167,6 +170,12 @@ async function createOrder(req, res, next) {
 
     // Get order with items
     order.items = await OrderItem.findByOrderId(order.id);
+
+    // Send order confirmation email
+    const orderEmail = order.email || (req.user ? req.user.email : null);
+    if (orderEmail) {
+      sendOrderConfirmation(order, orderEmail).catch(err => console.error('Failed to send order confirmation email:', err));
+    }
 
     res.status(201).json({
       message: 'Order created successfully',
@@ -229,6 +238,14 @@ async function updateOrderStatus(req, res, next) {
       message: 'Order status updated successfully',
       order,
     });
+
+    // Send status update email
+    if (order.email) {
+      sendOrderStatusUpdate(order, order.email).catch(err => console.error('Failed to send status update email:', err));
+    } else if (order.user_id) {
+        // If no email on order but has user_id, we might want to fetch user
+        // For now skipping to avoid complexity
+    }
   } catch (error) {
     next(error);
   }

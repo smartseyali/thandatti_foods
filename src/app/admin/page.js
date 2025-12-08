@@ -7,6 +7,7 @@ import DashboardTab from '@/components/admin/DashboardTab';
 import ProductsTab from '@/components/admin/ProductsTab';
 import CategoriesTab from '@/components/admin/CategoriesTab';
 import OrdersTab from '@/components/admin/OrdersTab';
+import DeliveryTab from '@/components/admin/DeliveryTab';
 
 const AdminPage = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -49,6 +50,11 @@ const AdminPage = () => {
                                             <i className="ri-shopping-cart-line me-2"></i> Orders
                                         </Nav.Link>
                                     </Nav.Item>
+                                    <Nav.Item>
+                                        <Nav.Link eventKey="delivery" className="px-4 py-2">
+                                            <i className="ri-truck-line me-2"></i> Delivery
+                                        </Nav.Link>
+                                    </Nav.Item>
                                 </Nav>
 
                                 <Tab.Content>
@@ -63,6 +69,9 @@ const AdminPage = () => {
                                     </Tab.Pane>
                                     <Tab.Pane eventKey="orders">
                                         <OrdersTab />
+                                    </Tab.Pane>
+                                    <Tab.Pane eventKey="delivery">
+                                        <DeliveryTab />
                                     </Tab.Pane>
                                 </Tab.Content>
                             </Tab.Container>

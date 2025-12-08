@@ -142,108 +142,135 @@ const OrdersTab = () => {
 
     return (
         <div className="bb-admin-orders">
-            <div className="bb-admin-header mb-24">
-                <Row>
-                    <Col lg={6}>
-                        <h4>Orders Management</h4>
-                    </Col>
-                    <Col lg={6}>
-                        <Form.Select
-                            value={statusFilter}
-                            onChange={(e) => {
-                                setStatusFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </Form.Select>
-                    </Col>
-                </Row>
-            </div>
+            <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white border-0 py-3">
+                    <Row className="align-items-center">
+                        <Col lg={6}>
+                            <h5 className="mb-0">Orders Management</h5>
+                        </Col>
+                        <Col lg={6}>
+                            <div className="d-flex justify-content-end align-items-center">
+                                <span className="me-2 text-muted small">Filter by:</span>
+                                <Form.Select
+                                    value={statusFilter}
+                                    onChange={(e) => {
+                                        setStatusFilter(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    className="form-select-sm w-auto"
+                                    style={{minWidth: '150px'}}
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </Form.Select>
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
 
-            {loading ? (
-                <p>Loading orders...</p>
-            ) : (
-                <>
-                    <Table responsive striped bordered hover>
-                        <thead>
-                            <tr>
-                                <th>Order Number</th>
-                                <th>Customer</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Payment Status</th>
-                                <th>Order Status</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="text-center">No orders found</td>
-                                </tr>
-                            ) : (
-                                orders.map((order) => (
-                                    <tr key={order.id}>
-                                        <td>#{order.order_number}</td>
-                                        <td>{getCustomerName(order)}</td>
-                                        <td>{order.total_items}</td>
-                                        <td>₹{formatPrice(order.total_price)}</td>
-                                        <td>
-                                            <span className={`badge ${getStatusBadgeClass(order.payment_status)}`}>
-                                                {order.payment_status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-                                                {order.status || 'pending'}
-                                            </span>
-                                        </td>
-                                        <td>{formatDate(order.created_at)}</td>
-                                        <td>
-                                            <Button
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={() => handleViewOrder(order)}
-                                            >
-                                                View/Edit
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </Table>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="bb-admin-pagination mt-3">
-                            <Button
-                                variant="outline-primary"
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(currentPage - 1)}
-                            >
-                                Previous
-                            </Button>
-                            <span className="mx-3">
-                                Page {currentPage} of {totalPages}
-                            </span>
-                            <Button
-                                variant="outline-primary"
-                                disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage(currentPage + 1)}
-                            >
-                                Next
-                            </Button>
+                <div className="card-body p-0">
+                    {loading ? (
+                         <div className="text-center py-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                            <p className="mt-2 text-muted">Loading orders...</p>
                         </div>
+                    ) : (
+                        <>
+                            <Table responsive hover className="mb-0 align-middle">
+                                <thead className="bg-light">
+                                    <tr>
+                                        <th className="border-0 py-3 ps-4">Order Number</th>
+                                        <th className="border-0 py-3">Customer</th>
+                                        <th className="border-0 py-3">Items</th>
+                                        <th className="border-0 py-3">Total</th>
+                                        <th className="border-0 py-3">Payment</th>
+                                        <th className="border-0 py-3">Status</th>
+                                        <th className="border-0 py-3">Date</th>
+                                        <th className="border-0 py-3 pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={8} className="text-center py-5 text-muted">
+                                                <i className="ri-shopping-cart-2-line fs-1 d-block mb-2"></i>
+                                                No orders found
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        orders.map((order) => (
+                                            <tr key={order.id}>
+                                                <td className="ps-4"><span className="fw-medium">#{order.order_number}</span></td>
+                                                <td>
+                                                    <div className="d-flex flex-column">
+                                                        <span className="fw-medium">{getCustomerName(order)}</span>
+                                                        <span className="text-muted small">{order.user_email}</span>
+                                                    </div>
+                                                </td>
+                                                <td>{order.total_items}</td>
+                                                <td><span className="fw-medium">₹{formatPrice(order.total_price)}</span></td>
+                                                <td>
+                                                    <span className={`badge ${getStatusBadgeClass(order.payment_status)} rounded-pill`}>
+                                                        {order.payment_status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${getStatusBadgeClass(order.status)} rounded-pill`}>
+                                                        {order.status || 'pending'}
+                                                    </span>
+                                                </td>
+                                                <td className="text-muted small">{formatDate(order.created_at)}</td>
+                                                <td className="pe-4">
+                                                    <Button
+                                                        variant="outline-primary"
+                                                        size="sm"
+                                                        onClick={() => handleViewOrder(order)}
+                                                        className="d-flex align-items-center gap-1"
+                                                    >
+                                                        <i className="ri-eye-line"></i> View
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </Table>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                                    <div className="text-muted small">
+                                        Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                                    </div>
+                                    <div className="btn-group">
+                                        <Button
+                                            variant="outline-primary"
+                                            size="sm"
+                                            disabled={currentPage === 1}
+                                            onClick={() => setCurrentPage(currentPage - 1)}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <Button
+                                            variant="outline-primary"
+                                            size="sm"
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => setCurrentPage(currentPage + 1)}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
-                </>
-            )}
+                </div>
+            </div>
 
             {/* Order Details Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">

@@ -374,106 +374,163 @@ const ProductsTab = () => {
 
     return (
         <div className="bb-admin-products">
-            <div className="bb-admin-header mb-24">
-                <Row>
-                    <Col lg={6}>
-                        <h4>Products Management</h4>
-                    </Col>
-                    <Col lg={6} className="text-end">
-                        <Button onClick={handleAdd} className="bb-btn-2">
-                            <i className="ri-add-line"></i> Add Product
-                        </Button>
-                    </Col>
-                </Row>
-                <Row className="mt-3">
-                    <Col lg={6}>
-                        <Form.Control
-                            type="text"
-                            placeholder="Search products..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </Col>
-                </Row>
-            </div>
-
-            {loading ? (
-                <p>Loading products...</p>
-            ) : (
-                <Table responsive striped bordered hover>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>SKU</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.length === 0 ? (
-                            <tr>
-                                <td colSpan={8} className="text-center">No products found</td>
-                            </tr>
-                        ) : (
-                            products.map((product) => (
-                                <tr key={product.id}>
-                                    <td>{product.id.substring(0, 8)}...</td>
-                                    <td>{product.title}</td>
-                                    <td>{product.sku}</td>
-                                    <td>{product.category_name || 'N/A'}</td>
-                                    <td>₹{product.new_price}</td>
-                                    <td>{product.item_left || product.stock_quantity}</td>
-                                    <td>{product.status}</td>
-                                    <td>
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => handleEdit(product)}
-                                            className="me-2"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(product.id)}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </Table>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="bb-admin-pagination mt-3">
-                    <Button
-                        variant="outline-primary"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                        Previous
-                    </Button>
-                    <span className="mx-3">
-                        Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                        variant="outline-primary"
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                        Next
-                    </Button>
+            <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white border-0 py-3">
+                    <Row className="align-items-center mb-3">
+                        <Col lg={6}>
+                            <h5 className="mb-0">Products Management</h5>
+                        </Col>
+                        <Col lg={6} className="text-end">
+                            <Button onClick={handleAdd} variant="primary" className="d-flex align-items-center gap-2 ms-auto">
+                                <i className="ri-add-line"></i> Add Product
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col lg={12}>
+                            <Form.Control
+                                type="text"
+                                placeholder="Search products by name or SKU..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-light border-0"
+                            />
+                        </Col>
+                    </Row>
                 </div>
-            )}
+
+                <div className="card-body p-0">
+                    {loading ? (
+                        <div className="text-center py-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                            <p className="mt-2 text-muted">Loading products...</p>
+                        </div>
+                    ) : (
+                        <Table responsive hover className="mb-0 align-middle">
+                            <thead className="bg-light">
+                                <tr>
+                                    <th className="border-0 py-3 ps-4">ID</th>
+                                    <th className="border-0 py-3">Title</th>
+                                    <th className="border-0 py-3">SKU</th>
+                                    <th className="border-0 py-3">Category</th>
+                                    <th className="border-0 py-3">Price</th>
+                                    <th className="border-0 py-3">Stock</th>
+                                    <th className="border-0 py-3">Status</th>
+                                    <th className="border-0 py-3 pe-4 text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="text-center py-5 text-muted">
+                                            <i className="ri-shopping-bag-3-line fs-1 d-block mb-2"></i>
+                                            {searchTerm ? 'No products found matching your search' : 'No products found'}
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    products.map((product) => (
+                                        <tr key={product.id}>
+                                            <td className="ps-4"><span className="text-muted">#{product.id.substring(0, 8)}...</span></td>
+                                            <td>
+                                                <div className="d-flex align-items-center">
+                                                    {product.primary_image && (
+                                                        <img 
+                                                            src={product.primary_image} 
+                                                            alt={product.title} 
+                                                            className="rounded me-2"
+                                                            style={{width: '40px', height: '40px', objectFit: 'cover'}}
+                                                        />
+                                                    )}
+                                                    <span className="fw-medium text-truncate" style={{maxWidth: '200px'}} title={product.title}>
+                                                        {product.title}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td><span className="badge bg-light text-dark fw-normal border">{product.sku}</span></td>
+                                            <td>{product.category_name || '-'}</td>
+                                            <td>
+                                                <div className="d-flex flex-column">
+                                                    <span className="fw-medium">₹{product.new_price}</span>
+                                                    {product.old_price > product.new_price && (
+                                                        <span className="text-decoration-line-through text-muted small">₹{product.old_price}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`badge ${
+                                                    (product.item_left || product.stock_quantity) > 10 ? 'bg-success bg-opacity-10 text-success' : 
+                                                    (product.item_left || product.stock_quantity) > 0 ? 'bg-warning bg-opacity-10 text-warning' : 
+                                                    'bg-danger bg-opacity-10 text-danger'
+                                                } rounded-pill`}>
+                                                    {product.item_left || product.stock_quantity} left
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`badge ${
+                                                    product.status === 'In Stock' ? 'bg-success' : 
+                                                    product.status === 'Out of Stock' ? 'bg-danger' : 
+                                                    'bg-secondary'
+                                                } rounded-pill`}>
+                                                    {product.status}
+                                                </span>
+                                            </td>
+                                            <td className="pe-4 text-end">
+                                                <Button
+                                                    variant="light"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(product)}
+                                                    className="me-2 text-primary"
+                                                    title="Edit"
+                                                >
+                                                    <i className="ri-edit-line"></i>
+                                                </Button>
+                                                <Button
+                                                    variant="light"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(product.id)}
+                                                    className="text-danger"
+                                                    title="Delete"
+                                                >
+                                                    <i className="ri-delete-bin-line"></i>
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </Table>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                            <div className="text-muted small">
+                                Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                            </div>
+                            <div className="btn-group">
+                                <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(currentPage - 1)}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(currentPage + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* Product Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">

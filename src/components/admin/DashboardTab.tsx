@@ -35,14 +35,17 @@ const DashboardTab = () => {
 
     if (loading) {
         return (
-            <div className="bb-admin-loading">
-                <p>Loading statistics...</p>
+            <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2 text-muted">Loading statistics...</p>
             </div>
         );
     }
 
     return (
-        <div className="bb-admin-dashboard">
+        <div>
             <h4 className="mb-4">Dashboard Overview</h4>
             <Row className="mb-4">
                 <Col lg={3} md={6} className="mb-4">

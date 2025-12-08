@@ -13,38 +13,40 @@ const AdminPage = () => {
 
     return (
         <AdminProtectedRoute>
-            <section className="section-admin padding-tb-50">
+            <section className="section-admin py-5 bg-light">
                 <div className="container">
-                    <Row>
+                    <Row className="mb-4">
                         <Col lg={12}>
-                            <div className="bb-admin-header mb-24">
-                                <h2 className="bb-title">Admin Dashboard</h2>
-                                <p>Manage your store products, categories, and orders</p>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h2 className="mb-1 fw-bold">Admin Dashboard</h2>
+                                    <p className="text-muted mb-0">Manage your store products, categories, and orders</p>
+                                </div>
                             </div>
                         </Col>
                     </Row>
                     <Row>
                         <Col lg={12}>
                             <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'dashboard')}>
-                                <Nav variant="tabs" className="bb-admin-tabs mb-24">
+                                <Nav variant="pills" className="bg-white p-2 rounded shadow-sm mb-4">
                                     <Nav.Item>
-                                        <Nav.Link eventKey="dashboard">
-                                            <i className="ri-dashboard-line"></i> Dashboard
+                                        <Nav.Link eventKey="dashboard" className="px-4 py-2">
+                                            <i className="ri-dashboard-line me-2"></i> Dashboard
                                         </Nav.Link>
                                     </Nav.Item>
                                     <Nav.Item>
-                                        <Nav.Link eventKey="products">
-                                            <i className="ri-shopping-bag-line"></i> Products
+                                        <Nav.Link eventKey="products" className="px-4 py-2">
+                                            <i className="ri-shopping-bag-line me-2"></i> Products
                                         </Nav.Link>
                                     </Nav.Item>
                                     <Nav.Item>
-                                        <Nav.Link eventKey="categories">
-                                            <i className="ri-folder-line"></i> Categories
+                                        <Nav.Link eventKey="categories" className="px-4 py-2">
+                                            <i className="ri-folder-line me-2"></i> Categories
                                         </Nav.Link>
                                     </Nav.Item>
                                     <Nav.Item>
-                                        <Nav.Link eventKey="orders">
-                                            <i className="ri-shopping-cart-line"></i> Orders
+                                        <Nav.Link eventKey="orders" className="px-4 py-2">
+                                            <i className="ri-shopping-cart-line me-2"></i> Orders
                                         </Nav.Link>
                                     </Nav.Item>
                                 </Nav>

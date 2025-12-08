@@ -170,7 +170,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
 
     return (
         <>
-            <div className="bottom-header">
+            <div className="bottom-header" style={{ padding: '10px 0' }}>
                 <div className="container-fluid">
                     <Row>
                         <div className='col-12'>

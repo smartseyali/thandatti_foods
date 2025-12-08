@@ -130,142 +130,182 @@ const CategoriesTab = () => {
 
     return (
         <div className="bb-admin-categories">
-            <div className="bb-admin-header mb-24">
-                <Row>
-                    <Col lg={6}>
-                        <h4>Categories Management</h4>
-                    </Col>
-                    <Col lg={6} className="text-end">
-                        <Button onClick={handleAdd} className="bb-btn-2">
-                            <i className="ri-add-line"></i> Add Category
-                        </Button>
-                    </Col>
-                </Row>
+            <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white border-0 py-3">
+                    <Row className="align-items-center">
+                        <Col>
+                            <h5 className="mb-0">Categories Management</h5>
+                        </Col>
+                        <Col className="text-end">
+                            <Button onClick={handleAdd} variant="primary" className="d-flex align-items-center gap-2 ms-auto">
+                                <i className="ri-add-line"></i> Add Category
+                            </Button>
+                        </Col>
+                    </Row>
+                </div>
+                
+                <div className="card-body p-0">
+                    {loading ? (
+                        <div className="text-center py-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                            <p className="mt-2 text-muted">Loading categories...</p>
+                        </div>
+                    ) : (
+                        <Table responsive hover className="mb-0 align-middle">
+                            <thead className="bg-light">
+                                <tr>
+                                    <th className="border-0 py-3 ps-4">ID</th>
+                                    <th className="border-0 py-3">Name</th>
+                                    <th className="border-0 py-3">Slug</th>
+                                    <th className="border-0 py-3">Description</th>
+                                    <th className="border-0 py-3">Products</th>
+                                    <th className="border-0 py-3 pe-4 text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categories.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-5 text-muted">
+                                            <i className="ri-folder-open-line fs-1 d-block mb-2"></i>
+                                            No categories found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    categories.map((category) => (
+                                        <tr key={category.id}>
+                                            <td className="ps-4"><span className="text-muted">#{category.id.substring(0, 8)}...</span></td>
+                                            <td className="fw-medium">{category.name}</td>
+                                            <td><span className="badge bg-light text-dark fw-normal border">{category.slug}</span></td>
+                                            <td className="text-muted small text-truncate" style={{maxWidth: '200px'}}>{category.description || '-'}</td>
+                                            <td>
+                                                <span className={`badge ${category.productCount ? 'bg-info bg-opacity-10 text-info' : 'bg-secondary bg-opacity-10 text-secondary'} rounded-pill`}>
+                                                    {category.productCount || 0} items
+                                                </span>
+                                            </td>
+                                            <td className="pe-4 text-end">
+                                                <Button
+                                                    variant="light"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(category)}
+                                                    className="me-2 text-primary"
+                                                    title="Edit"
+                                                >
+                                                    <i className="ri-edit-line"></i>
+                                                </Button>
+                                                <Button
+                                                    variant="light"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(category.id)}
+                                                    className="text-danger"
+                                                    title="Delete"
+                                                >
+                                                    <i className="ri-delete-bin-line"></i>
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </Table>
+                    )}
+                </div>
             </div>
 
-            {loading ? (
-                <p>Loading categories...</p>
-            ) : (
-                <Table responsive striped bordered hover>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Slug</th>
-                            <th>Description</th>
-                            <th>Products</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {categories.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="text-center">No categories found</td>
-                            </tr>
-                        ) : (
-                            categories.map((category) => (
-                                <tr key={category.id}>
-                                    <td>{category.id.substring(0, 8)}...</td>
-                                    <td>{category.name}</td>
-                                    <td>{category.slug}</td>
-                                    <td>{category.description || 'N/A'}</td>
-                                    <td>{category.productCount || 0}</td>
-                                    <td>
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => handleEdit(category)}
-                                            className="me-2"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(category.id)}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </Table>
-            )}
-
             {/* Category Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop="static">
                 <Modal.Header closeButton>
-                    <Modal.Title>{editingCategory ? 'Edit Category' : 'Add Category'}</Modal.Title>
+                    <Modal.Title>{editingCategory ? 'Edit Category' : 'Add New Category'}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Name *</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => {
-                                    setFormData({
-                                        ...formData,
-                                        name: e.target.value,
-                                        slug: formData.slug || generateSlug(e.target.value),
-                                    });
-                                }}
-                                required
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Slug</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={formData.slug}
-                                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                                placeholder="Auto-generated from name"
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Description</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Image URL</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={formData.image}
-                                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                placeholder="https://example.com/image.jpg"
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Parent Category</Form.Label>
-                            <Form.Select
-                                value={formData.parent_id || ''}
-                                onChange={(e) => setFormData({ ...formData, parent_id: e.target.value || null })}
-                            >
-                                <option value="">None (Top Level)</option>
-                                {categories
-                                    .filter((cat) => !editingCategory || cat.id !== editingCategory.id)
-                                    .map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                            </Form.Select>
-                        </Form.Group>
+                        <Row>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Category Name <span className="text-danger">*</span></Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="e.g. Traditional Rice"
+                                        value={formData.name}
+                                        onChange={(e) => {
+                                            setFormData({
+                                                ...formData,
+                                                name: e.target.value,
+                                                slug: formData.slug || generateSlug(e.target.value),
+                                            });
+                                        }}
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Slug</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.slug}
+                                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                        placeholder="Auto-generated from name"
+                                        className="bg-light"
+                                    />
+                                    <Form.Text className="text-muted">Unique identifier for URL</Form.Text>
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Parent Category</Form.Label>
+                                    <Form.Select
+                                        value={formData.parent_id || ''}
+                                        onChange={(e) => setFormData({ ...formData, parent_id: e.target.value || null })}
+                                    >
+                                        <option value="">None (Top Level Category)</option>
+                                        {categories
+                                            .filter((cat) => !editingCategory || cat.id !== editingCategory.id)
+                                            .map((cat) => (
+                                                <option key={cat.id} value={cat.id}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Description</Form.Label>
+                                    <Form.Control
+                                        as="textarea"
+                                        rows={3}
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Category description..."
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Image URL</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.image}
+                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="https://example.com/image.jpg"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        {formData.image && (
+                            <div className="mt-2 p-2 border rounded text-center bg-light">
+                                <img src={formData.image} alt="Preview" style={{maxHeight: '100px', objectFit: 'contain'}} />
+                            </div>
+                        )}
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        <Button variant="light" onClick={() => setShowModal(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit" className="bb-btn-2">
-                            {editingCategory ? 'Update' : 'Create'}
+                        <Button type="submit" variant="primary">
+                            {editingCategory ? 'Update Category' : 'Create Category'}
                         </Button>
                     </Modal.Footer>
                 </Form>

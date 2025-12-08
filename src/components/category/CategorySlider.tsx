@@ -4,16 +4,16 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import "swiper/css";
 import Link from 'next/link';
+import useSWR from 'swr';
+import fetcher from '../fetcher/Fetcher';
 
 const CategorySlider = () => {
-    const categories = [
-        { id: 1, image: '/assets/img/category/category-1.jpg', name: 'Thokku' },
-        { id: 2, image: '/assets/img/category/category-2.jpg', name: 'Mix' },
-        { id: 3, image: '/assets/img/category/category-3.jpg', name: 'Podi' },
-        { id: 4, image: '/assets/img/category/category-4.jpg', name: 'Malt' },
-        { id: 5, image: '/assets/img/category/category-5.jpg', name: 'Soup' },
-        // { id: 6, image: '/assets/img/category/category-6.jpg', name: 'Hair wash powder' },
-    ];
+    const { data: categoriesData, error } = useSWR('/api/category-slider', fetcher);
+    
+    // Ensure data is an array
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
+    
+    if (!categories || categories.length === 0) return null;
 
     return (
         <section className="section-category-slider padding-tb-50">
@@ -75,7 +75,7 @@ const CategorySlider = () => {
                                                 }}
                                             >
                                                 <img 
-                                                    src={cat.image} 
+                                                    src={cat.image || '/assets/img/category/category.jpg'} 
                                                     alt={cat.name} 
                                                     style={{
                                                         width: '100%',
@@ -84,7 +84,7 @@ const CategorySlider = () => {
                                                     }}
                                                 />
                                             </div>
-                                            <h4 className="category-name" style={{ fontSize: '18px', fontWeight: '700', color: '#3d4750' }}>{cat.name}</h4>
+                                            <h4 className="category-name" style={{ fontSize: '16px', fontWeight: '700', color: '#3d4750' }}>{cat.name}</h4>
                                         </Link>
                                     </div>
                                 </SwiperSlide>

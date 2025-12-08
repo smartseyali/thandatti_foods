@@ -183,7 +183,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Left: Logo (Desktop) */}
-                                <div className="header-logo me-3 d-none d-xl-block" style={{ height: '80px' }}>
+                                <div className="header-logo me-3 d-none d-xl-block" style={{ height: '60px' }}>
                                     <Link href="/">
                                         <img 
                                             src="/assets/img/logo/logo.gif" 
@@ -201,7 +201,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                 </div>
 
                                 {/* Center: Logo (Mobile) */}
-                                <div className="header-logo d-block d-xl-none position-absolute top-50 start-50 translate-middle" style={{ height: '80px' }}>
+                                <div className="header-logo d-block d-xl-none position-absolute top-50 start-50 translate-middle" style={{ height: '60px' }}>
                                     <Link href="/">
                                         <img 
                                             src="/assets/img/logo/logo.gif" 

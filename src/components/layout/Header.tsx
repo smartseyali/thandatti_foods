@@ -37,7 +37,7 @@ const Header = () => {
           }
         }
       `}</style>
-      {/* <HeaderTop /> */}
+      <HeaderTop />
       <HeaderCenter wishlistItem={wishlistItem} cartSlice={cartSlice} />
       <HeaderBottom />
     </header>

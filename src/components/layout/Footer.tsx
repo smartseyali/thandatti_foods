@@ -56,7 +56,7 @@ const Footer = ({
                                     <div className="bb-footer-widget bb-footer-company">
                                         <img src="/assets/img/logo/logo.gif" className="bb-footer-logo" alt="footer logo" />
                                         <img src="/assets/img/logo/logo.gif" className="bb-footer-dark-logo" alt="footer logo" />
-                                        <p className="bb-footer-detail">Pattikadai is an online home for pure, healthy, preservative-free country foods inspired by Grandma Eshwari's traditional cooking. It is our family's love, tradition, and trust packed for yours.</p>
+                                        <p className="bb-footer-detail">Pattikadai is an online home for pure, healthy, preservative-free country foods inspired by Grandma Eshwari&apos;s traditional cooking. It is our family&apos;s love, tradition, and trust packed for yours.</p>
                                         {/* <div className="bb-app-store">
                                             <a onClick={(e) => e.preventDefault()} href="#" className="app-img">
                                                 <img src="/assets/img/app/android.png" className="adroid" alt="apple" />

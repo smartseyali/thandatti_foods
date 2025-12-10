@@ -11,9 +11,11 @@ const BannerOne = () => {
                     <Row className="mb-minus-24">
                         <Col lg={6} className="mb-24 col-12">
                             <Fade triggerOnce direction='up' duration={1000} delay={400}>
+                                <Link href="/combos">
                                     <img src="/assets/img/banner-one/one1.png" alt="one" className="w-100" />
-                                </Fade>
-                            </Col>
+                                </Link>
+                            </Fade>
+                        </Col>
                             <Col lg={6} className="mb-24 col-12">
                                 <Fade triggerOnce direction='up' duration={1000} delay={400}>
                                     <img src="/assets/img/banner-one/two2.png" alt="two" className="w-100" />

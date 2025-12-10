@@ -228,13 +228,13 @@ const Footer = ({
                                             <div className="bb-footer-links bb-footer-dropdown">
                                                 <ul className="align-items-center">
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr"><i className="ri-facebook-fill"></i></a>
+                                                        <a href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"><i className="ri-facebook-fill"></i></a>
                                                     </li>
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3"><i className="ri-youtube-fill"></i></a>
+                                                        <a href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3" target="_blank" rel="noopener noreferrer"><i className="ri-youtube-fill"></i></a>
                                                     </li>
                                                     <li className="bb-footer-link">
-                                                        <a onClick={(e) => e.preventDefault()} href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1"><i className="ri-instagram-line"></i></a>
+                                                        <a href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1" target="_blank" rel="noopener noreferrer"><i className="ri-instagram-line"></i></a>
                                                     </li>
                                                 </ul>
                                             </div>

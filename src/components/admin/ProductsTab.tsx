@@ -51,6 +51,7 @@ interface Product {
     is_special?: boolean;
     is_combo?: boolean;
     primary_image: string;
+    sequence?: number;
     images?: any[];
     attributes?: ProductAttribute[];
 }
@@ -77,6 +78,7 @@ const ProductsTab = () => {
         is_special: false,
         is_combo: false,
         primary_image: '',
+        sequence: 0,
     });
     const [productImages, setProductImages] = useState<ImageItem[]>([]);
     const [productAttributes, setProductAttributes] = useState<ProductAttribute[]>([]);
@@ -148,6 +150,7 @@ const ProductsTab = () => {
             is_special: false,
             is_combo: false,
             primary_image: '',
+            sequence: 0,
         });
         setProductImages([]);
         setProductAttributes([]);
@@ -175,6 +178,7 @@ const ProductsTab = () => {
             is_special: product.is_special || false,
             is_combo: product.is_combo || false,
             primary_image: product.primary_image,
+            sequence: product.sequence || 0,
         });
         
         // Fetch product details with images, attributes, and detailed info
@@ -307,6 +311,7 @@ const ProductsTab = () => {
                 location: formData.location || 'In Store,online',
                 isSpecial: formData.is_special || false,
                 isCombo: formData.is_combo || false,
+                sequence: formData.sequence || 0,
             };
 
             // Add product details and information (as JSON strings)
@@ -683,15 +688,31 @@ const ProductsTab = () => {
                             onChange={setProductInformation}
                             helpText="Add additional product information like ingredients, shelf life, storage instructions, etc. as key-value pairs"
                         />
-                        <Form.Group className="mb-3">
-                            <Form.Label>Sale Tag</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={formData.sale_tag}
-                                onChange={(e) => setFormData({ ...formData, sale_tag: e.target.value })}
-                                placeholder="e.g., -20%"
-                            />
-                        </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Sale Tag</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.sale_tag}
+                                        onChange={(e) => setFormData({ ...formData, sale_tag: e.target.value })}
+                                        placeholder="e.g., -20%"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Sequence (Order)</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        value={formData.sequence}
+                                        onChange={(e) => setFormData({ ...formData, sequence: parseInt(e.target.value) || 0 })}
+                                        placeholder="0"
+                                    />
+                                    <Form.Text className="text-muted">Lower numbers appear first</Form.Text>
+                                </Form.Group>
+                            </Col>
+                        </Row>
                         <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3">

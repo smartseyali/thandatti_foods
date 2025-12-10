@@ -56,8 +56,7 @@ const Footer = ({
                                     <div className="bb-footer-widget bb-footer-company">
                                         <img src="/assets/img/logo/logo.gif" className="bb-footer-logo" alt="footer logo" />
                                         <img src="/assets/img/logo/logo.gif" className="bb-footer-dark-logo" alt="footer logo" />
-                                        <p className="bb-footer-detail">Pattikadai is the biggest market of grocery products. Get
-                                            your daily needs from our store.</p>
+                                        <p className="bb-footer-detail">Pattikadai is an online home for pure, healthy, preservative-free country foods inspired by Grandma Eshwari's traditional cooking. It is our family's love, tradition, and trust packed for yours.</p>
                                         {/* <div className="bb-app-store">
                                             <a onClick={(e) => e.preventDefault()} href="#" className="app-img">
                                                 <img src="/assets/img/app/android.png" className="adroid" alt="apple" />
@@ -212,7 +211,7 @@ const Footer = ({
                                                         <span>
                                                             <i className="ri-whatsapp-line"></i>
                                                         </span>
-                                                        <Link href="tel:+917708092434">+91 7708092434</Link>
+                                                        <Link href="tel:+919150444595">+91 9150444595</Link>
                                                     </li>
                                                     <li className="bb-footer-link bb-foo-mail">
                                                         <span>

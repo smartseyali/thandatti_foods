@@ -13,6 +13,7 @@ interface Category {
     description: string;
     image: string;
     parent_id: string | null;
+    sequence?: number;
     productCount?: number;
 }
 
@@ -27,6 +28,7 @@ const CategoriesTab = () => {
         description: '',
         image: '',
         parent_id: null,
+        sequence: 0,
     });
 
     useEffect(() => {
@@ -54,6 +56,7 @@ const CategoriesTab = () => {
             description: '',
             image: '',
             parent_id: null,
+            sequence: 0,
         });
         setShowModal(true);
     };
@@ -66,6 +69,7 @@ const CategoriesTab = () => {
             description: category.description || '',
             image: category.image || '',
             parent_id: category.parent_id,
+            sequence: category.sequence || 0,
         });
         setShowModal(true);
     };
@@ -158,6 +162,7 @@ const CategoriesTab = () => {
                                 <tr>
                                     <th className="border-0 py-3 ps-4">ID</th>
                                     <th className="border-0 py-3">Name</th>
+                                    <th className="border-0 py-3">Sequence</th>
                                     <th className="border-0 py-3">Slug</th>
                                     <th className="border-0 py-3">Description</th>
                                     <th className="border-0 py-3">Products</th>
@@ -177,6 +182,7 @@ const CategoriesTab = () => {
                                         <tr key={category.id}>
                                             <td className="ps-4"><span className="text-muted">#{category.id.substring(0, 8)}...</span></td>
                                             <td className="fw-medium">{category.name}</td>
+                                            <td>{category.sequence || 0}</td>
                                             <td><span className="badge bg-light text-dark fw-normal border">{category.slug}</span></td>
                                             <td className="text-muted small text-truncate" style={{maxWidth: '200px'}}>{category.description || '-'}</td>
                                             <td>
@@ -250,6 +256,18 @@ const CategoriesTab = () => {
                                         className="bg-light"
                                     />
                                     <Form.Text className="text-muted">Unique identifier for URL</Form.Text>
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Sequence (Order)</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        value={formData.sequence}
+                                        onChange={(e) => setFormData({ ...formData, sequence: parseInt(e.target.value) || 0 })}
+                                        placeholder="0"
+                                    />
+                                    <Form.Text className="text-muted">Lower numbers appear first</Form.Text>
                                 </Form.Group>
                             </Col>
                             <Col md={12}>

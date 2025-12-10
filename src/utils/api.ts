@@ -698,6 +698,7 @@ export const mapProductToFrontend = (product: any, images?: any[]) => {
     reviews: product.reviews || [],
     isSpecial: product.is_special || product.isSpecial || false,
     isCombo: product.is_combo || product.isCombo || false,
+    sequence: product.sequence || 0,
   };
 };
 

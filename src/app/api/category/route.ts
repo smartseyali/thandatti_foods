@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       id: cat.id,
       count: cat.productCount || cat.count || 0,
       slug: cat.slug || '',
+      sequence: cat.sequence || 0,
     }));
     
     return NextResponse.json(result);
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
       id: cat.id,
       count: cat.productCount || cat.count || 0,
       slug: cat.slug || '',
+      sequence: cat.sequence || 0,
     }));
     
     return NextResponse.json(result);

@@ -2,19 +2,19 @@ const pool = require('../config/database');
 
 class Category {
   static async create(categoryData) {
-    const { name, slug, description, image, parentId } = categoryData;
+    const { name, slug, description, image, parentId, sequence } = categoryData;
     const query = `
-      INSERT INTO categories (name, slug, description, image, parent_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO categories (name, slug, description, image, parent_id, sequence)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
-    const values = [name, slug, description, image, parentId];
+    const values = [name, slug, description, image, parentId, sequence || 0];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
 
   static async findAll() {
-    const query = 'SELECT * FROM categories ORDER BY name';
+    const query = 'SELECT * FROM categories ORDER BY sequence ASC, name ASC';
     const result = await pool.query(query);
     return result.rows;
   }
@@ -32,7 +32,7 @@ class Category {
   }
 
   static async update(id, categoryData) {
-    const { name, slug, description, image, parentId } = categoryData;
+    const { name, slug, description, image, parentId, sequence } = categoryData;
     const query = `
       UPDATE categories 
       SET name = COALESCE($1, name),
@@ -40,11 +40,12 @@ class Category {
           description = COALESCE($3, description),
           image = COALESCE($4, image),
           parent_id = COALESCE($5, parent_id),
+          sequence = COALESCE($6, sequence),
           updated_at = current_timestamp
-      WHERE id = $6
+      WHERE id = $7
       RETURNING *
     `;
-    const values = [name, slug, description, image, parentId, id];
+    const values = [name, slug, description, image, parentId, sequence, id];
     const result = await pool.query(query, values);
     return result.rows[0];
   }

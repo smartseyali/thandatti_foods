@@ -15,46 +15,7 @@ const Services = () => {
                                 </div>
                                 <div className="services-contact">
                                     <h4>Free Shipping</h4>
-                                    <p>Free shipping on all TN orders or above ₹200</p>
-                                </div>
-                            </div>
-                        </Fade>
-                    </Col>
-                    <Col lg={3} md={6} className="mb-24 col-12">
-                        <Fade triggerOnce duration={1000} direction='up' delay={400}>
-                            <div className="bb-services-box">
-                                <div className="services-img">
-                                    <img src="/assets/img/services/2.png" alt="services-2" />
-                                </div>
-                                <div className="services-contact">
-                                    <h4>24x7 Support</h4>
-                                    <p>Contact us 24 hours a day, 7 days a week</p>
-                                </div>
-                            </div>
-                        </Fade>
-                    </Col>
-                    <Col lg={3} md={6} className="mb-24 col-12">
-                        <Fade triggerOnce duration={1000} direction='up' delay={600}>
-                            <div className="bb-services-box">
-                                <div className="services-img">
-                                    <img src="/assets/img/services/3.png" alt="services-3" />
-                                </div>
-                                <div className="services-contact">
-                                    <h4>30 Days Return</h4>
-                                    <p>Simply return it within 30 days for an exchange</p>
-                                </div>
-                            </div>
-                        </Fade>
-                    </Col>
-                    <Col lg={3} md={6} className="mb-24 col-12">
-                        <Fade triggerOnce duration={1000} direction='up' delay={800}>
-                            <div className="bb-services-box">
-                                <div className="services-img">
-                                    <img src="/assets/img/services/4.png" alt="services-4" />
-                                </div>
-                                <div className="services-contact">
-                                    <h4>Payment Secure</h4>
-                                    <p>Contact us 24 hours a day, 7 days a week</p>
+                                    <p>Free shipping on all TN orders</p>
                                 </div>
                             </div>
                         </Fade>

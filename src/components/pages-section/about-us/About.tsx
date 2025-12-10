@@ -9,7 +9,7 @@ const About = () => {
     return (
         <>
             <AboutMe />
-            <PageServices />
+            {/* <PageServices /> */}
             {/* <Testimonials />
             <Team /> */}
         </>

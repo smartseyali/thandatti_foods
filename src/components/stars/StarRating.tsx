@@ -6,7 +6,7 @@ interface StarRatingProps {
 }
 
 const StarRating: React.FC<StarRatingProps> = ({ rating }) => {
-  const stars: JSX.Element[] = [];
+  const stars: React.ReactElement[] = [];
 
   for (let i = 0; i < 5; i++) {
     const isFilled = i < rating;

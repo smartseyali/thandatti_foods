@@ -8,7 +8,7 @@ const HeaderTop = () => {
                     <div className="col-12">
                         <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', color: '#fff', fontSize: '14px', fontWeight: '500' }}>
                             <div className="marquee-text">
-                                🚚 Free Shipping in Tamil Nadu | 🌿 Pure & Organic: No Preservatives 🚫 | 👵 Handcrafted by Grandma with Traditional Love ❤️ | 🏠 Authentic Country Foods: A Taste of Home 🍛 | ✨ Heal with Good Food & Heritage 🌾
+                                🌿 Pure & Organic: No Preservatives 🚫 | 👵 Handcrafted by Grandma with Traditional Love ❤️ | 🏠 Authentic Country Foods: A Taste of Home 🍛 | ✨ Heal with Good Food & Heritage 🌾
                             </div>
                         </div>
                         <style jsx>{`

@@ -328,6 +328,45 @@ class Product {
     const result = await pool.query(query, [id]);
     return result.rows[0]?.rating || 0;
   }
+
+  static async findBestSelling(limit = 10) {
+    const query = `
+      SELECT p.*, c.name as category_name, b.name as brand_name, 
+             COALESCE(SUM(oi.quantity), 0) as total_sold
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN brands b ON p.brand_id = b.id
+      LEFT JOIN order_items oi ON p.id = oi.product_id
+      LEFT JOIN orders o ON oi.order_id = o.id
+      WHERE (o.id IS NULL OR (o.status != 'cancelled' AND o.status != 'failed'))
+      GROUP BY p.id, c.id, b.id
+      HAVING SUM(oi.quantity) > 0
+      ORDER BY total_sold DESC
+      LIMIT $1
+    `;
+    
+    const result = await pool.query(query, [limit]);
+    
+    // Parse JSON fields
+    return result.rows.map(product => {
+      // Only try to parse if the field exists and is not null
+      if (product.product_details && typeof product.product_details === 'string') {
+        try {
+          product.product_details = JSON.parse(product.product_details);
+        } catch (e) {
+          // If parsing fails, keep as string
+        }
+      }
+      if (product.product_information && typeof product.product_information === 'string') {
+        try {
+          product.product_information = JSON.parse(product.product_information);
+        } catch (e) {
+          // If parsing fails, keep as string
+        }
+      }
+      return product;
+    });
+  }
 }
 
 module.exports = Product;

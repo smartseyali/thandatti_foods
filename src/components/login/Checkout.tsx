@@ -117,12 +117,57 @@ const Checkout = () => {
 
     // Calculate delivery charge when state (from address or form) or cart changes
     useEffect(() => {
+        const parseWeightToGrams = (weightStr: string): number => {
+            if (!weightStr) return 0;
+            const normalized = weightStr.toLowerCase().trim().replace(/\s/g, '');
+            const value = parseFloat(normalized);
+            if (isNaN(value)) return 0;
+
+            if (normalized.includes('kg')) {
+                return value * 1000;
+            } else if (normalized.includes('g') || normalized.includes('ml')) {
+                return value;
+            }
+            return 0;
+        };
+
+        const formatGramsToWeight = (grams: number): string => {
+            if (grams >= 1000) {
+                return `${grams / 1000}kg`;
+            }
+            return `${grams}g`;
+        };
+
+        const STANDARD_TIERS = [250, 500, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000];
+
         const calculateDelivery = async () => {
             if (currentDataForDelivery && cartSlice.length > 0) {
-                const items = cartSlice.map((item: any) => ({
-                    attributeValue: item.weight || '250g', // Default fallback if missing
-                    quantity: item.quantity
-                }));
+                let totalGrams = 0;
+                
+                cartSlice.forEach((item: any) => {
+                    const weightStr = item.weight || '250g';
+                    let itemWeight = parseWeightToGrams(weightStr);
+                    
+                    // Fallback to 250g if weight couldn't be parsed (e.g. "1pack") or is 0
+                    if (itemWeight === 0) {
+                        itemWeight = 250;
+                    }
+                    
+                    totalGrams += itemWeight * (item.quantity || 1);
+                });
+
+                // Find closest tier
+                const closestGrams = STANDARD_TIERS.reduce((prev, curr) => {
+                    return (Math.abs(curr - totalGrams) < Math.abs(prev - totalGrams) ? curr : prev);
+                });
+
+                const finalWeightStr = formatGramsToWeight(closestGrams);
+
+                // Send aggregated item to backend
+                const items = [{
+                    attributeValue: finalWeightStr,
+                    quantity: 1
+                }];
 
                 const charge = await deliveryApi.calculate({
                     state: currentDataForDelivery,
@@ -705,10 +750,24 @@ const Checkout = () => {
                                         </div>
                                     </div>
                                 </Fade>
+
                                     <div className="checkout-items" >
-                                        <div className="about-order ">
-                                            <h5>Add Comments About Your Order</h5>
-                                            <textarea name="your-commemt" placeholder="Comments"></textarea>
+                                        <div className="policy-section p-3 bg-light rounded-3" style={{ marginTop: "24px", paddingTop: "20px" }}>
+                                            <h5 className="mb-3 font-weight-bold">All India shipping Available</h5>
+                                            <ul className="list-unstyled mb-0 m-0 p-0">
+                                                <li className="d-flex align-items-start mb-3">
+                                                    <i className="ri-checkbox-circle-line me-2 mt-1 text-success fs-5" style={{ minWidth: "24px" }}></i>
+                                                    <span className="text-muted" style={{ fontSize: "14px", lineHeight: "1.5" }}>The product will be delivered within 6 working days</span>
+                                                </li>
+                                                <li className="d-flex align-items-start mb-3">
+                                                    <i className="ri-checkbox-circle-line me-2 mt-1 text-success fs-5" style={{ minWidth: "24px" }}></i>
+                                                    <span className="text-muted" style={{ fontSize: "14px", lineHeight: "1.5" }}>In case of valid damage claims, they must be reported within 24 Hours of product delivery. At our discretion, we may offer a replacement, which will be delivered within 4–5 working days.</span>
+                                                </li>
+                                                <li className="d-flex align-items-start">
+                                                    <i className="ri-checkbox-circle-line me-2 mt-1 text-success fs-5" style={{ minWidth: "24px" }}></i>
+                                                    <span className="text-muted" style={{ fontSize: "14px", lineHeight: "1.5" }}>No returns, No Refunds</span>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
                             </div>
@@ -1020,6 +1079,12 @@ const Checkout = () => {
                                                                             </div>
                                                                         </div>
                                                                     ))}
+                                                                    <div style={{ marginTop: "24px" }} className="col-12">
+                                                                        <div className="about-order">
+                                                                            <h5>Add Comments About Your Order</h5>
+                                                                            <textarea name="your-commemt" placeholder="Comments" className="w-100 p-2 border rounded" rows={3}></textarea>
+                                                                        </div>
+                                                                    </div>
                                                                     <div style={{ marginTop: "24px" }} className="col-12">
                                                                         <div className="input-button">
                                                                             <button 

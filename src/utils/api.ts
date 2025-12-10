@@ -227,6 +227,16 @@ export const productApi = {
       return [];
     }
   },
+
+  getBestSelling: async (limit: number = 50) => {
+    try {
+      const response = await apiRequest(`/api/products/bestselling?limit=${limit}`, {}, false);
+      return response.products || [];
+    } catch (error: any) {
+      console.error('Error fetching best selling products:', error);
+      return [];
+    }
+  },
 };
 
 // Cart API (requires authentication)

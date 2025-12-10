@@ -5,6 +5,7 @@ const { authenticate, requireRole } = require('../middleware/auth');
 const { validateProduct, validateUUID } = require('../middleware/validation');
 
 router.get('/', productController.getAllProducts);
+router.get('/bestselling', productController.getBestSellingProducts);
 router.get('/search', productController.searchProducts);
 router.get('/category/:categoryId', productController.getProductsByCategory);
 router.get('/:id', validateUUID, productController.getProductById);

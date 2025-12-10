@@ -401,6 +401,48 @@ async function searchProducts(req, res, next) {
   }
 }
 
+async function getBestSellingProducts(req, res, next) {
+  try {
+    const { limit = 50 } = req.query;
+    
+    // Check if Product model has findBestSelling method (it might not if server hasn't been restarted/file not reloaded)
+    // But since I updated it, it should be fine upon restart
+    
+    const products = await Product.findBestSelling(parseInt(limit));
+    
+    // Get images, tags, attributes for each product
+    for (let product of products) {
+      try {
+        product.images = await ProductImage.findByProductId(product.id);
+      } catch (error) {
+        console.error(`Error fetching images for product ${product.id}:`, error.message);
+        product.images = [];
+      }
+      
+      try {
+        product.tags = await ProductTag.findByProductId(product.id);
+      } catch (error) {
+        console.error(`Error fetching tags for product ${product.id}:`, error.message);
+        product.tags = [];
+      }
+      
+      try {
+        product.attributes = await ProductAttribute.findByProductId(product.id);
+      } catch (error) {
+        console.warn(`Error fetching attributes for product ${product.id}:`, error.message);
+        product.attributes = [];
+      }
+    }
+
+    res.json({
+      products,
+      count: products.length
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getAllProducts,
   getProductById,
@@ -409,5 +451,6 @@ module.exports = {
   deleteProduct,
   getProductsByCategory,
   searchProducts,
+  getBestSellingProducts,
 };
 

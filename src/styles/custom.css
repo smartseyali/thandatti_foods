@@ -300,3 +300,43 @@
         margin-bottom: 2px;
     }
 }
+
+/* Banner View Toggle Defaults */
+.banner-mobile-view {
+    display: none;
+}
+
+/* Mobile Banner Two Adjustments */
+@media (max-width: 768px) {
+
+    /* Hide Desktop View */
+    .banner-desktop-view {
+        display: none !important;
+    }
+
+    /* Force Section Height */
+    .section-banner-two {
+        height: 450px !important;
+        min-height: 450px !important;
+    }
+
+    /* Force Slider & Container Height */
+    .section-banner-two .banner-container,
+    .section-banner-two .slick-slider,
+    .section-banner-two .slick-list,
+    .section-banner-two .slick-track,
+    .section-banner-two .slick-slide,
+    .section-banner-two .banner-slide-item {
+        height: 450px !important;
+    }
+
+    /* Mobile Image Styling */
+    .banner-mobile-view {
+        display: block !important;
+        width: 100% !important;
+        height: 450px !important;
+        background-size: 100% 100% !important;
+        background-position: center top !important;
+        background-repeat: no-repeat !important;
+    }
+}

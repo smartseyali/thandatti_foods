@@ -13,10 +13,10 @@ const Services = () => {
                                 <div className="services-img">
                                     <img src="/assets/img/services/1.png" alt="services-1" />
                                 </div>
-                                <div className="services-contact">
+                                {/* <div className="services-contact">
                                     <h4>Free Shipping</h4>
                                     <p>Free shipping on all TN orders</p>
-                                </div>
+                                </div> */}
                             </div>
                         </Fade>
                     </Col>

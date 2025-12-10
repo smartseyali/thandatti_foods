@@ -1,4 +1,5 @@
 const paymentService = require('../services/paymentService');
+const { sendPaymentReceipt } = require('../services/emailService');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const { v4: uuidv4 } = require('uuid');
@@ -106,6 +107,19 @@ async function verifyPayment(req, res, next) {
 
     let verificationResult;
 
+    // Helper to send receipt
+    const sendReceipt = (orderObj) => {
+        const userEmail = orderObj.email || (req.user ? req.user.email : null);
+        if (userEmail) {
+            const userObj = {
+                email: userEmail,
+                firstName: orderObj.shipping_first_name || (req.user ? req.user.firstName : 'Customer'),
+                lastName: orderObj.shipping_last_name || (req.user ? req.user.lastName : ''),
+            };
+            sendPaymentReceipt(orderObj, userObj).catch(err => console.error("Failed to send payment receipt:", err));
+        }
+    };
+
     if (gateway === 'razorpay') {
       // Verify Razorpay payment
       verificationResult = paymentService.verifyRazorpayPayment(paymentData);
@@ -121,6 +135,9 @@ async function verifyPayment(req, res, next) {
         
         // Clear cart after successful payment
         await Cart.clear(req.userId);
+        
+        // Send receipt
+        sendReceipt(order);
       }
 
     } else if (gateway === 'phonepe') {
@@ -160,6 +177,10 @@ async function verifyPayment(req, res, next) {
         
         // Return the updated order
         const updatedOrder = await Order.findById(orderToVerify.id);
+        
+        // Send receipt
+        sendReceipt(updatedOrder);
+
         return res.json({
           success: true,
           message: 'Payment verified successfully',

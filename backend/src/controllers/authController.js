@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const { hashPassword, comparePassword } = require("../utils/bcrypt");
 const { generateToken } = require("../utils/jwt");
+const { sendWelcomeEmail } = require("../services/emailService");
 
 async function register(req, res, next) {
   try {
@@ -97,6 +98,11 @@ async function register(req, res, next) {
 
     // Remove password hash from response
     delete user.password_hash;
+
+    // Send welcome email
+    if (user.email && !user.email.endsWith('@pattikadai.com')) {
+        sendWelcomeEmail(user).catch(err => console.error("Failed to send welcome email:", err));
+    }
 
     res.status(201).json({
       message: "User registered successfully",

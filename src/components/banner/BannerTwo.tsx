@@ -46,9 +46,18 @@ const BannerTwo = () => {
     };
 
     const images = [
-        '/assets/img/banner-two/banner.jpg',
-        '/assets/img/banner-two/banner1.jpg',
-        '/assets/img/banner-two/banner3.jpg'
+        {
+            desktop: '/assets/img/banner-two/banner.jpg', 
+            mobile: '/assets/img/banner-two/banner_mobile.jpg'
+        },
+        { 
+            desktop: '/assets/img/banner-two/banner1.jpg', 
+            mobile: '/assets/img/banner-two/banner_mobile1.jpg' 
+        },
+        { 
+            desktop: '/assets/img/banner-two/banner3.jpg', 
+            mobile: '/assets/img/banner-two/banner_mobile2.jpg' 
+        }
     ];
 
     return (
@@ -58,8 +67,16 @@ const BannerTwo = () => {
                     {images.map((img, index) => (
                         <div key={index} className="banner-slide-item">
                             <div 
-                                className="banner-image-bg" 
-                                style={{ backgroundImage: `url(${img})` }}
+                                className="banner-image-bg banner-desktop-view" 
+                                style={{ backgroundImage: `url(${img.desktop})` }}
+                            >
+                            </div>
+                            <div 
+                                className="banner-image-bg banner-mobile-view" 
+                                style={{ 
+                                    backgroundImage: `url(${img.mobile})`,
+                                    backgroundPosition: 'center top'
+                                }}
                             >
                             </div>
                         </div>

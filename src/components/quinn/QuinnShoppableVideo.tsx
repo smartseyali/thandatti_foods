@@ -11,9 +11,9 @@ const QuinnShoppableVideo = () => {
     const [currentVideo, setCurrentVideo] = useState("");
 
     const videos = [
-        "https://ueirorganic.com/cdn/shop/files/quinn_oz8ke8ahqsodmsjl75fjhzec.mp4",
-        "https://ueirorganic.com/cdn/shop/files/quinn_cd4udp3da3yvb7sp98vbri3z.mp4",
-        "https://ueirorganic.com/cdn/shop/files/quinn_ueons1igmpo1wdb98p2i5v8m.mp4"
+        "/assets/videos/IMG_0814.MP4",
+        "/assets/videos/IMG_0815.MP4",
+        "/assets/videos/IMG_0816.MP4"
     ];
 
     const handleVideoClick = (videoSrc: string) => {
@@ -74,6 +74,7 @@ const QuinnShoppableVideo = () => {
                                                 src={videoSrc}
                                                 autoPlay
                                                 loop
+                                                muted
                                                 playsInline
                                                 style={{
                                                     width: '100%',

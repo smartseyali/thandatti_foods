@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,12 +29,14 @@
         }
 
         .container {
+            width: 90%;
             max-width: 600px;
             padding: 40px;
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            margin: 20px;
+            margin: 20px auto;
+            position: relative;
         }
 
         .logo {
@@ -42,6 +45,7 @@
 
         .logo img {
             max-width: 200px;
+            width: 100%;
             height: auto;
         }
 
@@ -97,6 +101,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .contact-item i {
@@ -107,6 +112,7 @@
             color: #666;
             text-decoration: none;
             transition: color 0.3s;
+            word-break: break-all;
         }
 
         .contact-item a:hover {
@@ -119,30 +125,44 @@
             color: #999;
         }
 
+        /* Mobile Adjustments */
         @media (max-width: 480px) {
             h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
+
             .container {
-                padding: 30px 20px;
+                padding: 25px 15px;
+                width: 95%;
+                margin: 10px auto;
+            }
+
+            .contact-item {
+                flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <div class="logo">
-            <img src="/assets/img/logo/logo.gif" alt="Pattikadai Logo">
+            <img src="assets/img/logo/logo.gif" alt="Pattikadai Logo">
         </div>
 
         <h1>We'll be back soon!</h1>
-        <p>Sorry for the inconvenience but we're performing some scheduled maintenance at the moment. We'll be back online shortly!</p>
+        <p>Sorry for the inconvenience but we're performing some scheduled maintenance at the moment. We'll be back
+            online shortly!</p>
 
         <div class="social-links">
-            <a href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"><i class="ri-facebook-fill"></i></a>
-            <a href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3" target="_blank" rel="noopener noreferrer"><i class="ri-youtube-fill"></i></a>
-            <a href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1" target="_blank" rel="noopener noreferrer"><i class="ri-instagram-line"></i></a>
+            <a href="https://www.facebook.com/share/19riyqAvB9/?mibextid=wwXIfr" target="_blank"
+                rel="noopener noreferrer"><i class="ri-facebook-fill"></i></a>
+            <a href="https://youtube.com/@countryfoodcooking2613?si=mj0BeUdac_IQElB3" target="_blank"
+                rel="noopener noreferrer"><i class="ri-youtube-fill"></i></a>
+            <a href="https://www.instagram.com/countryfoodcooking?igsh=bDNod2JyM2x6OTk1" target="_blank"
+                rel="noopener noreferrer"><i class="ri-instagram-line"></i></a>
         </div>
 
         <div class="contact-info">
@@ -161,4 +181,5 @@
     </div>
 
 </body>
+
 </html>

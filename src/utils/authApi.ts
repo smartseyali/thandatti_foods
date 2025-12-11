@@ -70,5 +70,15 @@ export const authApi = {
       throw error;
     }
   },
+
+  getUserOrders: async () => {
+    try {
+      const response = await apiRequest('/api/orders');
+      return response.orders;
+    } catch (error: any) {
+      console.error('Error fetching user orders:', error);
+      throw error;
+    }
+  },
 };
 

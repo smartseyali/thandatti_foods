@@ -175,7 +175,7 @@ const WishlistItemCard = ({ data }: any) => {
                     
                     <div className="bb-price">
                         <div className="inner-price">
-                            <span className="new-price">₹{data.newPrice.toFixed(2)}</span>
+                            <span className="new-price">₹{data.newPrice}</span>
                             <span className={data.oldPrice && data.oldPrice > 0 ? "old-price" : "item-left"}>
                                 {data.oldPrice && data.oldPrice > 0 ? (typeof data.oldPrice === 'number' ? `₹${data.oldPrice.toFixed(2)}` : data.oldPrice) : ""}
                             </span>

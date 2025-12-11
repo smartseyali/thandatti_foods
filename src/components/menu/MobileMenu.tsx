@@ -79,7 +79,7 @@ const MobileMenu = ({
                                             {categories.map((cat: any) => (
                                                 <li key={cat.category || cat.name}>
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleCategoryClick(cat.category || cat.name); }}>
-                                                        {cat.category || cat.name} {cat.count ? `(${cat.count})` : ''}
+                                                        {cat.category || cat.name}
                                                     </a>
                                                 </li>
                                             ))}
@@ -107,11 +107,7 @@ const MobileMenu = ({
                                     <span className="badge bg-danger ms-2" style={{ fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>Offers</span>
                                 </Link>
                             </li>
-                            <li>
-                                <Link href="/track-order" onClick={closeMobileManu} className="d-flex align-items-center gap-2">
-                                    <span>Track Order</span>
-                                </Link>
-                            </li>
+
                         </ul>
                     </div>
                     <div className="header-res-lan-curr">

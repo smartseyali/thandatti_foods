@@ -14,4 +14,16 @@ router.post('/charges', authenticate, requireRole('admin'), deliveryController.c
 router.put('/charges/:id', authenticate, requireRole('admin'), deliveryController.updateDeliveryCharge);
 router.delete('/charges/:id', authenticate, requireRole('admin'), deliveryController.deleteDeliveryCharge);
 
+// Admin routes for managing delivery rules (New Dynamic Calculation)
+router.post('/rules', authenticate, requireRole('admin'), deliveryController.saveDeliveryRule);
+router.delete('/rules/:id', authenticate, requireRole('admin'), deliveryController.deleteDeliveryRule);
+
+// New Tariff & Zone Routes
+router.post('/tariffs', authenticate, requireRole('admin'), deliveryController.createTariff);
+router.put('/tariffs/:id', authenticate, requireRole('admin'), deliveryController.updateTariff);
+router.delete('/tariffs/:id', authenticate, requireRole('admin'), deliveryController.deleteTariff);
+
+router.put('/states/:id/zone', authenticate, requireRole('admin'), deliveryController.updateStateZone);
+router.post('/states/zones/bulk', authenticate, requireRole('admin'), deliveryController.bulkUpdateStateZones);
+
 module.exports = router;

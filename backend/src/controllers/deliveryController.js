@@ -1,138 +1,216 @@
 const db = require('../config/database');
 
+// Helper to parse weight string to grams
+function parseWeightToGrams(weightStr) {
+  if (!weightStr) return 0;
+  if (typeof weightStr === 'number') return weightStr;
+  
+  const normalized = weightStr.toString().toLowerCase().trim().replace(/\s/g, '');
+  const value = parseFloat(normalized);
+  if (isNaN(value)) return 0;
+
+  if (normalized.includes('kg')) {
+    return value * 1000;
+  } else if (normalized.includes('g') || normalized.includes('ml')) {
+    return value;
+  }
+  return 0;
+}
+
+// Helper: Calculate charge from tariffs table
+async function calculateFromTariffs(totalGrams, zone) {
+    if (!zone) zone = 'REST'; 
+
+    // Find the slab where max_weight >= totalGrams, ordered by max_weight ASC
+    // The first one that fits is our slab.
+    const result = await db.query(
+        `SELECT prices FROM delivery_tariffs WHERE max_weight >= $1 ORDER BY max_weight ASC LIMIT 1`,
+        [totalGrams]
+    );
+
+    if (result.rows.length > 0) {
+        const prices = result.rows[0].prices;
+        // prices is JSONB { "TN": 40, "SOUTH": 55, ... }
+        let price = prices[zone];
+        
+        // Fallback for missing zone price to REST
+        if (price === undefined || price === null || price === 0) {
+            price = prices['REST'];
+        }
+        
+        return parseFloat(price || 0);
+    } else {
+        // Exceeds max slab. Use the largest available slab?
+        // Or throw error? Usually stick to max cost.
+        const maxResult = await db.query(
+            `SELECT prices FROM delivery_tariffs ORDER BY max_weight DESC LIMIT 1`
+        );
+        if (maxResult.rows.length > 0) {
+            const prices = maxResult.rows[0].prices;
+            let price = prices[zone];
+            if (price === undefined || price === null || price === 0) {
+                price = prices['REST'];
+            }
+            return parseFloat(price || 0);
+        }
+    }
+    return 0;
+}
+
 async function calculateDeliveryCharge(req, res, next) {
   try {
     const { state, items } = req.body;
 
-    if (!state) {
-      return res.status(400).json({ message: 'State is required' });
+    if (!state) return res.status(400).json({ message: 'State is required' });
+    if (!items || !Array.isArray(items)) return res.status(400).json({ message: 'Items are required' });
+
+    // Get State Zone
+    const stateResult = await db.query('SELECT zone FROM states WHERE name = $1', [state]);
+    let zone = 'REST';
+    if (stateResult.rows.length > 0) {
+        zone = stateResult.rows[0].zone || 'REST';
+    } else {
+        // State not found? Maybe treat as REST or return error. 
+        // Returning REST is safer.
+        console.warn(`State '${state}' not found. Defaulting to REST zone.`);
     }
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: 'Items are required' });
-    }
-
-    // Get State ID
-    const stateResult = await db.query('SELECT id FROM states WHERE name = $1', [state]);
-    
-    if (stateResult.rows.length === 0) {
-      // If state not found, maybe return default or 0?
-      // Or maybe the frontend sends state ID?
-      // The frontend sends state name currently.
-      // If state not found in DB, we can't calculate specific charge.
-      return res.json({ deliveryCharge: 0, message: 'State not found for delivery calculation' });
-    }
-
-    const stateId = stateResult.rows[0].id;
-    let totalDeliveryCharge = 0;
-
+    // Calculate total weight
+    let totalGrams = 0;
     for (const item of items) {
-      // Item should have attributeValue (e.g., '250g') and quantity
-      // If item doesn't have attributeValue, maybe it's a simple product?
-      // We'll assume attributeValue is passed.
-      
-      const attributeValue = item.attributeValue || item.weight || item.size; // Fallback
-      const quantity = parseInt(item.quantity) || 1;
+       const weightStr = item.attributeValue || item.weight || item.size || '0g';
+       const quantity = parseInt(item.quantity) || 1;
+       const grams = parseWeightToGrams(weightStr);
+       totalGrams += grams * quantity;
+    }
+    
+    // Fallback: assume 250g per item if 0
+    if (totalGrams === 0 && items.length > 0) {
+      items.forEach(item => totalGrams += 250 * (parseInt(item.quantity) || 1));
+    }
 
-      if (attributeValue) {
-        const chargeResult = await db.query(
-          'SELECT amount FROM delivery_charges WHERE state_id = $1 AND attribute_value = $2',
-          [stateId, attributeValue]
+    // Calculate Charge
+    const deliveryCharge = await calculateFromTariffs(totalGrams, zone);
+
+    return res.json({ 
+        deliveryCharge, 
+        method: 'zone_slab_db', 
+        zone, 
+        totalWeight: totalGrams 
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// --- ADMIN ENDPOINTS ---
+
+async function getAdminDeliveryData(req, res, next) {
+    try {
+        // Get Tariffs
+        const tariffs = await db.query('SELECT * FROM delivery_tariffs ORDER BY max_weight ASC');
+        
+        // Get States with Zones
+        const states = await db.query('SELECT id, name, zone FROM states ORDER BY name ASC');
+        
+        res.json({
+            tariffs: tariffs.rows,
+            states: states.rows
+        });
+    } catch(e) { next(e); }
+}
+
+async function createTariff(req, res, next) {
+    try {
+        const { max_weight, prices } = req.body;
+        if (!max_weight || !prices) return res.status(400).json({message: 'Missing fields'});
+        
+        const result = await db.query(
+            'INSERT INTO delivery_tariffs (max_weight, prices) VALUES ($1, $2) RETURNING *',
+            [max_weight, JSON.stringify(prices)]
         );
-
-        if (chargeResult.rows.length > 0) {
-          totalDeliveryCharge += parseFloat(chargeResult.rows[0].amount) * quantity;
-        } else {
-          // Default charge if specific attribute not found?
-          // For now, 0.
-        }
-      }
-    }
-
-    res.json({ deliveryCharge: totalDeliveryCharge });
-  } catch (error) {
-    next(error);
-  }
+        res.status(201).json(result.rows[0]);
+    } catch(e) { next(e); }
 }
 
+async function updateTariff(req, res, next) {
+    try {
+        const { id } = req.params;
+        const { max_weight, prices } = req.body;
+        
+        const result = await db.query(
+            'UPDATE delivery_tariffs SET max_weight = COALESCE($1, max_weight), prices = COALESCE($2, prices), updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
+            [max_weight, prices ? JSON.stringify(prices) : undefined, id]
+        );
+        
+        if (result.rows.length === 0) return res.status(404).json({message: 'Tariff not found'});
+        res.json(result.rows[0]);
+    } catch(e) { next(e); }
+}
+
+async function deleteTariff(req, res, next) {
+    try {
+        const { id } = req.params;
+        await db.query('DELETE FROM delivery_tariffs WHERE id = $1', [id]);
+        res.json({message: 'Deleted'});
+    } catch(e) { next(e); }
+}
+
+async function updateStateZone(req, res, next) {
+    try {
+        const { id } = req.params;
+        const { zone } = req.body;
+        if (!zone) return res.status(400).json({message: 'Zone required'});
+        
+        const result = await db.query(
+            'UPDATE states SET zone = $1 WHERE id = $2 RETURNING *',
+            [zone, id]
+        );
+        
+        if (result.rows.length === 0) return res.status(404).json({message: 'State not found'});
+        res.json(result.rows[0]);
+    } catch(e) { next(e); }
+}
+
+async function bulkUpdateStateZones(req, res, next) {
+    try {
+        const { stateIds, zone } = req.body;
+        if (!stateIds || !Array.isArray(stateIds) || !zone) return res.status(400).json({message: 'Invalid input'});
+        
+        await db.query(`UPDATE states SET zone = $1 WHERE id = ANY($2::int[])`, [zone, stateIds]);
+        res.json({message: 'Updated successfully'});
+    } catch(e) { next(e); }
+}
+
+// Legacy (Keep for backward compatibility if needed, but exports updated to point here)
+// Just proxying or removing old unused ones from exports
 async function getDeliveryCharges(req, res, next) {
-  try {
-    const result = await db.query(`
-      SELECT dc.id, dc.state_id, s.name as state_name, dc.attribute_value, dc.amount 
-      FROM delivery_charges dc
-      JOIN states s ON dc.state_id = s.id
-      ORDER BY s.name, dc.attribute_value
-    `);
-    res.json(result.rows);
-  } catch (error) {
-    next(error);
-  }
+    // Return empty or legacy if frontend expects it, but we are moving to new admin panel
+    return getAdminDeliveryData(req, res, next); 
 }
 
-async function createDeliveryCharge(req, res, next) {
-  try {
-    const { state_id, attribute_value, amount } = req.body;
+// Stub old create/update/delete delivery charge to avoid crash if routes exist
+const createDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
+const updateDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
+const deleteDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
+const saveDeliveryRule = async (req, res) => res.status(410).json({message: 'Deprecated'});
+const deleteDeliveryRule = async (req, res) => res.status(410).json({message: 'Deprecated'});
 
-    if (!state_id || !attribute_value || amount === undefined) {
-      return res.status(400).json({ message: 'State, attribute value, and amount are required' });
-    }
-
-    const result = await db.query(
-      'INSERT INTO delivery_charges (state_id, attribute_value, amount) VALUES ($1, $2, $3) RETURNING *',
-      [state_id, attribute_value, amount]
-    );
-
-    res.status(201).json({ message: 'Delivery charge created successfully', charge: result.rows[0] });
-  } catch (error) {
-    if (error.code === '23505') { // Unique violation
-        return res.status(409).json({ message: 'A delivery charge for this state and attribute value already exists' });
-    }
-    next(error);
-  }
-}
-
-async function updateDeliveryCharge(req, res, next) {
-  try {
-    const { id } = req.params;
-    const { state_id, attribute_value, amount } = req.body;
-
-    const result = await db.query(
-      'UPDATE delivery_charges SET state_id = COALESCE($1, state_id), attribute_value = COALESCE($2, attribute_value), amount = COALESCE($3, amount), updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-      [state_id, attribute_value, amount, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Delivery charge not found' });
-    }
-
-    res.json({ message: 'Delivery charge updated successfully', charge: result.rows[0] });
-  } catch (error) {
-    if (error.code === '23505') {
-        return res.status(409).json({ message: 'A delivery charge for this state and attribute value already exists' });
-    }
-    next(error);
-  }
-}
-
-async function deleteDeliveryCharge(req, res, next) {
-  try {
-    const { id } = req.params;
-    const result = await db.query('DELETE FROM delivery_charges WHERE id = $1 RETURNING *', [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Delivery charge not found' });
-    }
-
-    res.json({ message: 'Delivery charge deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-}
 
 module.exports = {
   calculateDeliveryCharge,
-  getDeliveryCharges,
+  getAdminDeliveryData,
+  createTariff,
+  updateTariff,
+  deleteTariff,
+  updateStateZone,
+  bulkUpdateStateZones,
+  // Maintain interface for routes if they are not updated yet
+  getDeliveryCharges, 
   createDeliveryCharge,
   updateDeliveryCharge,
-  deleteDeliveryCharge
+  deleteDeliveryCharge,
+  saveDeliveryRule,
+  deleteDeliveryRule
 };

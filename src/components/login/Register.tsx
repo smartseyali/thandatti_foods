@@ -39,7 +39,7 @@ const Register = () => {
             .min(6, "Confirm Password must be at least 6 characters")
             .required("Confirm Password is required"),
         firstName: yup.string().required("First Name is required"),
-        lastName: yup.string().required("Last Name is required"),
+        lastName: yup.string(),
         phoneNumber: yup.string()
             .min(10, "Phone number must be at least 10 digits")
             .matches(/^[0-9]+$/, "Phone number must contain only digits")
@@ -95,7 +95,20 @@ const Register = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Registration failed');
+                // Log the full error for debugging
+                console.error('Registration failed response:', data);
+
+                let errorMessage = data.message || 'Registration failed';
+                
+                if (data.errors) {
+                    if (Array.isArray(data.errors) && data.errors.length > 0) {
+                        errorMessage = data.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ');
+                    } else if (typeof data.errors === 'string') {
+                        errorMessage = data.errors;
+                    }
+                }
+                
+                throw new Error(errorMessage);
             }
 
             // Store token securely in sessionStorage
@@ -196,10 +209,10 @@ const Register = () => {
                                                         </Form.Group>
                                                     </div>
                                                     <div className="bb-register-wrap bb-register-width-50">
-                                                        <label>Last Name*</label>
+                                                        <label>Last Name</label>
                                                         <Form.Group>
                                                             <InputGroup>
-                                                                <Form.Control value={values.lastName || ""} onChange={handleChange} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last name" required />
+                                                                <Form.Control value={values.lastName || ""} onChange={handleChange} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last name" />
                                                                 <Form.Control.Feedback type="invalid">
                                                                     {errors.lastName}
                                                                 </Form.Control.Feedback>

@@ -8,8 +8,14 @@ import { getUserData, RegistrationData } from '@/utils/userData'
 import { Col, Row } from 'react-bootstrap'
 import Link from 'next/link'
 
+import { logout } from '@/store/reducer/loginSlice'
+import { authStorage } from '@/utils/authStorage'
+import { showSuccessToast } from '../toast-popup/Toastify'
+import { useDispatch } from 'react-redux'
+
 const UserProfile = () => {
     const router = useRouter()
+    const dispatch = useDispatch()
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
     const user = useSelector((state: RootState) => state.login.user);
     const [userData, setUserData] = useState<RegistrationData | null>(null);
@@ -85,6 +91,14 @@ const UserProfile = () => {
         fetchUserData();
     }, [isAuthenticated, user, router]);
 
+    const handleLogout = (e: React.MouseEvent) => {
+        e.preventDefault();
+        dispatch(logout());
+        authStorage.clear();
+        showSuccessToast("Logged out successfully");
+        router.push("/login");
+    }
+
     const handleSubmit = (e: any) => {
         e.preventDefault();
         router.push("/profile-edit")
@@ -98,10 +112,31 @@ const UserProfile = () => {
                             <div className="bb-cart-sidebar-block bb-sidebar-wrap bb-border-box bb-sticky-sidebar">
                                 <div className="bb-vendor-block-items">
                                     <ul>
-                                        <li><Link href="/user-profile">User Profile</Link></li>
-                                        <li><Link href="/cart">Cart</Link></li>
-                                        <li><Link href="/checkout">Checkout</Link></li>
-                                        <li><Link href="/track-order">Track Order</Link></li>
+                                        <li>
+                                            <Link href="/user-profile">
+                                                <i className="ri-user-line me-2"></i> User Profile
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/my-orders">
+                                                <i className="ri-file-list-line me-2"></i> My Orders
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/cart">
+                                                <i className="ri-shopping-cart-line me-2"></i> Cart
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/checkout">
+                                                <i className="ri-bank-card-line me-2"></i> Checkout
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <a href="#" onClick={handleLogout} className="text-danger">
+                                                <i className="ri-logout-box-r-line me-2"></i> Logout
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

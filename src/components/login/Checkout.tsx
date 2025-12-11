@@ -3,7 +3,7 @@ import { RootState } from '@/store';
 import React, { useEffect, useState } from 'react'
 import { Fade } from 'react-awesome-reveal'
 import { useDispatch, useSelector } from 'react-redux';
-import DiscountCoupon from '../discount-coupon/DiscountCoupon';
+
 import StarRating from '../stars/StarRating';
 import { useRouter } from 'next/navigation';
 import { showErrorToast, showSuccessToast } from '../toast-popup/Toastify';
@@ -27,6 +27,9 @@ interface FormValues {
     lastName: string;
     address: string;
     email: string;
+    phoneNumber?: string;
+    password?: string;
+    confirmPassword?: string;
     postCode: string;
     country: string;
     state: string;
@@ -65,9 +68,9 @@ const Checkout = () => {
     const [subTotal, setSubTotal] = useState(0);
     const [deliveryCharge, setDeliveryCharge] = useState(0);
 
-    const [discount, setDiscount] = useState(0);
+
     const [selectedMethod, setSelectedMethod] = useState("standard");
-    const [checkOutMethod, setCheckOutMethod] = useState("guest");
+    const [checkOutMethod, setCheckOutMethod] = useState("register");
     const [billingAddressMethod, setBillingAddressMethod] = useState("new");
     const [loginVisible, setLoginVisible] = useState(false);
     const [btnVisible, setBtnVisible] = useState(false);
@@ -138,36 +141,26 @@ const Checkout = () => {
             return `${grams}g`;
         };
 
-        const STANDARD_TIERS = [250, 500, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000];
-
         const calculateDelivery = async () => {
             if (currentDataForDelivery && cartSlice.length > 0) {
-                let totalGrams = 0;
-                
-                cartSlice.forEach((item: any) => {
-                    const weightStr = item.weight || '250g';
-                    let itemWeight = parseWeightToGrams(weightStr);
+                // Map cart items to send to backend for calculation
+                const items = cartSlice.map((item: any, index: number) => {
+                    let weightVal = item.weight;
                     
-                    // Fallback to 250g if weight couldn't be parsed (e.g. "1pack") or is 0
-                    if (itemWeight === 0) {
-                        itemWeight = 250;
+                    // If item has attributes (variations), pick selected one
+                    if (item.attributes && item.attributes.length > 0) {
+                        const selectedAttrIndex = activeIndex[index] || 0;
+                        if (item.attributes[selectedAttrIndex]) {
+                            weightVal = item.attributes[selectedAttrIndex].attributeValue;
+                        }
                     }
                     
-                    totalGrams += itemWeight * (item.quantity || 1);
+                    return {
+                        weight: weightVal,
+                        attributeValue: weightVal, // Backend checks this too
+                        quantity: item.quantity || 1
+                    };
                 });
-
-                // Find closest tier
-                const closestGrams = STANDARD_TIERS.reduce((prev, curr) => {
-                    return (Math.abs(curr - totalGrams) < Math.abs(prev - totalGrams) ? curr : prev);
-                });
-
-                const finalWeightStr = formatGramsToWeight(closestGrams);
-
-                // Send aggregated item to backend
-                const items = [{
-                    attributeValue: finalWeightStr,
-                    quantity: 1
-                }];
 
                 const charge = await deliveryApi.calculate({
                     state: currentDataForDelivery,
@@ -181,8 +174,7 @@ const Checkout = () => {
         calculateDelivery();
     }, [currentDataForDelivery, cartSlice]);
 
-    const discountAmount = subTotal * (discount / 100);
-    const total = subTotal + deliveryCharge - discountAmount;
+    const total = subTotal + deliveryCharge;
 
     // Load existing addresses from database when user is authenticated
     useEffect(() => {
@@ -301,11 +293,12 @@ const Checkout = () => {
 
             // Check if user is authenticated
             // Check if user is authenticated
+            const token = authStorage.getToken();
             const loginUser = typeof window !== 'undefined' 
                 ? (authStorage.getUserData() || {})
                 : {};
 
-            if (!loginUser?.token && checkOutMethod !== 'guest') {
+            if (!token && checkOutMethod !== 'guest') {
                 showErrorToast("Please login to place an order.");
                 setIsCreatingOrder(false);
                 return;
@@ -359,7 +352,7 @@ const Checkout = () => {
                 billingAddressId: addressId,
                 shippingMethod: selectedMethod,
                 items: items,
-                couponCode: discount > 0 ? 'COUPON' : null,
+                couponCode: null,
                 paymentMethod: paymentMethod,
                 deliveryCharge: deliveryCharge, // Pass delivery charge to backend
                 email: isAuthenticated ? loginUser.email : guestEmail,
@@ -473,11 +466,7 @@ const Checkout = () => {
             setBtnVisible(false);
             setTextVisible(false);
             setBillingVisible(false);
-        } else if (e.target.value === 'guest') {
-            setLoginVisible(false);
-            setBtnVisible(true);
-            setTextVisible(true);
-            setBillingVisible(false);
+
         } else {
             setLoginVisible(false);
             setBtnVisible(true);
@@ -499,9 +488,7 @@ const Checkout = () => {
         setBillingVisible(true);
     }
 
-    const handleDiscountApplied = (discountValue: number) => {
-        setDiscount(discountValue);
-    };
+
 
     const handleSelectAddress = (address: any) => {
         setSelectedAddress(address);
@@ -526,8 +513,23 @@ const Checkout = () => {
 
     const schema = yup.object().shape({
         firstName: yup.string().required("First Name is required"),
-        lastName: yup.string().required("Last Name is required"),
+        lastName: yup.string(),
         email: yup.string().email("Invalid email").required("Email is required"),
+        phoneNumber: !isAuthenticated 
+            ? yup.string()
+                .min(10, "Phone number must be at least 10 digits")
+                .matches(/^[0-9]+$/, "Phone number must contain only digits")
+                .required("Phone Number is required")
+            : yup.string().optional(),
+        password: !isAuthenticated
+            ? yup.string().min(6, "Password must be at least 6 characters").required("Password is required")
+            : yup.string().optional(),
+        confirmPassword: !isAuthenticated
+            ? yup.string()
+                .oneOf([yup.ref('password')], 'Passwords must match')
+                .min(6, "Confirm Password must be at least 6 characters")
+                .required("Confirm Password is required")
+            : yup.string().optional(),
         address: yup.string().required("Address is required"),
         city: yup.string().required("City is required"),
         postCode: yup.string().required("Post Code is required"),
@@ -539,7 +541,11 @@ const Checkout = () => {
         id: "",
         firstName: "",
         lastName: "",
+
         email: "",
+        phoneNumber: "",
+        password: "",
+        confirmPassword: "",
         address: "",
         city: "",
         postCode: "",
@@ -551,70 +557,183 @@ const Checkout = () => {
         formikHelpers.setSubmitting(true);
         
         try {
-            // Find country and state IDs from selected values
+            // Find country and state IDs/Names from selected values
             const selectedCountry = locationsData.find(c => c.name === values.country);
             const selectedState = selectedCountry?.states.find((s: any) => s.name === values.state);
-            // City is just a string in the JSON
-
-            // Create address on backend
-            const addressData = {
-                firstName: values.firstName,
-                lastName: values.lastName,
-                addressLine: values.address,
-                city: values.city,
-                postalCode: values.postCode,
-                state: selectedState?.name || values.state,
-                stateName: selectedState?.name || values.state,
-                country: selectedCountry?.name || values.country,
-                countryName: selectedCountry?.name || values.country,
-                isDefault: addressVisible.length === 0, // Set as default if it's the first address
-                addressType: 'billing',
-            };
             
-            setGuestEmail(values.email);
+            if (!isAuthenticated) {
+                // Register the user
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
+                
+                const registerPayload = {
+                    email: values.email,
+                    phoneNumber: values.phoneNumber,
+                    password: values.password,
+                    firstName: values.firstName,
+                    lastName: values.lastName,
+                    address: values.address,
+                    city: values.city,
+                    postCode: values.postCode,
+                    country: selectedCountry?.name || values.country,
+                    state: selectedState?.name || values.state,
+                };
 
-            const createdAddress = await addressApi.create(addressData, !isAuthenticated);
-            
-            // Update local state
-            if (!createdAddress) {
-                throw new Error("Failed to create address. Please check your input and try again.");
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registerPayload),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Registration failed');
+                }
+
+                // Store token securely
+                const { authStorage } = await import('@/utils/authStorage');
+                authStorage.setToken(data.token);
+                authStorage.setUserData(data.user);
+
+                // Store user data in Redux
+                dispatch(login({
+                    id: data.user.id,
+                    email: data.user.email,
+                    phoneNumber: data.user.phone_number,
+                    firstName: data.user.first_name,
+                    lastName: data.user.last_name,
+                    role: data.user.role || 'customer',
+                    token: data.token,
+                }));
+
+                const newAddress = {
+                    id: data.user.id, // Or address ID if returned? Usually user ID for main address or specific ID. 
+                    // Note: If backend register creates an address entry, we might need to fetch it or use what's in user object
+                    // In Register.tsx, it just redirects. 
+                    // data.user usually contains flat fields for profile address.
+                    // Let's assume data.user has the address fields.
+                    firstName: data.user.first_name || values.firstName,
+                    lastName: data.user.last_name || values.lastName,
+                    address: data.user.address || values.address,
+                    city: data.user.city || values.city,
+                    postCode: data.user.postal_code || values.postCode,
+                    country: data.user.country || values.country,
+                    state: data.user.state || values.state,
+                    email: data.user.email || values.email,
+                    is_default: true
+                };
+                
+                // We might need to reload addresses to get the proper ID for the address table
+                // But for now, let's try to simulate it or fetch
+                // Actually, logic below triggers 'loadAddresses' via useEffect when isAuthenticated changes to true!
+                // So we might just need to wait or manually set selectedAdress.
+                
+                // Let's rely on the useEffect[isAuthenticated] to load addresses?
+                // But we want to auto-select this one.
+                // The useEffect will run.
+                
+                setGuestEmail(values.email);
+                showSuccessToast("Registration successful! Proceeding...");
+                
+                // We can't easily wait for useEffect. So let's manually set addressVisible derived from response?
+                // The issue is ID. addressApi.getAll returns addresses with IDs. Register returns user.
+                // If user model has addresses linked, we need those IDs for order creation.
+                // If register creates a row in 'addresses' table, we need that ID.
+                // Let's assume we proceed to order creation. Order creation needs 'shippingAddressId'.
+                // If we rely on reload, it might be slow.
+                // Alternative: just call addressApi.getAll() immediately here with new token.
+                
+                // Wait, if I am now authenticated, I can create the address via addressApi.create as well?
+                // No, register already created it (presumably). Creating duplicates is bad.
+                // Let's fetch addresses.
+                
+                const addresses = await addressApi.getAll(); // Uses new token via interceptor/authStorage
+                const mapped = addresses.map((addr: any) => ({
+                    id: addr.id,
+                    firstName: addr.first_name || addr.firstName,
+                    lastName: addr.last_name || addr.lastName,
+                    address: addr.address_line || addr.addressLine || addr.address,
+                    city: addr.city,
+                    postCode: addr.postal_code || addr.postalCode || addr.postCode,
+                    country: addr.country_name || addr.country || '',
+                    state: addr.state_name || addr.state || '',
+                    is_default: addr.is_default || false,
+                    email: data.user.email || '',
+                }));
+                setAddressVisible(mapped);
+                if (mapped.length > 0) {
+                     setSelectedAddress(mapped[0]);
+                     setBillingAddressMethod("use");
+                     
+                     // Trigger checkout
+                    setTimeout(() => {
+                        const placeOrderBtn = document.querySelector('.bb-btn-2.place-order-btn') as HTMLElement;
+                        if (placeOrderBtn) {
+                            placeOrderBtn.click();
+                        }
+                    }, 500);
+                }
+
+            } else {
+                // User IS authenticated, create new address
+                const addressData = {
+                    firstName: values.firstName,
+                    lastName: values.lastName,
+                    addressLine: values.address,
+                    city: values.city,
+                    postalCode: values.postCode,
+                    state: selectedState?.name || values.state,
+                    stateName: selectedState?.name || values.state,
+                    country: selectedCountry?.name || values.country,
+                    countryName: selectedCountry?.name || values.country,
+                    isDefault: addressVisible.length === 0, 
+                    addressType: 'billing',
+                };
+                
+                setGuestEmail(values.email);
+
+                const createdAddress = await addressApi.create(addressData, false); // Authenticated is true (passed !isAuthenticated which is false)
+                // Wait, existing code passed `!isAuthenticated` which was false. So second arg is `isGuest`.
+                // Here `isAuthenticated` is true. So pass false.
+
+                 if (!createdAddress) {
+                    throw new Error("Failed to create address.");
+                }
+
+                const newAddress = {
+                    id: createdAddress.id,
+                    firstName: createdAddress.first_name || createdAddress.firstName,
+                    lastName: createdAddress.last_name || createdAddress.lastName,
+                    address: createdAddress.address_line || createdAddress.addressLine || createdAddress.address,
+                    city: createdAddress.city,
+                    postCode: createdAddress.postal_code || createdAddress.postalCode,
+                    country: createdAddress.country_name || createdAddress.country,
+                    state: createdAddress.state_name || createdAddress.state,
+                    email: values.email,
+                };
+
+                const updatedAddresses = [...addressVisible, newAddress];
+                setAddressVisible(updatedAddresses);
+                setSelectedAddress(newAddress);
+                setBillingAddressMethod("use");
+                
+                showSuccessToast("Address saved successfully!");
+                formikHelpers.resetForm();
+                
+                setStates([]);
+                setCities([]);
+
+                setTimeout(() => {
+                    const placeOrderBtn = document.querySelector('.bb-btn-2.place-order-btn') as HTMLElement;
+                    if (placeOrderBtn) {
+                        placeOrderBtn.click();
+                    }
+                }, 500);
             }
 
-            const newAddress = {
-                id: createdAddress.id,
-                firstName: createdAddress.first_name || createdAddress.firstName,
-                lastName: createdAddress.last_name || createdAddress.lastName,
-                address: createdAddress.address_line || createdAddress.addressLine || createdAddress.address,
-                city: createdAddress.city,
-                postCode: createdAddress.postal_code || createdAddress.postalCode,
-                country: createdAddress.country_name || createdAddress.country,
-                state: createdAddress.state_name || createdAddress.state,
-                email: values.email,
-            };
-
-            const updatedAddresses = [...addressVisible, newAddress];
-            setAddressVisible(updatedAddresses);
-            setSelectedAddress(newAddress);
-            setBillingAddressMethod("use");
-            
-            showSuccessToast("Address saved successfully!");
-            formikHelpers.resetForm();
-            
-            // Reset location selects
-            setStates([]);
-            setCities([]);
-
-            // Trigger checkout automatically after address is saved
-            setTimeout(() => {
-                const placeOrderBtn = document.querySelector('.bb-btn-2.place-order-btn') as HTMLElement;
-                if (placeOrderBtn) {
-                    placeOrderBtn.click();
-                }
-            }, 500);
-
         } catch (error: any) {
-            console.error('Error saving address:', error);
-            showErrorToast(error.message || "Failed to save address. Please try again.");
+            console.error('Error saving/registering:', error);
+            showErrorToast(error.message || "An error occurred. Please try again.");
         } finally {
             formikHelpers.setSubmitting(false);
         }
@@ -699,11 +818,7 @@ const Checkout = () => {
                                             <ul>
                                                 <li><span className="left-item">sub-total</span><span>₹{subTotal.toFixed(2)}</span></li>
                                                 <li><span className="left-item">Delivery Charge</span><span>₹{deliveryCharge.toFixed(2)}</span></li>
-                                                <li>
-                                                    <span className="left-item">Coupon Discount</span>
-                                                    <span><a onClick={(e) => e.preventDefault()} href="#" className="apply drop-coupon">Apply Coupon</a></span>
-                                                </li>
-                                                <DiscountCoupon onDiscountApplied={handleDiscountApplied} />
+
                                             </ul>
                                             <div className="summary-total">
                                                 <ul>
@@ -782,15 +897,11 @@ const Checkout = () => {
                                         <label className="inner-title">Checkout Options</label>
                                         <div className="checkout-radio">
                                             <div className="radio-itens">
-                                                <input onChange={handleCheckOutChange} checked={checkOutMethod === "guest"} value='guest' type="radio" id="del2" name="account" />
-                                                <label htmlFor="del2">Guest Account</label>
-                                            </div>
-                                            <div className="radio-itens">
                                                 <input onChange={handleCheckOutChange} checked={checkOutMethod === "register"} value='register' type="radio" id="del1" name="account" />
                                                 <label htmlFor="del1">Register Account</label>
                                             </div>
                                             <div className="radio-itens">
-                                                <input disabled={isAuthenticated} onChange={handleCheckOutChange} checked={checkOutMethod === "login"} value='login' type="radio" id="del3" name="account" />
+                                                <input onChange={handleCheckOutChange} checked={checkOutMethod === "login"} value='login' type="radio" id="del3" name="account" />
                                                 <label htmlFor="del3">Login Account</label>
                                             </div>
                                         </div>
@@ -923,7 +1034,7 @@ const Checkout = () => {
                                                                     </Col>
                                                                     <Col lg={6} sm={12}>
                                                                         <Form.Group className="input-item">
-                                                                            <label>Last Name *</label>
+                                                                            <label>Last Name</label>
                                                                             <InputGroup>
                                                                                 <Form.Control onChange={handleChange} value={values.lastName} isInvalid={!!errors.lastName} type="text" name="lastName" placeholder="Enter your Last Name" />
                                                                                 <Form.Control.Feedback type="invalid">
@@ -954,6 +1065,43 @@ const Checkout = () => {
                                                                             </InputGroup>
                                                                         </Form.Group>
                                                                     </Col>
+                                                                    {!isAuthenticated && (
+                                                                        <>
+                                                                            <Col sm={12}>
+                                                                                <Form.Group className="input-item">
+                                                                                    <label>Phone Number *</label>
+                                                                                    <InputGroup>
+                                                                                        <Form.Control onChange={handleChange} value={values.phoneNumber || ""} isInvalid={!!errors.phoneNumber} type="tel" name="phoneNumber" placeholder="Enter your Phone Number" />
+                                                                                        <Form.Control.Feedback type="invalid">
+                                                                                            {errors.phoneNumber}
+                                                                                        </Form.Control.Feedback>
+                                                                                    </InputGroup>
+                                                                                </Form.Group>
+                                                                            </Col>
+                                                                            <Col lg={6} sm={12}>
+                                                                                <Form.Group className="input-item">
+                                                                                    <label>Password *</label>
+                                                                                    <InputGroup>
+                                                                                        <Form.Control onChange={handleChange} value={values.password || ""} isInvalid={!!errors.password} type="password" name="password" placeholder="Password" />
+                                                                                        <Form.Control.Feedback type="invalid">
+                                                                                            {errors.password}
+                                                                                        </Form.Control.Feedback>
+                                                                                    </InputGroup>
+                                                                                </Form.Group>
+                                                                            </Col>
+                                                                            <Col lg={6} sm={12}>
+                                                                                <Form.Group className="input-item">
+                                                                                    <label>Confirm Password *</label>
+                                                                                    <InputGroup>
+                                                                                        <Form.Control onChange={handleChange} value={values.confirmPassword || ""} isInvalid={!!errors.confirmPassword} type="password" name="confirmPassword" placeholder="Confirm Password" />
+                                                                                        <Form.Control.Feedback type="invalid">
+                                                                                            {errors.confirmPassword}
+                                                                                        </Form.Control.Feedback>
+                                                                                    </InputGroup>
+                                                                                </Form.Group>
+                                                                            </Col>
+                                                                        </>
+                                                                    )}
                                                                     <Col lg={6} sm={12}>
                                                                         <Form.Group className="input-item">
                                                                             <label>Country *</label>

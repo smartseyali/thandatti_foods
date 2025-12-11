@@ -189,12 +189,15 @@ async function createOrder(req, res, next) {
 
 async function getAllOrders(req, res, next) {
   try {
-    const { page = 1, limit = 50, status } = req.query;
+    const { page = 1, limit = 50, status, fromDate, toDate, search } = req.query;
     
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
       status,
+      fromDate,
+      toDate,
+      search,
     };
 
     const orders = await Order.findAll(options);

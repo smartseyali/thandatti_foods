@@ -8,8 +8,10 @@ class Order {
       paymentMethod, paymentStatus, email
     } = orderData;
     
-    // Generate unique order number
-    const orderNumber = Date.now().toString();
+    // Generate unique order number using sequence
+    const seqResult = await pool.query("SELECT nextval('order_number_seq')");
+    const nextVal = seqResult.rows[0].nextval;
+    const orderNumber = `PK-${nextVal.toString().padStart(3, '0')}`;
     
     const query = `
       INSERT INTO orders (order_number, user_id, shipping_address_id, billing_address_id,
@@ -132,16 +134,43 @@ class Order {
   }
 
   static async findAll(options = {}) {
-    const { page = 1, limit = 50, status } = options;
+    const { page = 1, limit = 50, status, fromDate, toDate, search } = options;
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const values = [];
     let paramCount = 1;
-    let whereClause = '';
+    let whereConditions = [];
 
     if (status) {
-      whereClause = `WHERE o.status = $${paramCount++}`;
+      whereConditions.push(`o.status = $${paramCount++}`);
       values.push(status);
     }
+
+    if (fromDate) {
+      whereConditions.push(`o.created_at::date >= $${paramCount++}`);
+      values.push(fromDate);
+    }
+
+    if (toDate) {
+      whereConditions.push(`o.created_at::date <= $${paramCount++}`);
+      values.push(toDate);
+    }
+
+    if (search) {
+      const searchTerm = `%${search}%`;
+      whereConditions.push(`(
+        o.order_number ILIKE $${paramCount} OR 
+        u.first_name ILIKE $${paramCount} OR 
+        u.last_name ILIKE $${paramCount} OR 
+        u.phone_number ILIKE $${paramCount} OR 
+        u.email ILIKE $${paramCount} OR 
+        sa.first_name ILIKE $${paramCount} OR 
+        sa.last_name ILIKE $${paramCount}
+      )`);
+      values.push(searchTerm);
+      paramCount++;
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const query = `
       SELECT o.*, 
@@ -151,7 +180,7 @@ class Order {
              ba.first_name as billing_first_name, ba.last_name as billing_last_name,
              ba.address_line as billing_address, ba.city as billing_city,
              ba.postal_code as billing_postal_code, ba.country as billing_country,
-             u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name
+             u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.phone_number as user_phone
       FROM orders o
       LEFT JOIN addresses sa ON o.shipping_address_id = sa.id
       LEFT JOIN addresses ba ON o.billing_address_id = ba.id
@@ -166,17 +195,51 @@ class Order {
   }
 
   static async count(options = {}) {
-    const { status } = options;
+    const { status,Vk, fromDate, toDate, search } = options;
     const values = [];
     let paramCount = 1;
-    let whereClause = '';
+    let whereConditions = [];
 
     if (status) {
-      whereClause = `WHERE status = $${paramCount++}`;
-      values.push(status);
+        whereConditions.push(`o.status = $${paramCount++}`);
+        values.push(status);
     }
+  
+    if (fromDate) {
+        whereConditions.push(`o.created_at::date >= $${paramCount++}`);
+        values.push(fromDate);
+    }
+  
+    if (toDate) {
+        whereConditions.push(`o.created_at::date <= $${paramCount++}`);
+        values.push(toDate);
+    }
+  
+    if (search) {
+        const searchTerm = `%${search}%`;
+        whereConditions.push(`(
+          o.order_number ILIKE $${paramCount} OR 
+          u.first_name ILIKE $${paramCount} OR 
+          u.last_name ILIKE $${paramCount} OR 
+          u.phone_number ILIKE $${paramCount} OR 
+          u.email ILIKE $${paramCount} OR 
+          sa.first_name ILIKE $${paramCount} OR 
+          sa.last_name ILIKE $${paramCount}
+        )`);
+        values.push(searchTerm);
+        paramCount++;
+    }
+  
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    const query = `SELECT COUNT(*) as total FROM orders ${whereClause}`;
+    // Need joins for search to work on user/address fields
+    const query = `
+        SELECT COUNT(*) as total 
+        FROM orders o 
+        LEFT JOIN addresses sa ON o.shipping_address_id = sa.id
+        LEFT JOIN users u ON o.user_id = u.id
+        ${whereClause}
+    `;
     const result = await pool.query(query, values);
     return parseInt(result.rows[0].total);
   }

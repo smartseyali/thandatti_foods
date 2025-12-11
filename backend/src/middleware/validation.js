@@ -29,7 +29,7 @@ const validateRegister = [
   body('phoneNumber').notEmpty().trim().isLength({ min: 10 }),
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim(),
+  body('lastName').optional().trim(),
   body('email').notEmpty().withMessage('Email is required').isEmail().withMessage('Invalid email format').normalizeEmail(),
   handleValidationErrors,
 ];
@@ -77,7 +77,7 @@ const validateReview = [
 // Address validation
 const validateAddress = [
   body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim(),
+  body('lastName').optional().trim(),
   body('addressLine').notEmpty().trim(),
   body('city').notEmpty().trim(),
   body('postalCode').notEmpty().trim(),

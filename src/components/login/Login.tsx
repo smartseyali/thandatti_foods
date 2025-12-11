@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { authStorage } from '@/utils/authStorage';
 
 interface FormValues {
-    phoneNumber: string;
+    identifier: string;
     password: string;
 }
 
@@ -38,15 +38,26 @@ const Login = () => {
     }, [isAuthenticated, user, router])
 
     const schema = yup.object().shape({
-        phoneNumber: yup.string()
-            .min(10, "Phone number must be at least 10 digits")
-            .matches(/^[0-9]+$/, "Phone number must contain only digits")
-            .required("Phone Number is required"),
+        identifier: yup.string()
+            .required("Phone Number or Email is required")
+            .test('test-name', 'Must be a valid email or phone number', function(value) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const phoneRegex = /^[0-9]{10,}$/;
+                let isValidEmail = emailRegex.test(value as string);
+                
+                // For phone, strip spaces/dashes if you want, but sticking to digits for now as per previous
+                let isValidPhone = phoneRegex.test(value as string);
+                
+                if (!isValidEmail && !isValidPhone) {
+                    return false;
+                }
+                return true;
+            }),
         password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
     });
 
     const initialValues: FormValues = {
-        phoneNumber: "" as string,
+        identifier: "" as string,
         password: "" as string,
     };
 
@@ -57,15 +68,18 @@ const Login = () => {
         try {
             const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.pattikadai.com';
             
+            const isEmail = values.identifier.includes('@');
+            const loginPayload = {
+                password: values.password,
+                ...(isEmail ? { email: values.identifier } : { phoneNumber: values.identifier })
+            };
+
             const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    phoneNumber: values.phoneNumber,
-                    password: values.password,
-                }),
+                body: JSON.stringify(loginPayload),
             });
 
             const data = await response.json();
@@ -133,12 +147,21 @@ const Login = () => {
                                     return (
                                         <Form noValidate onSubmit={handleSubmit}>
                                             <div className="bb-login-wrap">
-                                                <label htmlFor="phoneNumber">Phone Number*</label>
+                                                <label htmlFor="identifier">Phone Number or Email*</label>
                                                 <Form.Group>
                                                     <InputGroup>
-                                                        <Form.Control onChange={handleChange} value={values.phoneNumber || ""} type="tel" id="phoneNumber" name="phoneNumber" placeholder="Enter Your Phone Number" required isInvalid={!!errors.phoneNumber} />
+                                                        <Form.Control 
+                                                            onChange={handleChange} 
+                                                            value={values.identifier || ""} 
+                                                            type="text" 
+                                                            id="identifier" 
+                                                            name="identifier" 
+                                                            placeholder="Enter Your Phone Number or Email" 
+                                                            required 
+                                                            isInvalid={!!errors.identifier} 
+                                                        />
                                                         <Form.Control.Feedback type="invalid">
-                                                            {errors.phoneNumber}
+                                                            {errors.identifier}
                                                         </Form.Control.Feedback>
                                                     </InputGroup>
                                                 </Form.Group>

@@ -23,9 +23,11 @@ interface Order {
     id: string;
     order_number: string;
     user_id: string;
-    user_email?: string;
+    email?: string; // Order email (guest or user)
+    user_email?: string; // User account email
     user_first_name?: string;
     user_last_name?: string;
+    user_phone?: string; // Added user_phone
     shipping_first_name?: string;
     shipping_last_name?: string;
     shipping_address?: string;
@@ -38,6 +40,7 @@ interface Order {
     subtotal: number;
     discount_amount: number;
     vat: number;
+    delivery_charge: number;
     total_price: number;
     payment_method: string;
     payment_status: string;
@@ -51,19 +54,39 @@ const OrdersTab = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [showModal, setShowModal] = useState(false);
+    
+    // Filters
     const [statusFilter, setStatusFilter] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [newStatus, setNewStatus] = useState<string>('');
 
+    // Debounce search effect using local timer logic or simplified effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchOrders();
+        }, 500); 
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, statusFilter, searchQuery, fromDate, toDate]); 
+
     const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await adminApi.getAllOrders({
+            const params: any = {
                 page: currentPage,
                 limit: 20,
                 status: statusFilter || undefined,
-            });
+            };
+            if (searchQuery) params.search = searchQuery;
+            if (fromDate) params.fromDate = fromDate;
+            if (toDate) params.toDate = toDate;
+
+            const response = await adminApi.getAllOrders(params);
             setOrders(response.orders || []);
             setTotalPages(response.pagination?.totalPages || 1);
         } catch (error: any) {
@@ -72,11 +95,7 @@ const OrdersTab = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, statusFilter]);
-
-    useEffect(() => {
-        fetchOrders();
-    }, [fetchOrders]);
+    }, [currentPage, statusFilter, searchQuery, fromDate, toDate]);
 
     const handleViewOrder = (order: Order) => {
         setSelectedOrder(order);
@@ -137,28 +156,68 @@ const OrdersTab = () => {
         if (order.shipping_first_name && order.shipping_last_name) {
             return `${order.shipping_first_name} ${order.shipping_last_name}`;
         }
-        return order.user_email || 'Guest User';
+        return order.email || order.user_email || 'Guest User';
+    };
+
+    // Handler to reset page when filters change
+    const onFilterChange = (setter: any, value: any) => {
+        setter(value);
+        setCurrentPage(1);
     };
 
     return (
         <div className="bb-admin-orders">
-            <div className="card border-0 shadow-sm">
-                <div className="card-header bg-white border-0 py-3">
-                    <Row className="align-items-center">
-                        <Col lg={6}>
-                            <h5 className="mb-0">Orders Management</h5>
+            <div className="card border-0 shadow-sm mb-4">
+                <div className="card-header bg-white border-0 py-4">
+                    <Row className="g-3 align-items-center justify-content-between">
+                        <Col xs="auto">
+                            <h5 className="mb-0 fw-bold">Orders Management</h5>
                         </Col>
-                        <Col lg={6}>
-                            <div className="d-flex justify-content-end align-items-center">
-                                <span className="me-2 text-muted small">Filter by:</span>
+                        <Col xs="auto">
+                             <div className="d-flex flex-wrap align-items-center gap-2">
+                                {/* Search */}
+                                <div style={{ width: '250px' }}>
+                                    <div className="input-group input-group-sm">
+                                        <span className="input-group-text bg-light border-end-0">
+                                            <i className="ri-search-line text-muted"></i>
+                                        </span>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Search orders..."
+                                            value={searchQuery}
+                                            onChange={(e) => onFilterChange(setSearchQuery, e.target.value)}
+                                            className="border-start-0"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Date Range */}
+                                <div className="d-flex align-items-center gap-2">
+                                    <Form.Control
+                                        type="date"
+                                        value={fromDate}
+                                        onChange={(e) => onFilterChange(setFromDate, e.target.value)}
+                                        size="sm"
+                                        title="From Date"
+                                        style={{ width: '130px' }}
+                                    />
+                                    <span className="text-muted">-</span>
+                                    <Form.Control
+                                        type="date"
+                                        value={toDate}
+                                        onChange={(e) => onFilterChange(setToDate, e.target.value)}
+                                        size="sm"
+                                        title="To Date"
+                                        style={{ width: '130px' }}
+                                    />
+                                </div>
+
+                                {/* Status Filter */}
                                 <Form.Select
                                     value={statusFilter}
-                                    onChange={(e) => {
-                                        setStatusFilter(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="form-select-sm w-auto"
-                                    style={{minWidth: '150px'}}
+                                    onChange={(e) => onFilterChange(setStatusFilter, e.target.value)}
+                                    size="sm"
+                                    style={{ width: '140px' }}
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="pending">Pending</option>
@@ -166,7 +225,25 @@ const OrdersTab = () => {
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
                                 </Form.Select>
-                            </div>
+
+                                {/* Clear Button */}
+                                {(searchQuery || fromDate || toDate || statusFilter) && (
+                                    <Button 
+                                        variant="outline-danger" 
+                                        size="sm" 
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setFromDate('');
+                                            setToDate('');
+                                            setStatusFilter('');
+                                            setCurrentPage(1);
+                                        }}
+                                        title="Clear Filters"
+                                    >
+                                        <i className="ri-filter-off-line"></i>
+                                    </Button>
+                                )}
+                             </div>
                         </Col>
                     </Row>
                 </div>
@@ -181,58 +258,88 @@ const OrdersTab = () => {
                         </div>
                     ) : (
                         <>
-                            <Table responsive hover className="mb-0 align-middle">
-                                <thead className="bg-light">
+                            <Table responsive hover className="mb-0 align-middle text-nowrap">
+                                <thead className="bg-light text-muted">
                                     <tr>
-                                        <th className="border-0 py-3 ps-4">Order Number</th>
+                                        <th className="border-0 py-3 ps-4">Order #</th>
                                         <th className="border-0 py-3">Customer</th>
-                                        <th className="border-0 py-3">Items</th>
-                                        <th className="border-0 py-3">Total</th>
+                                        <th className="border-0 py-3">Mobile</th>
+                                        <th className="border-0 py-3">Address</th>
+                                        <th className="border-0 py-3">Items / Total</th>
                                         <th className="border-0 py-3">Payment</th>
                                         <th className="border-0 py-3">Status</th>
                                         <th className="border-0 py-3">Date</th>
-                                        <th className="border-0 py-3 pe-4">Actions</th>
+                                        <th className="border-0 py-3 pe-4 text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {orders.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="text-center py-5 text-muted">
-                                                <i className="ri-shopping-cart-2-line fs-1 d-block mb-2"></i>
-                                                No orders found
+                                            <td colSpan={9} className="text-center py-5 text-muted">
+                                                <div className="mb-2"><i className="ri-inbox-line fs-1 opacity-50"></i></div>
+                                                No orders found matching your filters.
                                             </td>
                                         </tr>
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id}>
-                                                <td className="ps-4"><span className="fw-medium">#{order.order_number}</span></td>
+                                                <td className="ps-4">
+                                                    <span className="fw-bold text-primary">#{order.order_number}</span>
+                                                </td>
                                                 <td>
                                                     <div className="d-flex flex-column">
-                                                        <span className="fw-medium">{getCustomerName(order)}</span>
-                                                        <span className="text-muted small">{order.user_email}</span>
+                                                        <span className="fw-medium text-dark">{getCustomerName(order)}</span>
+                                                        <small className="text-muted" style={{ fontSize: '0.75rem' }}>{order.user_email}</small>
                                                     </div>
                                                 </td>
-                                                <td>{order.total_items}</td>
-                                                <td><span className="fw-medium">₹{formatPrice(order.total_price)}</span></td>
                                                 <td>
-                                                    <span className={`badge ${getStatusBadgeClass(order.payment_status)} rounded-pill`}>
-                                                        {order.payment_status}
-                                                    </span>
+                                                    {order.user_phone ? (
+                                                        <span className="fw-medium">{order.user_phone}</span>
+                                                    ) : (
+                                                        <span className="text-muted small">{order.email || order.user_email || '-'}</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ maxWidth: '200px' }}>
+                                                    <div className="text-truncate" title={`${order.shipping_address}, ${order.shipping_city}, ${order.shipping_postal_code}`}>
+                                                        {order.shipping_address}, {order.shipping_city}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex flex-column">
+                                                        <span className="fw-bold fs-6">₹{formatPrice(order.total_price)}</span>
+                                                        <small className="text-muted">{order.total_items} Items</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex flex-column gap-1">
+                                                        <span className="text-uppercase small fw-bold text-muted">{order.payment_method}</span>
+                                                        <span className={`badge ${getStatusBadgeClass(order.payment_status)} rounded-pill bg-opacity-75`} style={{ width: 'fit-content' }}>
+                                                            {order.payment_status}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${getStatusBadgeClass(order.status)} rounded-pill`}>
                                                         {order.status || 'pending'}
                                                     </span>
                                                 </td>
-                                                <td className="text-muted small">{formatDate(order.created_at)}</td>
-                                                <td className="pe-4">
+                                                <td>
+                                                    <div className="d-flex flex-column">
+                                                        <span className="small fw-medium">{new Date(order.created_at).toLocaleDateString()}</span>
+                                                        <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                                                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </small>
+                                                    </div>
+                                                </td>
+                                                <td className="pe-4 text-end">
                                                     <Button
-                                                        variant="outline-primary"
+                                                        variant="light"
                                                         size="sm"
                                                         onClick={() => handleViewOrder(order)}
-                                                        className="d-flex align-items-center gap-1"
+                                                        className="btn-icon text-primary bg-primary-subtle border-0"
+                                                        title="View Details"
                                                     >
-                                                        <i className="ri-eye-line"></i> View
+                                                        <i className="ri-eye-fill"></i>
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -284,11 +391,11 @@ const OrdersTab = () => {
                                 <Col md={6}>
                                     <h5>Customer Information</h5>
                                     <p>
-                                        <strong>Name:</strong>{' '}
-                                        {getCustomerName(selectedOrder)}
-                                    </p>
-                                    <p>
-                                        <strong>Email:</strong> {selectedOrder.user_email || 'N/A'}
+                                        <strong>Name:</strong> {getCustomerName(selectedOrder)}<br/>
+                                        <strong>Email:</strong> {selectedOrder.user_email || 'N/A'}<br/>
+                                        {selectedOrder.user_phone && (
+                                           <><strong>Phone:</strong> {selectedOrder.user_phone}</>
+                                        )}
                                     </p>
                                 </Col>
                                 <Col md={6}>
@@ -338,10 +445,7 @@ const OrdersTab = () => {
                                         <strong>Subtotal:</strong> ₹{formatPrice(selectedOrder.subtotal)}
                                     </p>
                                     <p>
-                                        <strong>Discount:</strong> ₹{formatPrice(selectedOrder.discount_amount)}
-                                    </p>
-                                    <p>
-                                        <strong>VAT:</strong> ₹{formatPrice(selectedOrder.vat)}
+                                        <strong>Delivery Charge:</strong> ₹{formatPrice(selectedOrder.delivery_charge || 0)}
                                     </p>
                                     <p>
                                         <strong>Total:</strong> ₹{formatPrice(selectedOrder.total_price)}
@@ -394,4 +498,3 @@ const OrdersTab = () => {
 };
 
 export default OrdersTab;
-

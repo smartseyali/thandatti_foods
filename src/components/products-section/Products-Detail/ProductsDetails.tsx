@@ -228,8 +228,6 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
         const newPriceNum = selectedPrice || product.newPrice || 0;
         
         if (oldPriceNum && oldPriceNum > 0 && newPriceNum > 0 && oldPriceNum > newPriceNum) {
-            const discountPercent = ((oldPriceNum - newPriceNum) / oldPriceNum) * 100;
-            discount = `-${Math.round(discountPercent)}%`;
             mrp = `₹${oldPriceNum.toFixed(2)}`;
         }
         
@@ -237,8 +235,8 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
     };
 
     const priceDisplay = getPriceDisplay();
-    const displayTitle = product?.title || "Ground Nuts Oil Pack 52g";
-    const displaySKU = product?.sku || "WH12";
+    const displayTitle = product?.title || "";
+    const displaySKU = product?.sku || "";
     const displayStatus = product?.status || "In stock";
     // Use detailed description from database, fallback to regular description
     const displayDescription = product?.detailedDescription || product?.detailed_description || product?.description || '';
@@ -354,7 +352,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                             <div className="bb-single-price-wrap">
                                 <div className="bb-single-price">
                                     <div className="price">
-                                        <h5>{priceDisplay.price} {priceDisplay.discount && <span>{priceDisplay.discount}</span>}</h5>
+                                        <h5>{priceDisplay.price}</h5>
                                     </div>
                                     {priceDisplay.mrp && (
                                         <div className="mrp">
@@ -385,11 +383,6 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                                     className={activeIndex === index ? "active-variation" : ""}
                                                 >
                                                     <span>{attr.attributeValue}</span>
-                                                    {attr.oldPrice && attr.price && attr.oldPrice > attr.price && (
-                                                        <span className="attribute-discount" style={{ fontSize: '0.8em', color: '#dc3545', marginLeft: '5px' }}>
-                                                            {Math.round(((attr.oldPrice - attr.price) / attr.oldPrice) * 100)}% off
-                                                        </span>
-                                                    )}
                                                 </li>
                                             ))}
                                         </ul>

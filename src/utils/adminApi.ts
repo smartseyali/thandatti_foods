@@ -92,12 +92,22 @@ export const adminApi = {
   },
 
   // Orders Management
-  getAllOrders: async (params?: { page?: number; limit?: number; status?: string }) => {
+  getAllOrders: async (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    search?: string; 
+    fromDate?: string; 
+    toDate?: string; 
+  }) => {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.status) queryParams.append('status', params.status);
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+      if (params?.toDate) queryParams.append('toDate', params.toDate);
 
       const query = queryParams.toString();
       const response = await adminApiRequest(`/api/orders/all${query ? `?${query}` : ''}`);
@@ -352,6 +362,84 @@ export const adminApi = {
       console.error('Error deleting delivery charge:', error);
       throw error;
     }
+  },
+
+  // Dynamic Delivery Rules
+  saveDeliveryRule: async (data: any) => {
+    try {
+      const response = await adminApiRequest('/api/delivery/rules', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response.rule;
+    } catch (error: any) {
+      console.error('Error saving delivery rule:', error);
+      throw error;
+    }
+  },
+
+  deleteDeliveryRule: async (id: string) => {
+    try {
+      await adminApiRequest(`/api/delivery/rules/${id}`, {
+        method: 'DELETE',
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting delivery rule:', error);
+      throw error;
+    }
+  },
+
+  // Tariff Management
+  createTariff: async (data: any) => {
+    try {
+      const response = await adminApiRequest('/api/delivery/tariffs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error: any) {
+       console.error('Error creating tariff:', error);
+       throw error;
+    }
+  },
+
+  updateTariff: async (id: string, data: any) => {
+    try {
+        const response = await adminApiRequest(`/api/delivery/tariffs/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        return response;
+    } catch (error: any) {
+        console.error('Error updating tariff:', error);
+        throw error;
+    }
+  },
+
+  deleteTariff: async (id: string) => {
+      try {
+          await adminApiRequest(`/api/delivery/tariffs/${id}`, {
+              method: 'DELETE'
+          });
+          return true;
+      } catch (error: any) {
+          console.error('Error deleting tariff:', error);
+          throw error;
+      }
+  },
+
+  updateStateZone: async (id: string, zone: string) => {
+      try {
+          const response = await adminApiRequest(`/api/delivery/states/${id}/zone`, {
+              method: 'PUT',
+              body: JSON.stringify({ zone })
+          });
+          return response;
+      } catch (error: any) {
+          console.error('Error updating state zone:', error);
+          throw error;
+      }
   },
 };
 

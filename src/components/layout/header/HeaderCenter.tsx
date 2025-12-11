@@ -162,7 +162,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
             <MenuItem key="all">All Categories</MenuItem>
             {categories.map((cat: any) => (
                 <MenuItem key={cat.category || cat.name} style={{padding: "8px 16px"}}>
-                    {cat.category || cat.name} {cat.count ? `(${cat.count})` : ''}
+                    {cat.category || cat.name}
                 </MenuItem>
             ))}
         </Menu>
@@ -250,9 +250,7 @@ const HeaderCenter = ({ wishlistItem, cartSlice }: any) => {
                                         <span className="fw-medium">Special Combo</span>
                                         <span className="badge bg-danger position-absolute" style={{ top: '-12px', right: '-30px', fontSize: '9px', padding: '3px 6px', borderRadius: '4px' }}>Offers</span>
                                     </Link>
-                                    <Link href="/track-order" className="menu-item text-dark text-decoration-none">
-                                        <span className="fw-medium">Track Order</span>
-                                    </Link>
+
                                 </div>
 
                                 {/* Right: Icons */}

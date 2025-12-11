@@ -120,9 +120,6 @@ const Footer = ({
                                                     <Link href="/about-us">About us</Link>
                                                 </li>
                                                 <li className="bb-footer-link">
-                                                    <Link href="/track-order">Delivery</Link>
-                                                </li>
-                                                <li className="bb-footer-link">
                                                     <Link href="/faq">Legal Notice</Link>
                                                 </li>
                                                 <li className="bb-footer-link">

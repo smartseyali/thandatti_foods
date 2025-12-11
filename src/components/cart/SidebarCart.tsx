@@ -23,9 +23,6 @@ const SidebarCart = ({
 
     const dispatch = useDispatch();
 
-    // Fetch related products (multiple products for the sidebar)
-    const { data, error } = useSWR("/api/related-products", fetcher, { onSuccess, onError });
-
     useEffect(() => {
         if (cartSlice.length === 0) {
             setSubTotal(0);
@@ -44,25 +41,6 @@ const SidebarCart = ({
 
     const total = subTotal;
 
-    if (error) return <div>Failed to load products</div>;
-    if (!data) return <div></div>;
-
-    const getData = () => {
-        // Ensure we always return an array
-        if (hasPaginate) {
-            return Array.isArray(data.data) ? data.data : [];
-        } else {
-            // If data is an array, return it; if it's a single object, wrap it in an array
-            if (Array.isArray(data)) {
-                return data;
-            } else if (data && typeof data === 'object') {
-                // Single product object - wrap in array
-                return [data];
-            }
-            return [];
-        }
-    };
-
     const handleRemoveItem = async (data: any) => {
         try {
             // Use cartItemId if available, otherwise use id
@@ -78,22 +56,8 @@ const SidebarCart = ({
         <>
             <div onClick={closeCart} style={{ display: isCartOpen ? "block" : "none", zIndex: 1999 }} className="bb-side-cart-overlay"></div>
             <div className={`bb-side-cart ${isCartOpen ? "bb-open-cart" : ""}`} style={{ zIndex: 2000 }}>
-                <Row className="row h-full">
-                    <Col md={5} className="col-12 d-none-767">
-                        <div className="bb-top-contact">
-                            <div className="bb-cart-title">
-                                <h4>Related Items</h4>
-                            </div>
-                        </div>
-                        <div className="bb-cart-box mb-minus-24 cart-related bb-border-right">
-                            <div className="bb-deal-card mb-24">
-                                {getData().slice(0, 2).map((data: any, index: any) => (
-                                    <ProductItemCard data={data} key={index} />
-                                ))}
-                            </div>
-                        </div>
-                    </Col>
-                    <Col md={7} className="col-12">
+                <Row className="row h-full" style={{ height: '100%' }}>
+                    <Col md={12} className="col-12" style={{ height: '100%' }}>
                         <div className="bb-inner-cart" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                             <div className="bb-top-contact" style={{ flexShrink: 0 }}>
                                 <div className="bb-cart-title">
@@ -122,7 +86,7 @@ const SidebarCart = ({
                                     </ul>
                                 )}
                             </div>
-                            <div className="bb-bottom-cart" style={{ flexShrink: 0 }}>
+                            <div className="bb-bottom-cart" style={{ flexShrink: 0, position: 'sticky', bottom: 0, backgroundColor: 'white', zIndex: 10, borderTop: '1px solid #eee' }}>
                                 {cartSlice.length ? (
                                     <div className="cart-sub-total">
                                         <table className="table cart-table">
@@ -141,7 +105,6 @@ const SidebarCart = ({
                                     </div>
                                 ) : <></>}
                                 <div className="cart-btn">
-                                    <Link href="/cart" className="bb-btn-1" onClick={closeCart}>View Cart</Link>
                                     <Link href="/checkout" className="bb-btn-2" onClick={closeCart}>Checkout</Link>
                                 </div>
                             </div>

@@ -4,8 +4,8 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'pattikadaiofficial@gmail.com',
-    pass: process.env.EMAIL_PASS || 'pattikadaiofficial@2025',
+    user: process.env.EMAIL_USER || 'pattikadaisuport@gmail.com',
+    pass: process.env.EMAIL_PASS || 'apgk nkpx dxgw gphl',
   },
 });
 
@@ -20,7 +20,7 @@ const sendEmail = async (to, subject, html) => {
     // Credentials are now hardcoded as fallback, so this check is always true unless hardcoded ones fail
 
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Patti Kadai" <pattikadaiofficial@gmail.com>',
+      from: process.env.EMAIL_FROM || '"Patti Kadai" <pattikadaisuport@gmail.com>',
       to,
       subject,
       html,
@@ -28,7 +28,13 @@ const sendEmail = async (to, subject, html) => {
     console.log('Message sent: %s', info.messageId);
     return info;
   } catch (error) {
-    console.error('Error sending email:', error);
+    if (error.responseCode === 535) {
+        console.error('❌ Email Authentication Failed (Error 535).');
+        console.error('If using Gmail, your password might be rejected. Please use an App Password instead of your login password.');
+        console.error('Guide: Google Account -> Security -> 2-Step Verification -> App Passwords');
+    } else {
+        console.error('Error sending email:', error);
+    }
     // Log error but don't break the application flow
     return null;
   }

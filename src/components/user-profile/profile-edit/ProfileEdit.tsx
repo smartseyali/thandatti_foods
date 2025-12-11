@@ -38,7 +38,7 @@ const ProfileEdit = () => {
 
     const schema = yup.object().shape({
         firstName: yup.string().required(),
-        lastName: yup.string().required(),
+        lastName: yup.string(),
         email: yup.string().required(),
         phoneNumber: yup.string().min(10, "Conform Password must be at least 6 characters").required(),
         address: yup.string().required(),
@@ -203,9 +203,9 @@ const ProfileEdit = () => {
                                                     </Form.Group>
                                                 </div>
                                                 <div className="bb-register-wrap bb-register-width-50">
-                                                    <label>Last Name*</label>
+                                                    <label>Last Name</label>
                                                     <Form.Group>
-                                                        <Form.Control onChange={handleChange} value={values.lastName} type="text" name="lastName" placeholder="Enter your Last name" required isInvalid={!!errors.lastName} />
+                                                        <Form.Control onChange={handleChange} value={values.lastName} type="text" name="lastName" placeholder="Enter your Last name" isInvalid={!!errors.lastName} />
                                                         <Form.Control.Feedback type='invalid'>
                                                             {errors.lastName}
                                                         </Form.Control.Feedback>

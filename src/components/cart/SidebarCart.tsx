@@ -105,7 +105,7 @@ const SidebarCart = ({
                                     </div>
                                 ) : <></>}
                                 <div className="cart-btn">
-                                    <Link href="/checkout" className="bb-btn-2" onClick={closeCart}>Checkout</Link>
+                                    <Link href="/checkout" className="bb-btn-2" onClick={closeCart}>Buy Now <i className="ri-arrow-right-line"></i></Link>
                                 </div>
                             </div>
                         </div>

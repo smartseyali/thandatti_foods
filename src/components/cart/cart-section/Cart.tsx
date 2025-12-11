@@ -172,7 +172,7 @@ const Cart = () => {
                                 </table>
                             </Fade>
                             <Fade triggerOnce direction='up' duration={1000} delay={400}>
-                                <Link href="/checkout" className="bb-btn-2 check-btn">Check Out</Link>
+                                <Link href="/checkout" className="bb-btn-2 check-btn">Buy Now <i className="ri-arrow-right-line"></i></Link>
                             </Fade>
                         </Col>
                     </Row>

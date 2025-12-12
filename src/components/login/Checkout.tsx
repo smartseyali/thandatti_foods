@@ -172,7 +172,7 @@ const Checkout = () => {
             }
         };
         calculateDelivery();
-    }, [currentDataForDelivery, cartSlice]);
+    }, [currentDataForDelivery, cartSlice, activeIndex]);
 
     const total = subTotal + deliveryCharge;
 

@@ -24,7 +24,7 @@ const PrivacyPolicy = () => {
                                             {/* Privacy Policy Section */}
                                             <div className="block mb-5">
                                                 <p className="text-justify" style={{ fontSize: '1rem', lineHeight: '1.8' }}>
-                                                    This Privacy Policy describes how <strong>THANDATTI FOODS</strong> (referred to as "we," "us," or "our") collects, uses, and discloses your personal information when you visit, make a purchase from, or interact with our website, <a href="https://pattikadai.com/" className="text-primary">https://pattikadai.com/</a> (the "Site").
+                                                    This Privacy Policy describes how <strong>THANDATTI FOODS</strong> (referred to as &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) collects, uses, and discloses your personal information when you visit, make a purchase from, or interact with our website, <a href="https://pattikadai.com/" className="text-primary">https://pattikadai.com/</a> (the &quot;Site&quot;).
                                                 </p>
                                             </div>
 
@@ -90,8 +90,8 @@ const PrivacyPolicy = () => {
                                                 <ul className="list-disc ps-4 mt-2">
                                                     <li className="mb-2"><strong>Right to Access:</strong> The right to request copies of the personal data we hold about you.</li>
                                                     <li className="mb-2"><strong>Right to Rectification:</strong> The right to request that we correct any information you believe is inaccurate.</li>
-                                                    <li className="mb-2"><strong>Right to Erasure ('Right to be Forgotten'):</strong> The right to request that we erase your personal data, under certain conditions.</li>
-                                                    <li className="mb-2"><strong>Right to Opt-Out of Marketing:</strong> You can always unsubscribe from our marketing emails by clicking the "unsubscribe" link at the bottom of any email.</li>
+                                                    <li className="mb-2"><strong>Right to Erasure (&apos;Right to be Forgotten&apos;):</strong> The right to request that we erase your personal data, under certain conditions.</li>
+                                                    <li className="mb-2"><strong>Right to Opt-Out of Marketing:</strong> You can always unsubscribe from our marketing emails by clicking the &quot;unsubscribe&quot; link at the bottom of any email.</li>
                                                 </ul>
                                                 <p className="mt-2 text-muted fst-italic">If you wish to exercise any of these rights, please contact us using the details below.</p>
                                             </div>

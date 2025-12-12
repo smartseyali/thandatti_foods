@@ -120,13 +120,13 @@ const Footer = ({
                                                     <Link href="/about-us">About us</Link>
                                                 </li>
                                                 <li className="bb-footer-link">
-                                                    <Link href="/faq">Legal Notice</Link>
+                                                    <Link href="/faq">Faq</Link>
                                                 </li>
                                                 <li className="bb-footer-link">
                                                     <Link href="/terms">Terms & conditions</Link>
                                                 </li>
                                                 <li className="bb-footer-link">
-                                                    <Link href="/checkout">Secure payment</Link>
+                                                    <Link href="/privacy-policy">Privacy Policy</Link>
                                                 </li>
                                                 <li className="bb-footer-link">
                                                     <Link href="/contact-us">Contact us</Link>

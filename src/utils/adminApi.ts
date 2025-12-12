@@ -91,6 +91,46 @@ export const adminApi = {
     }
   },
 
+  // Users Management
+  getUsers: async (params?: { page?: number; limit?: number; search?: string }) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+
+      const query = queryParams.toString();
+      const response = await adminApiRequest(`/api/admin/users${query ? `?${query}` : ''}`);
+      return response;
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  getUserDetails: async (userId: string) => {
+    try {
+      const response = await adminApiRequest(`/api/admin/users/${userId}`);
+      return response;
+    } catch (error: any) {
+      console.error('Error fetching user details:', error);
+      throw error;
+    }
+  },
+
+  updateUserStatus: async (userId: string, data: { role?: string; is_active?: boolean }) => {
+    try {
+      const response = await adminApiRequest(`/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error: any) {
+      console.error('Error updating user status:', error);
+      throw error;
+    }
+  },
+
   // Orders Management
   getAllOrders: async (params?: { 
     page?: number; 

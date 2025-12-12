@@ -7,6 +7,7 @@ import DashboardTab from '@/components/admin/DashboardTab';
 import ProductsTab from '@/components/admin/ProductsTab';
 import CategoriesTab from '@/components/admin/CategoriesTab';
 import OrdersTab from '@/components/admin/OrdersTab';
+import UsersTab from '@/components/admin/UsersTab';
 import DeliveryTab from '@/components/admin/DeliveryTab';
 
 const AdminPage = () => {
@@ -51,6 +52,11 @@ const AdminPage = () => {
                                         </Nav.Link>
                                     </Nav.Item>
                                     <Nav.Item>
+                                        <Nav.Link eventKey="users" className="px-4 py-2">
+                                            <i className="ri-user-line me-2"></i> Users
+                                        </Nav.Link>
+                                    </Nav.Item>
+                                    <Nav.Item>
                                         <Nav.Link eventKey="delivery" className="px-4 py-2">
                                             <i className="ri-truck-line me-2"></i> Delivery
                                         </Nav.Link>
@@ -69,6 +75,9 @@ const AdminPage = () => {
                                     </Tab.Pane>
                                     <Tab.Pane eventKey="orders">
                                         <OrdersTab />
+                                    </Tab.Pane>
+                                    <Tab.Pane eventKey="users">
+                                        <UsersTab />
                                     </Tab.Pane>
                                     <Tab.Pane eventKey="delivery">
                                         <DeliveryTab />

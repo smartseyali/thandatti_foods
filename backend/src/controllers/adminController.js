@@ -69,7 +69,77 @@ async function getOrdersByStatus() {
   }, {});
 }
 
+async function getUsers(req, res, next) {
+  try {
+    const { page = 1, limit = 50, search } = req.query;
+    const User = require('../models/User');
+
+    const [users, total] = await Promise.all([
+      User.findAll({ page, limit, search }),
+      User.count({ search }),
+    ]);
+
+    res.json({
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getUserDetails(req, res, next) {
+  try {
+    const { id } = req.params;
+    const User = require('../models/User');
+    const Address = require('../models/Address');
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const addresses = await Address.findByUserId(id);
+
+    res.json({
+      user,
+      addresses
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateUserStatusAndRole(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { role, is_active } = req.body;
+    const User = require('../models/User');
+
+    const updatedUser = await User.updateStatusAndRole(id, { role, is_active });
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      user: updatedUser,
+      message: 'User updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getStats,
+  getUsers,
+  getUserDetails,
+  updateUserStatusAndRole,
 };
 

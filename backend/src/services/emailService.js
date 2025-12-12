@@ -1,13 +1,23 @@
 const nodemailer = require('nodemailer');
 
 // Create transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'pattikadaisuport@gmail.com',
-    pass: process.env.EMAIL_PASS || 'apgk nkpx dxgw gphl',
-  },
-});
+const emailConfig = process.env.EMAIL_HOST ? {
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    }
+} : {
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'pattikadaisuport@gmail.com',
+        pass: process.env.EMAIL_PASS || 'apgk nkpx dxgw gphl',
+    }
+};
+
+const transporter = nodemailer.createTransport(emailConfig);
 
 const sendEmail = async (to, subject, html) => {
   try {
@@ -15,9 +25,6 @@ const sendEmail = async (to, subject, html) => {
         console.warn("Email service: No recipient defined");
         return;
     }
-    
-    // Check if email configuration is present
-    // Credentials are now hardcoded as fallback, so this check is always true unless hardcoded ones fail
 
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || '"Patti Kadai" <pattikadaisuport@gmail.com>',

@@ -139,6 +139,14 @@ const apiRequest = async (
       
       // For authenticated endpoints, throw auth errors
       if (requireAuth && response.status === 401) {
+        // Auto-logout: Clear invalid token and redirect if in browser
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('auth_token');
+          // Only redirect if not already on the login page to avoid loops
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login?expired=true';
+          }
+        }
         throw new Error(error.message || 'Authentication required');
       }
       

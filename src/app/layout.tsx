@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="stylesheet" href="/assets/css/box-1.css" id="add_box"/>
+        {/* <link rel="stylesheet" href="/assets/css/box-1.css" id="add_box"/> */}
       </head>
       <body>
         {/* Google Analytics 4 */}

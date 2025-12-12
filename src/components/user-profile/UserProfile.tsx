@@ -19,6 +19,7 @@ const UserProfile = () => {
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
     const user = useSelector((state: RootState) => state.login.user);
     const [userData, setUserData] = useState<RegistrationData | null>(null);
+    const [userRole, setUserRole] = useState<string>('');
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -44,6 +45,7 @@ const UserProfile = () => {
                             shippingAddress: apiUser.shipping_address || apiUser.shippingAddress || '',
                         };
                         setUserData(data);
+                        setUserRole(apiUser.role || '');
                     } else if (user) {
                         // Fallback to Redux store
                         const data: RegistrationData = {
@@ -62,6 +64,7 @@ const UserProfile = () => {
                             shippingAddress: user.shippingAddress || '',
                         };
                         setUserData(data);
+                        setUserRole(user.role || '');
                     }
                 } catch (error) {
                     console.error("Failed to fetch user data:", error);
@@ -83,6 +86,7 @@ const UserProfile = () => {
                             shippingAddress: user.shippingAddress || '',
                         };
                         setUserData(data);
+                        setUserRole(user.role || '');
                     }
                 }
             }
@@ -117,6 +121,13 @@ const UserProfile = () => {
                                                 <i className="ri-user-line me-2"></i> User Profile
                                             </Link>
                                         </li>
+                                        {userRole === 'admin' && (
+                                            <li>
+                                                <Link href="/admin">
+                                                    <i className="ri-admin-line me-2"></i> Admin Panel
+                                                </Link>
+                                            </li>
+                                        )}
                                         <li>
                                             <Link href="/my-orders">
                                                 <i className="ri-file-list-line me-2"></i> My Orders

@@ -23,7 +23,7 @@ const TermsAndConditions = () => {
                                         <div className="terms-detail">
                                             <div className="block">
                                                 <h3>1. General Terms</h3>
-                                                <p>Welcome to Pattikadai. By accessing and using this website, you agree to comply with and be bound by the following terms and conditions. If you disagree with any part of these terms, please do not use our website.</p>
+                                                <p>Welcome to Pattikadai (a brand of Thandatti Foods). By accessing and using this website, you agree to comply with and be bound by the following terms and conditions. If you disagree with any part of these terms, please do not use our website.</p>
                                             </div>
                                             <div className="block">
                                                 <h3>2. Product Authenticity</h3>

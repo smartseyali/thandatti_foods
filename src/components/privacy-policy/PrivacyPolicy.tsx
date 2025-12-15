@@ -24,7 +24,7 @@ const PrivacyPolicy = () => {
                                             {/* Privacy Policy Section */}
                                             <div className="block mb-5">
                                                 <p className="text-justify" style={{ fontSize: '1rem', lineHeight: '1.8' }}>
-                                                    This Privacy Policy describes how <strong>THANDATTI FOODS</strong> (referred to as &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) collects, uses, and discloses your personal information when you visit, make a purchase from, or interact with our website, <a href="https://pattikadai.com/" className="text-primary">https://pattikadai.com/</a> (the &quot;Site&quot;).
+                                                    This Privacy Policy describes how <strong>Pattikadai, a brand of Thandatti Foods</strong> (referred to as &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) collects, uses, and discloses your personal information when you visit, make a purchase from, or interact with our website, <a href="https://pattikadai.com/" className="text-primary">https://pattikadai.com/</a> (the &quot;Site&quot;).
                                                 </p>
                                             </div>
 

@@ -20,15 +20,15 @@
     "formik": "^2.4.6",
     "framer-motion": "^12.5.0",
     "lodash": "^4.17.21",
-    "next": "^15.2.3",
+    "next": "^16.0.0",
     "nouislider-react": "^3.4.2",
     "razorpay": "^2.9.6",
     "rc-dropdown": "^4.2.0",
     "rc-menu": "^9.15.1",
-    "react": "^19.0.0",
+    "react": "^19.0.1",
     "react-awesome-reveal": "^4.3.1",
     "react-bootstrap": "^2.10.9",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.0.1",
     "react-hot-toast": "^2.6.0",
     "react-inner-image-zoom": "^3.0.2",
     "react-owl-carousel": "^2.3.3",
@@ -58,7 +58,7 @@
     "@types/react-slick": "^0.23.13",
     "critters": "^0.0.23",
     "eslint": "^9.19.0",
-    "eslint-config-next": "^15.1.6",
+    "eslint-config-next": "^16.0.0",
     "typescript": "^5"
   }
 }

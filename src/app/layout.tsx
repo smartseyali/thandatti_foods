@@ -11,8 +11,8 @@ import Providers from "@/store/Provider";
 import Layout from "@/components/layout";
 
 export const metadata: Metadata = {
-  title: "Pattikadai - Organic Food Store",
-  description: "Authentic Tradition, Crafted by Grandma's Hands. Patti Kadai—an online home for pure, healthy, preservative-free country foods inspired by traditional cooking.",
+  title: "Pattikadai - A Brand of Thandatti Foods",
+  description: "Authentic Tradition, Crafted by Grandma's Hands. Patti Kadai—a brand of Thandatti Foods—is an online home for pure, healthy, preservative-free country foods inspired by traditional cooking.",
 
   icons: {
     icon: "/assets/img/favicon/favicon.png",
@@ -30,7 +30,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* <link rel="stylesheet" href="/assets/css/box-1.css" id="add_box"/> */}
+        <link rel="stylesheet" href="/assets/css/vendor/bootstrap.min.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/remixicon.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/aos.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/swiper-bundle.min.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/owl.carousel.min.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/animate.min.css" />
+        <link rel="stylesheet" href="/assets/css/vendor/jquery-range-ui.css" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
       </head>
       <body>
         {/* Google Analytics 4 */}

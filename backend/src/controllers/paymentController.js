@@ -257,6 +257,21 @@ async function razorpayWebhook(req, res, next) {
       
       // Clear cart after successful payment
       await Cart.clear(order.user_id);
+
+      // Fetch full order details including shipping info for receipt
+      const fullOrder = await Order.findById(order.id);
+      
+      // Send receipt
+      if (fullOrder && fullOrder.email) {
+        const userObj = {
+          email: fullOrder.email,
+          firstName: fullOrder.shipping_first_name || 'Customer',
+          lastName: fullOrder.shipping_last_name || '',
+        };
+        // We import sendPaymentReceipt at top but we need to ensure it's available.
+        // It is required as: const { sendPaymentReceipt } = require('../services/emailService');
+        await sendPaymentReceipt(fullOrder, userObj).catch(err => console.error("Failed to send payment receipt in webhook:", err));
+      }
     } else if (event === 'payment.failed') {
       await Order.updatePaymentStatus(order.id, 'failed');
     }

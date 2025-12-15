@@ -1,23 +1,4 @@
-const nodemailer = require('nodemailer');
-
-// Create transporter
-const emailConfig = process.env.EMAIL_HOST ? {
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '587'),
-    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    }
-} : {
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'pattikadaisuport@gmail.com',
-        pass: process.env.EMAIL_PASS || 'apgk nkpx dxgw gphl',
-    }
-};
-
-const transporter = nodemailer.createTransport(emailConfig);
+const axios = require('axios');
 
 const sendEmail = async (to, subject, html) => {
   try {
@@ -26,22 +7,21 @@ const sendEmail = async (to, subject, html) => {
         return;
     }
 
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Patti Kadai" <pattikadaisuport@gmail.com>',
-      to,
-      subject,
-      html,
-    });
-    console.log('Message sent: %s', info.messageId);
-    return info;
+    const payload = {
+        to: to,
+        subject: subject,
+        msg_type: "HTML",
+        msg: html
+    };
+
+    const webhookUrl = 'https://n8n.srv1198132.hstgr.cloud/webhook/send-mail';
+
+    const response = await axios.post(webhookUrl, payload);
+    
+    console.log('Email sent via webhook. Status:', response.status);
+    return response.data;
   } catch (error) {
-    if (error.responseCode === 535) {
-        console.error('❌ Email Authentication Failed (Error 535).');
-        console.error('If using Gmail, your password might be rejected. Please use an App Password instead of your login password.');
-        console.error('Guide: Google Account -> Security -> 2-Step Verification -> App Passwords');
-    } else {
-        console.error('Error sending email:', error);
-    }
+    console.error('Error sending email via webhook:', error.message);
     // Log error but don't break the application flow
     return null;
   }

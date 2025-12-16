@@ -186,7 +186,6 @@ async function createOrder(req, res, next) {
           description: `Payment for Order #${order.order_number || order.id}`,
           customer: {
             name: customerName,
-            email: order.email,
             contact: customerPhone
           },
           callbackUrl: `${process.env.CORS_ORIGIN || 'https://pattikadai.com'}/my-orders`,

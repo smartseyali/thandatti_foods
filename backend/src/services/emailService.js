@@ -43,8 +43,10 @@ const sendEmail = async (to, subject, html) => {
 const sendWelcomeEmail = async (user) => {
     const html = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h1 style="color: #F97316;">Welcome to Patti Kadai!</h1>
+            <div style="text-align: center; border-bottom: 2px solid #F97316; padding-bottom: 20px; margin-bottom: 20px;">
+                <img src="https://pattikadai.com/assets/img/logo/logo.gif" alt="Patti Kadai" style="max-height: 80px; margin-bottom: 10px;">
+                <p style="font-size: 14px; color: #555; margin: 0;">A Brand of Thandatti Foods</p>
+                <h1 style="color: #F97316; margin: 15px 0 0 0;">Welcome to Patti Kadai!</h1>
             </div>
             <p>Dear <strong>${user.firstName} ${user.lastName}</strong>,</p>
             <p>Thank you for creating an account with Patti Kadai. We are thrilled to have you as part of our community!</p>
@@ -74,7 +76,11 @@ const sendOrderConfirmation = async (order, email) => {
 
     const html = `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333; border-bottom: 2px solid #F97316; padding-bottom: 10px;">Order Confirmation</h2>
+            <div style="text-align: center; border-bottom: 2px solid #F97316; padding-bottom: 20px; margin-bottom: 20px;">
+                <img src="https://pattikadai.com/assets/img/logo/logo.gif" alt="Patti Kadai" style="max-height: 80px; margin-bottom: 10px;">
+                <p style="font-size: 14px; color: #555; margin: 0;">A Brand of Thandatti Foods</p>
+                <h2 style="color: #333; margin: 15px 0 0 0;">Order Confirmation</h2>
+            </div>
             <p>Thank you for your order!</p>
             <div style="background-color: #f8f8f8; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
                 <p><strong>Order Number:</strong> #${order.order_number || order.orderNumber || order.id}</p>
@@ -120,7 +126,11 @@ const sendOrderConfirmation = async (order, email) => {
 const sendOrderStatusUpdate = async (order, email) => {
     const html = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <h2 style="color: #333;">Order Status Update</h2>
+            <div style="text-align: center; border-bottom: 2px solid #F97316; padding-bottom: 20px; margin-bottom: 20px;">
+                <img src="https://pattikadai.com/assets/img/logo/logo.gif" alt="Patti Kadai" style="max-height: 80px; margin-bottom: 10px;">
+                <p style="font-size: 14px; color: #555; margin: 0;">A Brand of Thandatti Foods</p>
+                <h2 style="color: #333; margin: 15px 0 0 0;">Order Status Update</h2>
+            </div>
             <p>Your order <strong>#${order.order_number || order.orderNumber}</strong> status has been updated.</p>
             <div style="background-color: #f8f8f8; padding: 15px; margin: 20px 0;">
                 <p style="font-size: 18px;">New Status: <strong style="color: #F97316; text-transform: capitalize;">${order.status}</strong></p>
@@ -136,8 +146,10 @@ const sendPaymentReceipt = async (order, user) => {
     const html = `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
             <div style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
-                <h1 style="color: #28a745; margin: 0;">Payment Successful</h1>
-                <p style="color: #666; margin-top: 5px;">Transaction Reference: ${order.transaction_id || 'N/A'}</p>
+                <img src="https://pattikadai.com/assets/img/logo/logo.gif" alt="Patti Kadai" style="max-height: 80px; margin-bottom: 10px;">
+                <p style="font-size: 14px; color: #555; margin: 0;">A Brand of Thandatti Foods</p>
+                <h1 style="color: #28a745; margin: 20px 0 0 0;">Payment Successful</h1>
+                <p style="color: #666; margin-top: 5px;">Transaction Reference: ${order.transaction_id || order.payment_transaction_id || 'N/A'}</p>
             </div>
             
             <div style="margin-bottom: 20px;">
@@ -148,16 +160,16 @@ const sendPaymentReceipt = async (order, user) => {
             <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
                 <table style="width: 100%;">
                     <tr>
-                        <td style="color: #666;">Amount Paid:</td>
-                        <td style="font-weight: bold; text-align: right;">₹${parseFloat(order.total_price || order.amount).toFixed(2)}</td>
+                        <td style="color: #666; padding: 5px 0;">Amount Paid:</td>
+                        <td style="font-weight: bold; text-align: right; padding: 5px 0;">₹${parseFloat(order.total_price || order.amount).toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td style="color: #666;">Date:</td>
-                        <td style="font-weight: bold; text-align: right;">${new Date().toLocaleString()}</td>
+                        <td style="color: #666; padding: 5px 0;">Date:</td>
+                        <td style="font-weight: bold; text-align: right; padding: 5px 0;">${new Date().toLocaleString()}</td>
                     </tr>
                     <tr>
-                        <td style="color: #666;">Payment Method:</td>
-                        <td style="font-weight: bold; text-align: right;">${order.payment_method || 'Online'}</td>
+                        <td style="color: #666; padding: 5px 0;">Payment Method:</td>
+                        <td style="font-weight: bold; text-align: right; padding: 5px 0;">${(order.payment_method || 'Online').toUpperCase()}</td>
                     </tr>
                 </table>
             </div>

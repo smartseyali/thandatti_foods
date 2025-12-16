@@ -1,5 +1,18 @@
 const axios = require('axios');
 
+const emailSignature = `
+    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+        <p style="margin-bottom: 10px;">Please contact us for further queries.</p>
+        <p style="margin-bottom: 5px;"><strong>Contact Information:</strong></p>
+        <p style="color: #555; line-height: 1.6;">
+            <strong>Mobile:</strong> +91 9150444595<br>
+            <strong>Email:</strong> pattikadaiofficial@gmail.com<br>
+            <strong>Address:</strong> No.206, V.G.V Garden, Kangeyam Road, Rakkiyapalayam, Tiruppur, Tamil Nadu, 641606
+        </p>
+        <p style="margin-top: 15px;">Thank you,<br>Patti Kadai Team</p>
+    </div>
+`;
+
 const sendEmail = async (to, subject, html) => {
   try {
     if (!to) {
@@ -41,8 +54,7 @@ const sendWelcomeEmail = async (user) => {
                 <a href="https://pattikadai.com" style="background-color: #F97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Start Shopping</a>
             </div>
 
-            <p>If you have any questions, feel free to contact our support team.</p>
-            <p>Best regards,<br>The Patti Kadai Team</p>
+            ${emailSignature}
         </div>
     `;
     await sendEmail(user.email, 'Welcome to Patti Kadai!', html);
@@ -86,8 +98,19 @@ const sendOrderConfirmation = async (order, email) => {
                 </tbody>
             </table>
             
+            ${order.paymentLink ? `
+            <div style="background-color: #fff3cd; color: #856404; padding: 15px; margin: 20px 0; border: 1px solid #ffeeba; border-radius: 5px;">
+                <p style="margin-top: 0;"><strong>Pending Payment?</strong></p>
+                <p>If you faced any difficulty with the payment or if it's pending, please use the link below to verify and complete your order:</p>
+                <div style="margin: 15px 0; text-align: center;">
+                    <a href="${order.paymentLink}" style="background-color: #F97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Pay Now</a>
+                </div>
+                <p style="margin-bottom: 0; font-size: 13px;">Once paid, your order status will be updated automatically.</p>
+            </div>
+            ` : ''}
+
             <p style="margin-top: 20px;">We will notify you when your order is shipped.</p>
-            <p>Thank you,<br>Patti Kadai Team</p>
+            ${emailSignature}
         </div>
     `;
     
@@ -103,7 +126,7 @@ const sendOrderStatusUpdate = async (order, email) => {
                 <p style="font-size: 18px;">New Status: <strong style="color: #F97316; text-transform: capitalize;">${order.status}</strong></p>
             </div>
             <p>Thank you for shopping with us!</p>
-            <p>Thank you,<br>Patti Kadai Team</p>
+            ${emailSignature}
         </div>
     `;
     await sendEmail(email, `Order Status Update #${order.order_number || order.orderNumber}`, html);
@@ -141,8 +164,8 @@ const sendPaymentReceipt = async (order, user) => {
 
             <div style="margin-top: 30px; text-align: center; color: #666; font-size: 12px;">
                 <p>This is an automated receipt.</p>
-                <p>Patti Kadai</p>
             </div>
+            ${emailSignature}
         </div>
     `;
     await sendEmail(user.email, `Payment Receipt - Order #${order.order_number || order.orderNumber}`, html);

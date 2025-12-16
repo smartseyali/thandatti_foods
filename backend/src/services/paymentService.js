@@ -18,6 +18,41 @@ class PaymentService {
   }
 
   /**
+   * Create Razorpay Payment Link
+   */
+  async createRazorpayPaymentLink(orderData) {
+    try {
+      const { amount, currency, description, customer, notify, callbackUrl, notes } = orderData;
+
+      const options = {
+        amount: amount * 100, // Convert to paise
+        currency: currency || 'INR',
+        accept_partial: false,
+        first_min_partial_amount: 0,
+        description: description,
+        customer: customer,
+        notify: notify || { sms: true, email: true },
+        reminder_enable: true,
+        notes: notes || {},
+        callback_url: callbackUrl,
+        callback_method: 'get'
+      };
+
+      const paymentLink = await this.razorpay.paymentLink.create(options);
+      return {
+        success: true,
+        id: paymentLink.id,
+        short_url: paymentLink.short_url,
+        status: paymentLink.status
+      };
+    } catch (error) {
+      console.error('Razorpay payment link creation error:', error);
+      // Don't throw, just return null so order flow continues
+      return null;
+    }
+  }
+
+  /**
    * Create Razorpay order
    */
   async createRazorpayOrder(orderData) {

@@ -240,12 +240,19 @@ async function razorpayWebhook(req, res, next) {
     const payment = body.payload.payment.entity;
 
     // Find order by payment ID
-    const orders = await Order.findByPaymentTransactionId(payment.id);
-    if (orders.length === 0) {
-      return res.status(404).json({ message: 'Order not found' });
+    let orders = await Order.findByPaymentTransactionId(payment.id);
+    let order;
+
+    if (orders.length > 0) {
+      order = orders[0];
+    } else if (payment.notes && payment.notes.order_id) {
+      // Fallback: Try to find by order_id from notes (used by Payment Links)
+      order = await Order.findById(payment.notes.order_id);
     }
 
-    const order = orders[0];
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
 
     if (event === 'payment.captured' || event === 'payment.authorized') {
       await Order.updatePaymentInfo(order.id, {

@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
+const paymentService = require('../services/paymentService');
 const { sendOrderConfirmation, sendOrderStatusUpdate } = require('../services/emailService');
 
 async function getUserOrders(req, res, next) {
@@ -170,6 +171,39 @@ async function createOrder(req, res, next) {
 
     // Get order with items
     order.items = await OrderItem.findByOrderId(order.id);
+
+    // Generate Razorpay Payment Link if method is razorpay
+    if (paymentMethod === 'razorpay') {
+      try {
+        // Try to get customer phone from request body if available (guest checkout usually passes phone)
+        // Or from user object if logged in
+        const customerPhone = req.body.phone || req.body.mobile || (req.user ? req.user.mobile : undefined);
+        const customerName = req.body.name || (req.user ? `${req.user.firstName} ${req.user.lastName}` : 'Customer');
+
+        const paymentLinkResult = await paymentService.createRazorpayPaymentLink({
+          amount: order.total_price || order.totalPrice,
+          currency: 'INR',
+          description: `Payment for Order #${order.order_number || order.id}`,
+          customer: {
+            name: customerName,
+            email: order.email,
+            contact: customerPhone
+          },
+          callbackUrl: `${process.env.CORS_ORIGIN || 'https://pattikadai.com'}/my-orders`,
+          notes: {
+            order_id: order.id,
+            user_id: req.userId || ''
+          }
+        });
+
+        if (paymentLinkResult && paymentLinkResult.short_url) {
+          order.paymentLink = paymentLinkResult.short_url;
+        }
+      } catch (plError) {
+        console.error('Failed to generate payment link for email:', plError);
+        // Continue without link
+      }
+    }
 
     // Send order confirmation email
     const orderEmail = order.email || (req.user ? req.user.email : null);

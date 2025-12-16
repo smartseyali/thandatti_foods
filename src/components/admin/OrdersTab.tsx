@@ -136,6 +136,7 @@ const OrdersTab = () => {
 
     const getStatusBadgeClass = (status: string) => {
         switch (status?.toLowerCase()) {
+            case 'shipped':
             case 'completed':
                 return 'bg-success';
             case 'pending':
@@ -144,6 +145,8 @@ const OrdersTab = () => {
                 return 'bg-danger';
             case 'processing':
                 return 'bg-info';
+            case 'packing':
+                return 'bg-primary';
             default:
                 return 'bg-secondary';
         }
@@ -212,19 +215,9 @@ const OrdersTab = () => {
                                     />
                                 </div>
 
-                                {/* Status Filter */}
-                                <Form.Select
-                                    value={statusFilter}
-                                    onChange={(e) => onFilterChange(setStatusFilter, e.target.value)}
-                                    size="sm"
-                                    style={{ width: '140px' }}
-                                >
-                                    <option value="">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </Form.Select>
+                                {
+                                    /* Status Filter Dropdown Removed in favor of Tabs */
+                                }
 
                                 {/* Clear Button */}
                                 {(searchQuery || fromDate || toDate || statusFilter) && (
@@ -249,6 +242,58 @@ const OrdersTab = () => {
                 </div>
 
                 <div className="card-body p-0">
+                    {/* Status Tabs */}
+                    <ul className="nav nav-tabs px-4 border-bottom-0 mt-3">
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === '' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, '')}
+                            >
+                                All Orders
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === 'pending' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, 'pending')}
+                            >
+                                Pending
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === 'processing' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, 'processing')}
+                            >
+                                Processing
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === 'packing' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, 'packing')}
+                            >
+                                Packing
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === 'shipped' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, 'shipped')}
+                            >
+                                Shipped
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button 
+                                className={`nav-link ${statusFilter === 'cancelled' ? 'active fw-bold' : 'text-muted'}`}
+                                onClick={() => onFilterChange(setStatusFilter, 'cancelled')}
+                            >
+                                Cancelled
+                            </button>
+                        </li>
+                    </ul>
+
                     {loading ? (
                          <div className="text-center py-5">
                             <div className="spinner-border text-primary" role="status">
@@ -471,7 +516,8 @@ const OrdersTab = () => {
                                         >
                                             <option value="pending">Pending</option>
                                             <option value="processing">Processing</option>
-                                            <option value="completed">Completed</option>
+                                            <option value="packing">Packing</option>
+                                            <option value="shipped">Shipped</option>
                                             <option value="cancelled">Cancelled</option>
                                         </Form.Select>
                                     </Form.Group>

@@ -3,29 +3,20 @@ const path = require('path');
 const fs = require('fs');
 
 // Configure storage
+// Configure storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
-      // Save to public/assets/img/product folder
-      // Path resolution: from backend/src/controllers to project root/public/assets/img/product
-      // __dirname = backend/src/controllers (when server runs from backend/)
-      // Go up: ../ = backend/src/
-      // Go up: ../../ = backend/
-      // Go up: ../../../ = project root/
-      // Then: public/assets/img/product
-      
-      // Match the path used in server.js
-      // server.js (from backend/server.js): path.join(__dirname, '../public/assets')
-      // This resolves to: backend/../public/assets = project_root/public/assets
-      // 
-      // From uploadController (backend/src/controllers):
-      // Go up to backend directory: ../.. = backend/
-      // Then match server.js path: ../public/assets/img/product
-      // Match the path used in server.js for serving static files
-      // server.js uses: path.join(__dirname, '../public/assets') from backend/server.js
-      // This resolves to project_root/public/assets
+      // Save to public/assets/img/product folder or public/assets/videos
       const backendDir = path.resolve(__dirname, '../..'); // backend/src/controllers -> backend/
-      const uploadPath = path.resolve(backendDir, '../public/assets/img/product');
+      
+      // Determine subdirectory based on file type
+      let subDir = 'img/product';
+      if (file.mimetype.startsWith('video/')) {
+        subDir = 'videos';
+      }
+      
+      const uploadPath = path.resolve(backendDir, `../public/assets/${subDir}`);
       
       console.log('=== UPLOAD DESTINATION ===');
       console.log('__dirname (uploadController):', __dirname);
@@ -81,16 +72,16 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter - only allow images
+// File filter - allow images and videos
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|mov|quicktime/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const mimetype = allowedTypes.test(file.mimetype) || file.mimetype.startsWith('video/');
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    cb(new Error('Only image and video files are allowed'));
   }
 };
 
@@ -98,7 +89,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   },
   fileFilter: fileFilter
 });
@@ -205,8 +196,15 @@ const uploadImage = (req, res, next) => {
     });
 
     // Return the path relative to public folder
-    // This will be accessible via /assets/img/product/filename
-    const imagePath = `/assets/img/product/${req.file.filename}`;
+    let relativePath = '/assets/img/product/';
+    if (req.file.destination.includes('videos')) {
+      relativePath = '/assets/videos/';
+    } else if (req.file.destination.includes('assets') && req.file.destination.includes('img') && req.file.destination.includes('product')) {
+       relativePath = '/assets/img/product/';
+    }
+    
+    // Normalize path separators to forward slashes
+    const imagePath = `${relativePath}${req.file.filename}`;
     
     res.json({
       message: 'Image uploaded successfully',

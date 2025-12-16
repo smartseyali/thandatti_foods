@@ -1,20 +1,35 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import { Modal } from 'react-bootstrap';
 import "swiper/css";
 import "swiper/css/navigation";
 
+import { bannerApi } from '@/utils/api';
+
 const QuinnShoppableVideo = () => {
     const [showModal, setShowModal] = useState(false);
     const [currentVideo, setCurrentVideo] = useState("");
-
-    const videos = [
+    const [videos, setVideos] = useState<string[]>([
         "/assets/videos/IMG_0814.MP4",
         "/assets/videos/IMG_0815.MP4",
         "/assets/videos/IMG_0816.MP4"
-    ];
+    ]);
+
+    useEffect(() => {
+        const fetchVideos = async () => {
+            try {
+                const data: any = await bannerApi.getAll({ type: 'video' });
+                if (Array.isArray(data) && data.length > 0) {
+                    setVideos(data.map((item: any) => item.image_url));
+                }
+            } catch (error) {
+                console.error("Error loading videos", error);
+            }
+        };
+        fetchVideos();
+    }, []);
 
     const handleVideoClick = (videoSrc: string) => {
         setCurrentVideo(videoSrc);

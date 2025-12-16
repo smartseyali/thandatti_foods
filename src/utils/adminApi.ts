@@ -481,5 +481,59 @@ export const adminApi = {
           throw error;
       }
   },
+
+  // Banners Management
+  getBanners: async (params?: { type?: string; activeOnly?: boolean }) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.type) queryParams.append('type', params.type);
+      if (params?.activeOnly) queryParams.append('activeOnly', 'true');
+      
+      const query = queryParams.toString();
+      const response = await adminApiRequest(`/api/banners${query ? `?${query}` : ''}`);
+      return response;
+    } catch (error: any) {
+      console.error('Error fetching banners:', error);
+      throw error;
+    }
+  },
+
+  createBanner: async (data: any) => {
+    try {
+      const response = await adminApiRequest('/api/banners', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error: any) {
+      console.error('Error creating banner:', error);
+      throw error;
+    }
+  },
+
+  updateBanner: async (id: string, data: any) => {
+    try {
+      const response = await adminApiRequest(`/api/banners/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (error: any) {
+      console.error('Error updating banner:', error);
+      throw error;
+    }
+  },
+
+  deleteBanner: async (id: string) => {
+    try {
+      await adminApiRequest(`/api/banners/${id}`, {
+        method: 'DELETE',
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting banner:', error);
+      throw error;
+    }
+  },
 };
 

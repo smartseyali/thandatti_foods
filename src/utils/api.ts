@@ -554,6 +554,24 @@ export const deliveryApi = {
   },
 };
 
+// Banner API (public endpoints - no auth required)
+export const bannerApi = {
+  getAll: async (params?: { type?: string }) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.type) queryParams.append('type', params.type);
+      queryParams.append('activeOnly', 'true'); // Public always fetches active only
+
+      const query = queryParams.toString();
+      const response = await apiRequest(`/api/banners${query ? `?${query}` : ''}`, {}, false);
+      return Array.isArray(response) ? response : [];
+    } catch (error: any) {
+      console.error('Error fetching banners:', error);
+      return [];
+    }
+  },
+};
+
 // Helper function to convert image path to full URL if needed (exported for reuse)
 // Must be defined before mapProductToFrontend since it's used there
 export const getImageUrl = (imagePath: string | null | undefined): string => {

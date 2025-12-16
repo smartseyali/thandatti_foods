@@ -48,7 +48,7 @@ const sendWelcomeEmail = async (user) => {
                 <p style="font-size: 14px; color: #555; margin: 0;">A Brand of Thandatti Foods</p>
                 <h1 style="color: #F97316; margin: 15px 0 0 0;">Welcome to Patti Kadai!</h1>
             </div>
-            <p>Dear <strong>${user.firstName} ${user.lastName}</strong>,</p>
+            <p>Dear <strong>${user.first_name}</strong>,</p>
             <p>Thank you for creating an account with Patti Kadai. We are thrilled to have you as part of our community!</p>
             <p>At Patti Kadai, we bring you the finest traditional foods and products.</p>
             
@@ -153,7 +153,7 @@ const sendPaymentReceipt = async (order, user) => {
             </div>
             
             <div style="margin-bottom: 20px;">
-                <p>Dear <strong>${user.firstName || 'Customer'}</strong>,</p>
+                <p>Dear <strong>${user.first_name || 'Customer'}</strong>,</p>
                 <p>We have successfully received your payment for Order <strong>#${order.order_number || order.orderNumber}</strong>.</p>
             </div>
 

@@ -38,6 +38,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="/assets/css/vendor/animate.min.css" />
         <link rel="stylesheet" href="/assets/css/vendor/jquery-range-ui.css" />
         <link rel="stylesheet" href="/assets/css/style.css" />
+        <meta name="google-site-verification" content="0KIhM3qtAWQmMd_by-SQChU_tEnTpjCICJiBk2kiLGI" />
       </head>
       <body>
         {/* Google Analytics 4 */}

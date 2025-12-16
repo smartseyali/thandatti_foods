@@ -35,7 +35,8 @@ class PaymentService {
         reminder_enable: true,
         notes: notes || {},
         callback_url: callbackUrl,
-        callback_method: 'get'
+        callback_method: 'get',
+        reference_id: orderData.reference_id, // Add reference_id for tracking in callback
       };
 
       const paymentLink = await this.razorpay.paymentLink.create(options);

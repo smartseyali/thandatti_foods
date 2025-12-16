@@ -392,6 +392,25 @@ export const paymentApi = {
       throw error;
     }
   },
+
+  verifyPaymentLink: async (verificationData: {
+    razorpay_payment_id: string;
+    razorpay_payment_link_id: string;
+    razorpay_payment_link_reference_id: string;
+    razorpay_payment_link_status: string;
+    razorpay_signature: string;
+  }) => {
+    try {
+      const response = await apiRequest('/api/payments/verify-link', {
+        method: 'POST',
+        body: JSON.stringify(verificationData),
+      }, false);
+      return response;
+    } catch (error: any) {
+      console.error('Error verifying payment link:', error);
+      throw error;
+    }
+  },
 };
 
 // Category API (public endpoints - no auth required)

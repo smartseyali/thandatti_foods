@@ -8,6 +8,9 @@ import { authApi } from '@/utils/authApi'
 import { Col, Row, Table, Modal, Button, Badge } from 'react-bootstrap'
 import Link from 'next/link'
 
+import { paymentApi } from '@/utils/api'
+import { showErrorToast, showSuccessToast } from '../toast-popup/Toastify'
+
 const MyOrders = () => {
     const router = useRouter()
     const isAuthenticated = useSelector((state: RootState) => state.login.isAuthenticated);
@@ -15,6 +18,38 @@ const MyOrders = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [showModal, setShowModal] = useState(false);
+
+    useEffect(() => {
+        const checkPaymentParams = async () => {
+            if (typeof window === 'undefined') return;
+            
+            const params = new URLSearchParams(window.location.search);
+            const razorpay_payment_id = params.get('razorpay_payment_id');
+            const razorpay_payment_link_id = params.get('razorpay_payment_link_id');
+            const razorpay_payment_link_reference_id = params.get('razorpay_payment_link_reference_id');
+            const razorpay_payment_link_status = params.get('razorpay_payment_link_status');
+            const razorpay_signature = params.get('razorpay_signature');
+
+            if (razorpay_payment_id && razorpay_payment_link_id && razorpay_payment_link_status === 'paid' && razorpay_signature) {
+                 try {
+                     setLoading(true);
+                     await paymentApi.verifyPaymentLink({
+                         razorpay_payment_id,
+                         razorpay_payment_link_id,
+                         razorpay_payment_link_reference_id: razorpay_payment_link_reference_id || '',
+                         razorpay_payment_link_status,
+                         razorpay_signature
+                     });
+                     showSuccessToast('Payment verified successfully!');
+                     router.push('/my-orders'); // clear params
+                 } catch (err) {
+                    showErrorToast('Payment verification failed.');
+                 }
+            }
+        };
+
+        checkPaymentParams();
+    }, [router]);
 
     useEffect(() => {
         if (!isAuthenticated) {

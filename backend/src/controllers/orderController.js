@@ -189,6 +189,7 @@ async function createOrder(req, res, next) {
             contact: customerPhone
           },
           callbackUrl: `${process.env.CORS_ORIGIN || 'https://pattikadai.com'}/my-orders`,
+          reference_id: order.order_number,
           notes: {
             order_id: order.id,
             user_id: req.userId || ''

@@ -9,6 +9,9 @@ router.post('/create-order', optionalAuth, paymentController.createPaymentOrder)
 // Verify payment
 router.post('/verify', optionalAuth, paymentController.verifyPayment);
 
+// Verify payment link (from callback)
+router.post('/verify-link', optionalAuth, paymentController.verifyPaymentLink);
+
 // Webhook handlers (no authentication required, but signature verification is done)
 router.post('/webhook/razorpay', paymentController.razorpayWebhook);
 router.post('/webhook/phonepe', paymentController.phonepeWebhook);

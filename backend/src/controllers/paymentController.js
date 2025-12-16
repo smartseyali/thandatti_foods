@@ -216,6 +216,87 @@ async function verifyPayment(req, res, next) {
 }
 
 /**
+ * Verify Razorpay Payment Link callback
+ */
+async function verifyPaymentLink(req, res, next) {
+  try {
+    const { 
+      razorpay_payment_id,
+      razorpay_payment_link_id,
+      razorpay_payment_link_reference_id,
+      razorpay_payment_link_status,
+      razorpay_signature
+    } = req.body;
+
+    if (!razorpay_payment_id || !razorpay_payment_link_id || !razorpay_payment_link_status || !razorpay_signature) {
+      return res.status(400).json({ message: 'Missing required parameters' });
+    }
+
+    if (razorpay_payment_link_status !== 'paid') {
+      return res.status(400).json({ message: 'Payment status is not paid' });
+    }
+
+    // Verify signature
+    const crypto = require('crypto');
+    const webhookSecret = process.env.RAZORPAY_KEY_SECRET || config.payment.razorpay.keySecret; // Use Key Secret for callback verification
+    
+    // Note: Payment Link callback signature construction
+    // payment_link_id + "|" + payment_link_reference_id + "|" + payment_link_status + "|" + razorpay_payment_id
+    const payload = `${razorpay_payment_link_id}|${razorpay_payment_link_reference_id}|${razorpay_payment_link_status}|${razorpay_payment_id}`;
+    
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(payload)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: 'Invalid signature' });
+    }
+
+    // Find order by reference_id (Order Number)
+    const order = await Order.findByOrderNumber(razorpay_payment_link_reference_id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Update order status
+    await Order.updatePaymentInfo(order.id, {
+      payment_transaction_id: razorpay_payment_id,
+      payment_signature: razorpay_signature,
+    });
+    await Order.updatePaymentStatus(order.id, 'paid');
+    await Order.updateStatus(order.id, 'confirmed');
+
+    // Clear cart if user exists
+    if (order.user_id) {
+      await Cart.clear(order.user_id);
+    }
+    
+    // Send receipt
+    const fullOrder = await Order.findById(order.id);
+    if (fullOrder && fullOrder.email) {
+      const userObj = {
+        email: fullOrder.email,
+        firstName: fullOrder.shipping_first_name || 'Customer',
+        lastName: fullOrder.shipping_last_name || '',
+      };
+      sendPaymentReceipt(fullOrder, userObj).catch(err => console.error("Failed to send payment receipt (link):", err));
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully',
+      order: fullOrder
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+/**
  * Razorpay webhook handler
  */
 async function razorpayWebhook(req, res, next) {
@@ -334,6 +415,7 @@ async function phonepeWebhook(req, res, next) {
 module.exports = {
   createPaymentOrder,
   verifyPayment,
+  verifyPaymentLink,
   razorpayWebhook,
   phonepeWebhook,
 };

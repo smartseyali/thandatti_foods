@@ -164,8 +164,8 @@ async function createOrder(req, res, next) {
       await Coupon.recordUsage(couponId, req.userId || null, order.id, discountAmount);
     }
 
-    // Clear cart only for COD, for payment gateways cart will be cleared after payment verification
-    if (paymentMethod === 'cod' && req.userId) {
+    // Clear cart always as per requirement (User wants cart cleared "once order placed")
+    if (req.userId) {
       await Cart.clear(req.userId);
     }
 
@@ -198,6 +198,8 @@ async function createOrder(req, res, next) {
 
         if (paymentLinkResult && paymentLinkResult.short_url) {
           order.paymentLink = paymentLinkResult.short_url;
+          // Persist payment link to database
+          await Order.updatePaymentLink(order.id, order.paymentLink);
         }
       } catch (plError) {
         console.error('Failed to generate payment link for email:', plError);

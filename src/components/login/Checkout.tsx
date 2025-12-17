@@ -368,12 +368,16 @@ const Checkout = () => {
             // Get attribution data for conversion tracking
             const attribution = getAttributionForConversion();
 
-            // Handle payment method
+            // Clear cart immediately as order is placed
+            dispatch(clearCart());
+            
+            if (!isAuthenticated && createdOrder.order_number) {
+                 sessionStorage.setItem('guest_last_order_id', createdOrder.order_number);
+            }
+
             // Handle payment method - Always Razorpay
-            // Trigger Razorpay Payment directly
             try {
                 // Create payment order on backend
-                console.log('Creating payment order for:', createdOrder.id);
                 const paymentOrder = await paymentApi.createOrder({
                     orderId: createdOrder.id,
                     gateway: 'razorpay',
@@ -382,8 +386,6 @@ const Checkout = () => {
                     callbackUrl: getPaymentCallbackUrl('razorpay'),
                 });
                 
-                console.log('Payment Order Created:', paymentOrder);
-
                 if (!paymentOrder || !paymentOrder.orderId) {
                     throw new Error('Failed to create payment order');
                 }
@@ -414,19 +416,23 @@ const Checkout = () => {
                             });
 
                             if (verificationResult.success) {
-                                handlePaymentSuccess(createdOrder.id);
+                                showSuccessToast("Payment successful! Order placed.");
                             } else {
-                                throw new Error('Payment verification failed');
+                                showErrorToast('Payment verification failed');
                             }
                         } catch (error: any) {
                             console.error('Payment verification error:', error);
                             showErrorToast(error.message || 'Payment verification failed');
+                        } finally {
+                            // Always redirect to My Orders per requirement
+                            router.push("/my-orders");
                         }
                     },
                     modal: {
                         ondismiss: () => {
-                            setIsCreatingOrder(false); // Re-enable button
-                            showErrorToast('Payment cancelled');
+                            setIsCreatingOrder(false);
+                            // Redirect when closed intentionally
+                            router.push("/my-orders");
                         },
                     },
                 });
@@ -434,6 +440,8 @@ const Checkout = () => {
                 console.error('Razorpay init error:', error);
                 showErrorToast(error.message || "Failed to initialize payment.");
                 setIsCreatingOrder(false);
+                // Redirect even on init failure so user can access Pay Now in My Orders
+                router.push("/my-orders");
             }
 
         } catch (error: any) {

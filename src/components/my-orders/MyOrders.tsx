@@ -143,9 +143,14 @@ const MyOrders = () => {
                                                         </td>
                                                         <td>₹{order.total_price}</td>
                                                         <td>
-                                                            <Button variant="outline-primary" size="sm" onClick={() => handleViewOrder(order)}>
+                                                            <Button variant="outline-primary" size="sm" onClick={() => handleViewOrder(order)} style={{marginRight: '5px'}}>
                                                                 View Details
                                                             </Button>
+                                                            {(order.status === 'pending' || order.payment_status === 'pending_payment' || order.payment_status === 'pending') && (order.payment_link || order.paymentLink) && (
+                                                                <a href={order.payment_link || order.paymentLink} className="btn btn-success btn-sm" target="_blank" rel="noopener noreferrer">
+                                                                    Pay Now
+                                                                </a>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -170,9 +175,14 @@ const MyOrders = () => {
                                                         <strong>₹{order.total_price}</strong>
                                                 </div>
                                                 <div className="mobile-order-actions">
-                                                        <Button variant="outline-primary" size="sm" onClick={() => handleViewOrder(order)}>
+                                                        <Button variant="outline-primary" size="sm" onClick={() => handleViewOrder(order)} style={{marginRight: '5px'}}>
                                                             View Details
                                                         </Button>
+                                                        {(order.status === 'pending' || order.payment_status === 'pending_payment' || order.payment_status === 'pending') && (order.payment_link || order.paymentLink) && (
+                                                            <a href={order.payment_link || order.paymentLink} className="btn btn-success btn-sm" target="_blank" rel="noopener noreferrer">
+                                                                Pay Now
+                                                            </a>
+                                                        )}
                                                 </div>
                                             </div>
                                         ))}

@@ -127,6 +127,17 @@ class Order {
     return result.rows[0];
   }
 
+  static async updatePaymentLink(id, link) {
+    const query = `
+      UPDATE orders 
+      SET payment_link = $1, updated_at = current_timestamp
+      WHERE id = $2
+      RETURNING *
+    `;
+    const result = await pool.query(query, [link, id]);
+    return result.rows[0];
+  }
+
   static async findByPaymentTransactionId(transactionId) {
     const query = 'SELECT * FROM orders WHERE payment_transaction_id = $1';
     const result = await pool.query(query, [transactionId]);

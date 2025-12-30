@@ -39,6 +39,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="/assets/css/vendor/jquery-range-ui.css" />
         <link rel="stylesheet" href="/assets/css/style.css" />
         <meta name="google-site-verification" content="0KIhM3qtAWQmMd_by-SQChU_tEnTpjCICJiBk2kiLGI" />
+        <meta name="facebook-domain-verification" content="kp7yj5nn348q5h8sq62p3wd8c935rk" />
       </head>
       <body>
         {/* Google Analytics 4 */}

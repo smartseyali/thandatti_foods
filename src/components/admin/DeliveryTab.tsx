@@ -8,6 +8,7 @@ import { showSuccessToast, showErrorToast } from '../toast-popup/Toastify';
 interface Tariff {
     id: string;
     max_weight: number;
+    tariff_type: 'WEIGHT' | 'VOLUME';
     prices: {
         TN: number;
         SOUTH: number;
@@ -30,12 +31,14 @@ const DeliveryTab = () => {
     const [states, setStates] = useState<State[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTariffType, setActiveTariffType] = useState<'WEIGHT' | 'VOLUME'>('WEIGHT');
 
     // Modal States
     const [showTariffModal, setShowTariffModal] = useState(false);
     const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
     const [tariffForm, setTariffForm] = useState({
         max_weight: '',
+        tariff_type: 'WEIGHT', // Initialize as string, but logically typed
         prices: { TN: 0, SOUTH: 0, NE: 0, REST: 0 }
     });
 
@@ -47,15 +50,11 @@ const DeliveryTab = () => {
         try {
             setLoading(true);
             const data:any = await adminApi.getDeliveryCharges();
-            // Data structure from backend: { tariffs: [], states: [] }
-            // Or { rules: [], legacy: [] } if old endpoint called but I updated controller.
-            // My updated controller returns { tariffs, states }.
             
             if (data.tariffs && data.states) {
                 setTariffs(data.tariffs);
                 setStates(data.states);
             } else {
-                // Fallback or empty
                 setTariffs([]);
                 setStates([]); 
             }
@@ -73,6 +72,7 @@ const DeliveryTab = () => {
         setEditingTariff(null);
         setTariffForm({
             max_weight: '',
+            tariff_type: activeTariffType, // Default to current tab
             prices: { TN: 0, SOUTH: 0, NE: 0, REST: 0 }
         });
         setShowTariffModal(true);
@@ -82,6 +82,7 @@ const DeliveryTab = () => {
         setEditingTariff(tariff);
         setTariffForm({
             max_weight: tariff.max_weight.toString(),
+            tariff_type: tariff.tariff_type || 'WEIGHT',
             prices: { ...tariff.prices }
         });
         setShowTariffModal(true);
@@ -103,6 +104,7 @@ const DeliveryTab = () => {
         try {
             const payload = {
                 max_weight: parseInt(tariffForm.max_weight),
+                tariff_type: tariffForm.tariff_type,
                 prices: tariffForm.prices
             };
 
@@ -149,25 +151,45 @@ const DeliveryTab = () => {
         s.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const filteredTariffs = tariffs.filter(t => (t.tariff_type || 'WEIGHT') === activeTariffType);
+
     return (
         <div className="bb-admin-delivery">
             <Tabs defaultActiveKey="tariffs" className="mb-4">
                 <Tab eventKey="tariffs" title="Tariff Slabs">
                     <Card className="border-0 shadow-sm">
-                        <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <div>
                                 <h5 className="mb-0">Delivery Tariffs</h5>
-                                <small className="text-muted">Define pricing based on weight and zones</small>
+                                <small className="text-muted">Define pricing based on weight/volume and zones</small>
                             </div>
-                            <Button onClick={handleAddTariff} variant="primary" size="sm">
-                                <i className="ri-add-line"></i> Add Tariff Slab
-                            </Button>
+                            <div className="d-flex gap-2">
+                                <div className="btn-group" role="group">
+                                    <button 
+                                        type="button" 
+                                        className={`btn btn-sm ${activeTariffType === 'WEIGHT' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                        onClick={() => setActiveTariffType('WEIGHT')}
+                                    >
+                                        Weight (Grams)
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className={`btn btn-sm ${activeTariffType === 'VOLUME' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                        onClick={() => setActiveTariffType('VOLUME')}
+                                    >
+                                        Volume (ML)
+                                    </button>
+                                </div>
+                                <Button onClick={handleAddTariff} variant="success" size="sm">
+                                    <i className="ri-add-line"></i> Add Slab
+                                </Button>
+                            </div>
                         </Card.Header>
                         <Card.Body className="p-0">
                             <Table responsive hover className="mb-0 align-middle">
                                 <thead className="bg-light">
                                     <tr>
-                                        <th className="ps-4">Max Weight (g)</th>
+                                        <th className="ps-4">Max {activeTariffType === 'WEIGHT' ? 'Weight (g)' : 'Volume (ml)'}</th>
                                         <th>TN Price</th>
                                         <th>South Price</th>
                                         <th>North East Price</th>
@@ -176,12 +198,12 @@ const DeliveryTab = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tariffs.length === 0 ? (
-                                        <tr><td colSpan={6} className="text-center py-4 text-muted">No tariffs found.</td></tr>
+                                    {filteredTariffs.length === 0 ? (
+                                        <tr><td colSpan={6} className="text-center py-4 text-muted">No tariffs found for {activeTariffType}.</td></tr>
                                     ) : (
-                                        tariffs.map(t => (
+                                        filteredTariffs.map(t => (
                                             <tr key={t.id}>
-                                                <td className="ps-4 fw-bold">{t.max_weight}g</td>
+                                                <td className="ps-4 fw-bold">{t.max_weight}{activeTariffType === 'WEIGHT' ? 'g' : 'ml'}</td>
                                                 <td>₹{t.prices?.TN || 0}</td>
                                                 <td>₹{t.prices?.SOUTH || 0}</td>
                                                 <td>₹{t.prices?.NE || 0}</td>
@@ -262,15 +284,28 @@ const DeliveryTab = () => {
                 <Form onSubmit={handleTariffSubmit}>
                     <Modal.Body>
                         <Form.Group className="mb-3">
-                            <Form.Label>Max Weight (grams)</Form.Label>
+                            <Form.Label>Tariff Type</Form.Label>
+                            <Form.Select 
+                                value={tariffForm.tariff_type}
+                                onChange={(e) => setTariffForm({...tariffForm, tariff_type: e.target.value})}
+                            >
+                                <option value="WEIGHT">Weight (Grams)</option>
+                                <option value="VOLUME">Volume (ML)</option>
+                            </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Max {tariffForm.tariff_type === 'WEIGHT' ? 'Weight (grams)' : 'Volume (ml)'}</Form.Label>
                             <Form.Control 
                                 type="number" 
                                 value={tariffForm.max_weight}
                                 onChange={(e) => setTariffForm({...tariffForm, max_weight: e.target.value})}
-                                placeholder="e.g. 1000"
+                                placeholder={tariffForm.tariff_type === 'WEIGHT' ? 'e.g. 1000' : 'e.g. 500'}
                                 required 
                             />
-                            <Form.Text className="text-muted">Prices apply for weights up to this amount.</Form.Text>
+                            <Form.Text className="text-muted">
+                                Prices apply for {tariffForm.tariff_type === 'WEIGHT' ? 'weights' : 'volumes'} up to this amount.
+                            </Form.Text>
                         </Form.Group>
                         
                         <h6 className="mb-3 mt-4">Zone Prices (₹)</h6>

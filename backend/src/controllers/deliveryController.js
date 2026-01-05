@@ -1,49 +1,58 @@
 const db = require('../config/database');
 
-// Helper to parse weight string to grams
-function parseWeightToGrams(weightStr) {
-  if (!weightStr) return 0;
-  if (typeof weightStr === 'number') return weightStr;
+// Helper to parse unit string to value and type
+function parseItemUnit(unitStr) {
+  if (!unitStr) return { value: 0, type: 'WEIGHT' };
+  if (typeof unitStr === 'number') return { value: unitStr, type: 'WEIGHT' };
   
-  const normalized = weightStr.toString().toLowerCase().trim().replace(/\s/g, '');
+  const normalized = unitStr.toString().toLowerCase().trim().replace(/\s/g, '');
   const value = parseFloat(normalized);
-  if (isNaN(value)) return 0;
+  if (isNaN(value)) return { value: 0, type: 'WEIGHT' };
 
-  if (normalized.includes('kg')) {
-    return value * 1000;
-  } else if (normalized.includes('g') || normalized.includes('ml')) {
-    return value;
+  // Volume
+  if (normalized.includes('ml')) {
+    return { value: value, type: 'VOLUME' };
   }
-  return 0;
+  if (normalized.endsWith('l') && !normalized.includes('ml') && !normalized.includes('lb')) {
+      return { value: value * 1000, type: 'VOLUME' };
+  }
+
+  // Weight
+  if (normalized.includes('kg')) {
+    return { value: value * 1000, type: 'WEIGHT' };
+  } else if (normalized.includes('g')) {
+    return { value: value, type: 'WEIGHT' };
+  }
+  
+  return { value: value, type: 'WEIGHT' };
 }
 
 // Helper: Calculate charge from tariffs table
-async function calculateFromTariffs(totalGrams, zone) {
+async function calculateFromTariffs(totalUnits, zone, type = 'WEIGHT') {
+    if (totalUnits <= 0) return 0;
     if (!zone) zone = 'REST'; 
 
-    // Find the slab where max_weight >= totalGrams, ordered by max_weight ASC
-    // The first one that fits is our slab.
+    // Find the slab where max_weight >= totalUnits and tariff_type matches
+    // Note: We use max_weight column for both weight and volume(ml) limits
     const result = await db.query(
-        `SELECT prices FROM delivery_tariffs WHERE max_weight >= $1 ORDER BY max_weight ASC LIMIT 1`,
-        [totalGrams]
+        `SELECT prices FROM delivery_tariffs WHERE max_weight >= $1 AND tariff_type = $2 ORDER BY max_weight ASC LIMIT 1`,
+        [totalUnits, type]
     );
 
     if (result.rows.length > 0) {
         const prices = result.rows[0].prices;
-        // prices is JSONB { "TN": 40, "SOUTH": 55, ... }
         let price = prices[zone];
         
-        // Fallback for missing zone price to REST
         if (price === undefined || price === null || price === 0) {
             price = prices['REST'];
         }
         
         return parseFloat(price || 0);
     } else {
-        // Exceeds max slab. Use the largest available slab?
-        // Or throw error? Usually stick to max cost.
+        // Exceeds max slab. Use the largest available slab for this type
         const maxResult = await db.query(
-            `SELECT prices FROM delivery_tariffs ORDER BY max_weight DESC LIMIT 1`
+            `SELECT prices FROM delivery_tariffs WHERE tariff_type = $1 ORDER BY max_weight DESC LIMIT 1`,
+            [type]
         );
         if (maxResult.rows.length > 0) {
             const prices = maxResult.rows[0].prices;
@@ -70,33 +79,47 @@ async function calculateDeliveryCharge(req, res, next) {
     if (stateResult.rows.length > 0) {
         zone = stateResult.rows[0].zone || 'REST';
     } else {
-        // State not found? Maybe treat as REST or return error. 
-        // Returning REST is safer.
         console.warn(`State '${state}' not found. Defaulting to REST zone.`);
     }
 
-    // Calculate total weight
+    // Calculate total weight and volume
     let totalGrams = 0;
+    let totalMl = 0;
+
     for (const item of items) {
-       const weightStr = item.attributeValue || item.weight || item.size || '0g';
+       const unitStr = item.attributeValue || item.weight || item.size || '0g';
        const quantity = parseInt(item.quantity) || 1;
-       const grams = parseWeightToGrams(weightStr);
-       totalGrams += grams * quantity;
+       const { value, type } = parseItemUnit(unitStr);
+       
+       if (type === 'VOLUME') {
+           totalMl += value * quantity;
+       } else {
+           totalGrams += value * quantity;
+       }
     }
     
-    // Fallback: assume 250g per item if 0
-    if (totalGrams === 0 && items.length > 0) {
-      items.forEach(item => totalGrams += 250 * (parseInt(item.quantity) || 1));
+    // Fallback logic check? If both 0, maybe default to 250g weight?
+    if (totalGrams === 0 && totalMl === 0 && items.length > 0) {
+        // Assume weight if unknown
+        items.forEach(item => totalGrams += 250 * (parseInt(item.quantity) || 1));
     }
 
-    // Calculate Charge
-    const deliveryCharge = await calculateFromTariffs(totalGrams, zone);
+    // Calculate Charges independently
+    const weightCharge = await calculateFromTariffs(totalGrams, zone, 'WEIGHT');
+    const volumeCharge = await calculateFromTariffs(totalMl, zone, 'VOLUME');
+
+    const totalDeliveryCharge = weightCharge + volumeCharge;
 
     return res.json({ 
-        deliveryCharge, 
-        method: 'zone_slab_db', 
+        deliveryCharge: totalDeliveryCharge, 
+        method: 'zone_slab_mixed', 
         zone, 
-        totalWeight: totalGrams 
+        totalWeight: totalGrams,
+        totalVolume: totalMl,
+        breakdown: {
+            weightCharge,
+            volumeCharge
+        }
     });
 
   } catch (error) {
@@ -109,7 +132,7 @@ async function calculateDeliveryCharge(req, res, next) {
 async function getAdminDeliveryData(req, res, next) {
     try {
         // Get Tariffs
-        const tariffs = await db.query('SELECT * FROM delivery_tariffs ORDER BY max_weight ASC');
+        const tariffs = await db.query('SELECT * FROM delivery_tariffs ORDER BY tariff_type, max_weight ASC');
         
         // Get States with Zones
         const states = await db.query('SELECT id, name, zone FROM states ORDER BY name ASC');
@@ -123,12 +146,14 @@ async function getAdminDeliveryData(req, res, next) {
 
 async function createTariff(req, res, next) {
     try {
-        const { max_weight, prices } = req.body;
+        const { max_weight, prices, tariff_type } = req.body;
         if (!max_weight || !prices) return res.status(400).json({message: 'Missing fields'});
         
+        const type = tariff_type || 'WEIGHT';
+
         const result = await db.query(
-            'INSERT INTO delivery_tariffs (max_weight, prices) VALUES ($1, $2) RETURNING *',
-            [max_weight, JSON.stringify(prices)]
+            'INSERT INTO delivery_tariffs (max_weight, prices, tariff_type) VALUES ($1, $2, $3) RETURNING *',
+            [max_weight, JSON.stringify(prices), type]
         );
         res.status(201).json(result.rows[0]);
     } catch(e) { next(e); }
@@ -137,11 +162,11 @@ async function createTariff(req, res, next) {
 async function updateTariff(req, res, next) {
     try {
         const { id } = req.params;
-        const { max_weight, prices } = req.body;
+        const { max_weight, prices, tariff_type } = req.body;
         
         const result = await db.query(
-            'UPDATE delivery_tariffs SET max_weight = COALESCE($1, max_weight), prices = COALESCE($2, prices), updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
-            [max_weight, prices ? JSON.stringify(prices) : undefined, id]
+            'UPDATE delivery_tariffs SET max_weight = COALESCE($1, max_weight), prices = COALESCE($2, prices), tariff_type = COALESCE($3, tariff_type), updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+            [max_weight, prices ? JSON.stringify(prices) : undefined, tariff_type, id]
         );
         
         if (result.rows.length === 0) return res.status(404).json({message: 'Tariff not found'});
@@ -184,13 +209,10 @@ async function bulkUpdateStateZones(req, res, next) {
 }
 
 // Legacy (Keep for backward compatibility if needed, but exports updated to point here)
-// Just proxying or removing old unused ones from exports
 async function getDeliveryCharges(req, res, next) {
-    // Return empty or legacy if frontend expects it, but we are moving to new admin panel
     return getAdminDeliveryData(req, res, next); 
 }
 
-// Stub old create/update/delete delivery charge to avoid crash if routes exist
 const createDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
 const updateDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
 const deleteDeliveryCharge = async (req, res) => res.status(410).json({message: 'Deprecated'});
@@ -206,7 +228,6 @@ module.exports = {
   deleteTariff,
   updateStateZone,
   bulkUpdateStateZones,
-  // Maintain interface for routes if they are not updated yet
   getDeliveryCharges, 
   createDeliveryCharge,
   updateDeliveryCharge,

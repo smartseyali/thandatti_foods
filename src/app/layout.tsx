@@ -10,6 +10,7 @@ import "@/styles/custom.css";
 import Providers from "@/store/Provider";
 import Layout from "@/components/layout";
 import MetaPixel from "@/components/common/MetaPixel";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Pattikadai - A Brand of Thandatti Foods",
@@ -69,7 +70,9 @@ export default function RootLayout({
 
 
         <Providers>
-          <MetaPixel />
+          <Suspense fallback={null}>
+            <MetaPixel />
+          </Suspense>
           <Layout>{children}</Layout>
         </Providers>
       </body>

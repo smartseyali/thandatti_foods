@@ -8,6 +8,7 @@ import {
   showSuccessToast,
 } from "@/components/toast-popup/Toastify";
 import Breadcrumb from "@/components/breadcrumb/Breadcrumb";
+import { trackPurchase } from "@/utils/metaPixel";
 
 const PaymentSuccess = () => {
   const router = useRouter();
@@ -48,6 +49,22 @@ const PaymentSuccess = () => {
           });
 
           if (verificationResult.success) {
+            
+            // Try to fetch order details for tracking
+            try {
+              const order = await orderApi.getById(orderIdParam);
+              if (order) {
+                  trackPurchase({
+                    value: parseFloat(order.total_price),
+                    currency: 'INR',
+                    orderId: order.id,
+                    items: order.items || []
+                  });
+              }
+            } catch (err) {
+              console.error("Tracking error:", err);
+            }
+
             setVerificationStatus("success");
             showSuccessToast("Payment verified successfully!");
             setTimeout(() => {

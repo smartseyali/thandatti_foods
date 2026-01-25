@@ -14,6 +14,7 @@ import { addOrder, clearCart, setOrders } from '@/store/reducer/cartSlice';
 import { useLoadOrders } from '@/hooks/useOrders';
 import { login } from '@/store/reducer/loginSlice';
 import { getAttributionForConversion } from '@/utils/attribution';
+import { trackPurchase } from '@/utils/metaPixel';
 import PaymentGateway from '../payment/PaymentGateway';
 import { orderApi, addressApi, deliveryApi, paymentApi } from '@/utils/api';
 import { cartApi } from '@/utils/api';
@@ -416,6 +417,14 @@ const Checkout = () => {
                             });
 
                             if (verificationResult.success) {
+                                // Track Purchase Event
+                                trackPurchase({
+                                    value: total,
+                                    currency: 'INR',
+                                    orderId: createdOrder.id,
+                                    items: items
+                                });
+
                                 showSuccessToast("Payment successful! Order placed.");
                             } else {
                                 showErrorToast('Payment verification failed');

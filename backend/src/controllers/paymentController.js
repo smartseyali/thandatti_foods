@@ -2,6 +2,8 @@ const paymentService = require('../services/paymentService');
 const { sendPaymentReceipt } = require('../services/emailService');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const OrderItem = require('../models/OrderItem');
+const { sendPurchaseEvent } = require('../utils/metaCapi');
 const { v4: uuidv4 } = require('uuid');
 
 /**
@@ -138,6 +140,15 @@ async function verifyPayment(req, res, next) {
         
         // Send receipt
         sendReceipt(order);
+
+        // Send Meta CAPI Event
+        try {
+            const items = await OrderItem.findByOrderId(order.id);
+            order.items = items;
+            await sendPurchaseEvent(order, req);
+        } catch (e) {
+            console.error("Failed to send Meta CAPI event:", e);
+        }
       }
 
     } else if (gateway === 'phonepe') {
@@ -180,6 +191,15 @@ async function verifyPayment(req, res, next) {
         
         // Send receipt
         sendReceipt(updatedOrder);
+
+        // Send Meta CAPI Event
+        try {
+            const items = await OrderItem.findByOrderId(updatedOrder.id);
+            updatedOrder.items = items;
+            await sendPurchaseEvent(updatedOrder, req);
+        } catch (e) {
+             console.error("Failed to send Meta CAPI event:", e);
+        }
 
         return res.json({
           success: true,
@@ -282,6 +302,17 @@ async function verifyPaymentLink(req, res, next) {
         lastName: fullOrder.shipping_last_name || '',
       };
       sendPaymentReceipt(fullOrder, userObj).catch(err => console.error("Failed to send payment receipt (link):", err));
+    }
+
+    // Send Meta CAPI Event
+    try {
+        if (fullOrder) {
+            const items = await OrderItem.findByOrderId(fullOrder.id);
+            fullOrder.items = items;
+            await sendPurchaseEvent(fullOrder, req);
+        }
+    } catch (e) {
+        console.error("Failed to send Meta CAPI event (link):", e);
     }
 
     res.json({

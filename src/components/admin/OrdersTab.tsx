@@ -446,6 +446,8 @@ const OrdersTab = () => {
                                 <Col md={6}>
                                     <h5>Shipping Address</h5>
                                     <p>
+                                        {getCustomerName(selectedOrder)}
+                                        <br/>
                                         {selectedOrder.shipping_address || 'N/A'}
                                         <br />
                                         {selectedOrder.shipping_city || ''}

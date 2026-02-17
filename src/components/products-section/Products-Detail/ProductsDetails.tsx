@@ -115,8 +115,10 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
 
     const router = useRouter();
 
+    const isOutOfStock = (product?.status || "Out of Stock") === "Out of Stock";
+
     const handleBuyNow = async () => {
-        if (!product) return;
+        if (!product || isOutOfStock) return;
         
         try {
             const productToAdd = {
@@ -148,7 +150,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
     };
 
     const handleAddToCart = async () => {
-        if (!product) return;
+        if (!product || isOutOfStock) return;
         
         try {
             const productToAdd = {
@@ -266,10 +268,10 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
         
         // Fallback to product.reviews if available
         if (product?.reviews && Array.isArray(product.reviews) && product.reviews.length > 0) {
-            const approvedReviews = product.reviews.filter((r: any) => r.is_approved !== false);
-            if (approvedReviews.length > 0) {
-                const sum = approvedReviews.reduce((acc: number, review: any) => acc + (parseInt(review.rating) || 0), 0);
-                const avgRating = sum / approvedReviews.length;
+            const allReviews = product.reviews; // Use all reviews
+            if (allReviews.length > 0) {
+                const sum = allReviews.reduce((acc: number, review: any) => acc + (parseInt(review.rating) || 0), 0);
+                const avgRating = sum / allReviews.length;
                 return Math.round(avgRating * 10) / 10; // Round to 1 decimal place
             }
         }
@@ -365,7 +367,7 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                         <h5>SKU#: {displaySKU}</h5>
                                     </div>
                                     <div className="stock">
-                                        <span>{displayStatus}</span>
+                                        <span style={{ color: isOutOfStock ? 'red' : 'inherit' }}>{isOutOfStock ? "Out of Stock" : displayStatus}</span>
                                     </div>
                                 </div>
                             </div>
@@ -392,9 +394,9 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                             <div className="bb-single-qty">
                                 <div className="qty-plus-minus">
                                     <div
-                                        onClick={handleDecrement}
+                                        onClick={isOutOfStock ? undefined : handleDecrement}
                                         className='bb-qtybtn'
-                                        style={{ margin: " 0 0 0 10px" }}
+                                        style={{ margin: " 0 0 0 10px", cursor: isOutOfStock ? 'not-allowed' : 'pointer', opacity: isOutOfStock ? 0.5 : 1 }}
                                     >
                                         -
                                     </div>
@@ -404,16 +406,31 @@ const ProductsDetails = ({ productId }: { productId?: string }) => {
                                         type="text"
                                         name="gi-qtybtn"
                                         value={quantity}
+                                        disabled={isOutOfStock}
                                     />
-                                    <div onClick={handleIncrement} className='bb-qtybtn'
-                                        style={{ margin: " 0 10px 0 0" }}
+                                    <div onClick={isOutOfStock ? undefined : handleIncrement} className='bb-qtybtn'
+                                        style={{ margin: " 0 10px 0 0", cursor: isOutOfStock ? 'not-allowed' : 'pointer', opacity: isOutOfStock ? 0.5 : 1 }}
                                     >
                                         +
                                     </div>
                                 </div>
                                 <div className="buttons">
-                                    <button onClick={handleAddToCart} className="bb-btn-2">Add to Cart</button>
-                                    <button onClick={handleBuyNow} className="bb-btn-2" style={{ marginLeft: '10px', backgroundColor: '#333', borderColor: '#333' }}>Buy Now</button>
+                                    <button 
+                                        onClick={handleAddToCart} 
+                                        className="bb-btn-2" 
+                                        disabled={isOutOfStock}
+                                        style={{ cursor: isOutOfStock ? 'not-allowed' : 'pointer', opacity: isOutOfStock ? 0.6 : 1 }}
+                                    >
+                                        {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                                    </button>
+                                    <button 
+                                        onClick={handleBuyNow} 
+                                        className="bb-btn-2" 
+                                        style={{ marginLeft: '10px', backgroundColor: '#333', borderColor: '#333', cursor: isOutOfStock ? 'not-allowed' : 'pointer', opacity: isOutOfStock ? 0.6 : 1 }}
+                                        disabled={isOutOfStock}
+                                    >
+                                        {isOutOfStock ? "Out of Stock" : "Buy Now"}
+                                    </button>
                                 </div>
                                 <ul className="bb-pro-actions">
                                     <li className="bb-btn-group">

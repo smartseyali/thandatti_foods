@@ -8,7 +8,19 @@ export const reviewApi = {
       const response = await apiRequest(`/api/reviews/product/${productId}?page=${page}&limit=${limit}`, {
         method: 'GET',
       }, false);
-      return response.reviews || [];
+      
+      // Handle various response structures
+      if (Array.isArray(response)) {
+        return response;
+      }
+      if (response && Array.isArray(response.reviews)) {
+        return response.reviews;
+      }
+      if (response && Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching reviews:', error);
       return [];

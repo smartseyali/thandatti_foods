@@ -42,11 +42,15 @@ const ProductItemCard = ({ data }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
 
+    const isOutOfStock = data.quantity <= 0;
+
     const handleProductClick = () => {
+        if (isOutOfStock) return;
         router.push(`/product/${data.id}`);
     }
 
     const openItemModal = () => {
+        if (isOutOfStock) return;
         setIsModalOpen(true)
     }
 
@@ -55,6 +59,7 @@ const ProductItemCard = ({ data }: any) => {
     }
 
     const handleCart = async (data: Item) => {
+        if (isOutOfStock) return;
         setIsAddingToCart(true);
         try {
             const isItemInCart = cartSlice?.some((item: any) => item.productId === data.id || item.id === data.id);
@@ -134,10 +139,11 @@ const ProductItemCard = ({ data }: any) => {
 
     return (
         <>
-            <div className="bb-pro-box">
-                <div className="bb-pro-img " onClick={handleProductClick} style={{ cursor: 'pointer' }}>
+            <div className={`bb-pro-box ${isOutOfStock ? 'out-of-stock' : ''}`} style={{ opacity: isOutOfStock ? 0.6 : 1, pointerEvents: isOutOfStock ? 'none' : 'auto' }}>
+                <div className="bb-pro-img " onClick={handleProductClick} style={{ cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}>
                     <span className="flags">
                         <span>{data.sale}</span>
+                        {isOutOfStock && <span className="out-of-stock-tag" style={{ backgroundColor: '#ff0000', color: '#fff', fontSize: '10px', padding: '2px 5px', borderRadius: '3px', marginLeft: '5px' }}>Out of Stock</span>}
                     </span>
                     <div className="inner-img">
                         <img 
@@ -167,7 +173,7 @@ const ProductItemCard = ({ data }: any) => {
                             top: '10px',
                             right: '10px',
                             zIndex: 10,
-                            cursor: 'pointer',
+                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                             backgroundColor: 'rgba(255, 255, 255, 0.8)',
                             borderRadius: '50%',
                             width: '30px',
@@ -175,7 +181,8 @@ const ProductItemCard = ({ data }: any) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            pointerEvents: 'auto'
                         }}
                     >
                          <i className={wishlistItem.some((item: any) => item.id === data.id) ? "ri-heart-fill text-danger" : "ri-heart-line"} style={{ fontSize: '18px' }}></i>
@@ -183,7 +190,7 @@ const ProductItemCard = ({ data }: any) => {
                     
                 </div>
                 <div className="bb-pro-contact">
-                    <h4 className="bb-pro-title"><a onClick={handleProductClick} style={{ cursor: 'pointer' }}>{data.title}</a></h4>
+                    <h4 className="bb-pro-title"><a onClick={handleProductClick} style={{ cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}>{data.title}</a></h4>
                     <div className="product-meta-row">
                         <span className="meta-badge meta-category">{data.category}</span>
                         <span className="meta-badge meta-weight">{data.weight}</span>
@@ -207,10 +214,16 @@ const ProductItemCard = ({ data }: any) => {
                         <button 
                             className="add-to-cart-btn-custom"
                             onClick={(e) => { e.stopPropagation(); handleCart(data); }}
-                            disabled={isAddingToCart}
+                            disabled={isAddingToCart || isOutOfStock}
+                             style={{ 
+                                opacity: isOutOfStock ? 0.6 : 1,
+                                cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                            }}
                         >
                             {isAddingToCart ? (
                                 "Adding..."
+                            ) : isOutOfStock ? (
+                                "Out of Stock"
                             ) : (
                                 <>
                                     <img 

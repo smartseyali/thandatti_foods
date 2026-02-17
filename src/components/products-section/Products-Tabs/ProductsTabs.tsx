@@ -41,40 +41,60 @@ const ProductsTabs = ({ productId, onReviewCreated }: { productId?: string; onRe
             if (productId) {
                 try {
                     setLoadingReviews(true);
+                    let productReviews: any[] = [];
                     // Fetch product details
                     const productData = await productApi.getById(productId);
                     if (productData) {
+                        console.log('Product Data for Debugging:', JSON.stringify(productData, null, 2));
                         // Map product to frontend format to ensure consistent structure
                         const mappedProduct = mapProductToFrontend(productData, productData.images || []);
                         setProduct(mappedProduct || productData);
+                        productReviews = mappedProduct?.reviews || productData.reviews || [];
                     }
-                    // Fetch reviews (works for guest users - no authentication required)
+
+                    // Helper to map reviews
+                    const mapReviews = (data: any[]) => {
+                        return data.map((review: any) => ({
+                            id: review.id || review._id,
+                            name: review.name || `${review.first_name || ''} ${review.last_name || ''}`.trim() || 'Anonymous',
+                            rating: parseInt(review.rating) || 0,
+                            comment: review.comment || review.review || review.description || review.content || review.text || '',
+                            avatar: review.profile_photo || review.avatar_url || "/assets/img/user-photo/placeholder.jpg",
+                            createdAt: review.created_at || review.createdAt,
+                            // Keep original data for reference
+                            first_name: review.first_name,
+                            last_name: review.last_name,
+                            profile_photo: review.profile_photo,
+                            avatar_url: review.avatar_url,
+                            is_approved: review.is_approved,
+                        }));
+                    };
+
+                    // Fetch reviews from dedicated API (works for guest users - no authentication required)
                     try {
                         const reviewsData = await reviewApi.getByProductId(productId);
                         console.log('Fetched reviews data:', reviewsData);
-                        if (reviewsData && Array.isArray(reviewsData)) {
-                            const mappedReviews = reviewsData.map((review: any) => ({
-                                id: review.id,
-                                name: `${review.first_name || ''} ${review.last_name || ''}`.trim() || 'Anonymous',
-                                rating: review.rating || 0,
-                                comment: review.comment || '',
-                                avatar: review.profile_photo || review.avatar_url || "/assets/img/user-photo/placeholder.jpg",
-                                createdAt: review.created_at || review.createdAt,
-                                // Keep original data for reference
-                                first_name: review.first_name,
-                                last_name: review.last_name,
-                                profile_photo: review.profile_photo,
-                                avatar_url: review.avatar_url,
-                            }));
-                            console.log('Mapped reviews:', mappedReviews);
-                            setReviews(mappedReviews);
-                        } else {
-                            console.log('No reviews data or invalid format');
-                            setReviews([]);
+                        
+                        let finalReviews: any[] = [];
+                        
+                        if (reviewsData && Array.isArray(reviewsData) && reviewsData.length > 0) {
+                            finalReviews = mapReviews(reviewsData);
+                        } else if (productReviews.length > 0) {
+                            console.log('Using product reviews as fallback');
+                            finalReviews = mapReviews(productReviews);
                         }
+                        
+                        console.log('Mapped reviews:', finalReviews);
+                        setReviews(finalReviews);
                     } catch (reviewError) {
                         console.error('Error fetching reviews:', reviewError);
-                        setReviews([]);
+                        // Fallback to product reviews if API fails
+                        if (productReviews.length > 0) {
+                            console.log('Using product reviews as fallback after error');
+                            setReviews(mapReviews(productReviews));
+                        } else {
+                            setReviews([]);
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching product:', error);
@@ -427,11 +447,11 @@ const ProductsTabs = ({ productId, onReviewCreated }: { productId?: string; onRe
                                                 is_approved: review.is_approved,
                                             });
                                             
-                                            // Only render approved reviews (or all if is_approved is not set)
-                                            if (review.is_approved === false) {
-                                                console.log('Skipping unapproved review:', reviewId);
-                                                return null;
-                                            }
+                                            // Render all reviews regardless of approval status
+                                            // if (review.is_approved === false) {
+                                            //     console.log('Skipping unapproved review:', reviewId);
+                                            //     return null;
+                                            // }
                                             
                                             return (
                                                 <div key={reviewId} className="reviews-bb-box">

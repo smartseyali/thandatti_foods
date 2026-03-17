@@ -781,22 +781,29 @@ export const mapProductToFrontend = (product: any, images?: any[]) => {
 // Map backend cart item to frontend format
 export const mapCartItemToFrontend = (cartItem: any) => {
   // Store both cart_item_id and product_id for API operations
-  const imagePath = cartItem.primary_image || '/assets/img/product/default.jpg';
+  const imagePath = cartItem.primary_image || cartItem.product?.primary_image || '/assets/img/product/default.jpg';
+  
+  // Try to get weight from flat object (from our join) or nested product object
+  const weight = cartItem.weight || cartItem.product?.weight || '';
+  
   return {
-    id: cartItem.product_id || cartItem.id, // Use product_id as the main ID for frontend
+    id: cartItem.product_id || cartItem.productId || cartItem.id, // Use product_id as the main ID for frontend
     cartItemId: cartItem.id, // Store cart item ID for API operations
-    productId: cartItem.product_id,
-    title: cartItem.title,
-    newPrice: parseFloat(cartItem.new_price) || 0,
-    oldPrice: cartItem.old_price ? `₹${parseFloat(cartItem.old_price).toFixed(2)}` : '',
+    productId: cartItem.product_id || cartItem.productId,
+    title: cartItem.title || cartItem.product?.title || 'Unknown Product',
+    newPrice: parseFloat(cartItem.new_price || cartItem.product?.new_price || 0),
+    oldPrice: (cartItem.old_price || cartItem.product?.old_price) 
+      ? `₹${parseFloat(cartItem.old_price || cartItem.product?.old_price).toFixed(2)}` 
+      : '',
     image: getImageUrl(imagePath),
     imageTwo: getImageUrl(imagePath),
-    category: cartItem.category_name || '',
-    brand: cartItem.brand_name || '',
-    sku: cartItem.sku || '',
-    status: cartItem.product_status || 'In Stock',
+    category: cartItem.category_name || cartItem.product?.category_name || '',
+    brand: cartItem.brand_name || cartItem.product?.brand_name || '',
+    sku: cartItem.sku || cartItem.product?.sku || '',
+    status: cartItem.product_status || cartItem.product?.status || 'In Stock',
     rating: parseFloat(cartItem.rating || cartItem.product?.rating || 0),
-    weight: '',
+    weight: weight,
+    attributes: cartItem.attributes || cartItem.product?.attributes || [],
     location: 'In Store,online',
     quantity: parseInt(cartItem.quantity) || 1,
     date: cartItem.created_at || '',
@@ -846,7 +853,7 @@ export const mapOrderToFrontend = (order: any, items?: any[]) => {
       sku: item.sku || '',
       status: 'In Stock',
       rating: 0,
-      weight: '',
+      weight: item.weight || '',
       location: '',
       quantity: parseInt(item.quantity) || 1,
       date: order.created_at || '',

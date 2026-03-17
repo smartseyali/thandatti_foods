@@ -35,7 +35,7 @@ class OrderItem {
 
   static async findByOrderId(orderId) {
     const query = `
-      SELECT oi.*, p.title, p.primary_image, p.sku
+      SELECT oi.*, p.title, p.primary_image, p.sku, p.weight
       FROM order_items oi
       JOIN products p ON oi.product_id = p.id
       WHERE oi.order_id = $1

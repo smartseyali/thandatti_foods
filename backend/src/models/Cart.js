@@ -4,7 +4,7 @@ class Cart {
   static async findByUserId(userId) {
     const query = `
       SELECT ci.*, p.title, p.new_price, p.old_price, p.primary_image, 
-             p.status as product_status, p.stock_quantity, p.item_left
+             p.status as product_status, p.stock_quantity, p.item_left, p.weight
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.user_id = $1

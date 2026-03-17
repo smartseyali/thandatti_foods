@@ -87,27 +87,25 @@ async function calculateDeliveryCharge(req, res, next) {
     let totalMl = 0;
 
     for (const item of items) {
-       const unitStr = item.attributeValue || item.weight || item.size || '0g';
+       const unitStr = item.attributeValue || item.weight || item.size || '';
        const quantity = parseInt(item.quantity) || 1;
        const { value, type } = parseItemUnit(unitStr);
        
-       if (type === 'VOLUME') {
+       if (type === 'VOLUME' && value > 0) {
            totalMl += value * quantity;
-       } else {
+       } else if (type === 'WEIGHT' && value > 0) {
            totalGrams += value * quantity;
+       } else {
+           // Fallback: Default to weight (250g) if unit is unknown or value is 0
+           totalGrams += 250 * quantity;
        }
-    }
-    
-    // Fallback logic check? If both 0, maybe default to 250g weight?
-    if (totalGrams === 0 && totalMl === 0 && items.length > 0) {
-        // Assume weight if unknown
-        items.forEach(item => totalGrams += 250 * (parseInt(item.quantity) || 1));
     }
 
     // Calculate Charges independently
     const weightCharge = await calculateFromTariffs(totalGrams, zone, 'WEIGHT');
     const volumeCharge = await calculateFromTariffs(totalMl, zone, 'VOLUME');
 
+    // sum both charges for mixed orders
     const totalDeliveryCharge = weightCharge + volumeCharge;
 
     return res.json({ 

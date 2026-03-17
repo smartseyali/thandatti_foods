@@ -1,8 +1,20 @@
 const Cart = require('../models/Cart');
 
+const ProductAttribute = require('../models/ProductAttribute');
+
 async function getCart(req, res, next) {
   try {
     const cartItems = await Cart.findByUserId(req.userId);
+    
+    // Fetch attributes for each product in the cart
+    for (const item of cartItems) {
+      try {
+        item.attributes = await ProductAttribute.findByProductId(item.product_id);
+      } catch (error) {
+        item.attributes = [];
+      }
+    }
+    
     res.json({ cart: cartItems });
   } catch (error) {
     next(error);

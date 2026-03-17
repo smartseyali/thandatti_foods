@@ -3,28 +3,38 @@ const db = require('../config/database');
 // Helper to parse unit string to value and type
 function parseItemUnit(unitStr) {
   if (!unitStr) return { value: 0, type: 'WEIGHT' };
-  if (typeof unitStr === 'number') return { value: unitStr, type: 'WEIGHT' };
-  
+
   const normalized = unitStr.toString().toLowerCase().trim().replace(/\s/g, '');
-  const value = parseFloat(normalized);
+  
+  // Extract numerical value
+  const valueMatch = normalized.match(/(\d+\.?\d*)/);
+  const value = valueMatch ? parseFloat(valueMatch[0]) : NaN;
+  
   if (isNaN(value)) return { value: 0, type: 'WEIGHT' };
 
-  // Volume
-  if (normalized.includes('ml')) {
-    return { value: value, type: 'VOLUME' };
-  }
-  if (normalized.endsWith('l') && !normalized.includes('ml') && !normalized.includes('lb')) {
-      return { value: value * 1000, type: 'VOLUME' };
+  // Volume detection (ml, l, liter, litre)
+  const isVolume = normalized.includes('ml') || 
+                   normalized.includes('liter') || 
+                   normalized.includes('litre') || 
+                   (normalized.endsWith('l') && !normalized.includes('ml') && !normalized.includes('lb'));
+
+  if (isVolume) {
+    const mlValue = (normalized.includes('ml')) ? value : value * 1000;
+    return { value: mlValue, type: 'VOLUME' };
   }
 
-  // Weight
-  if (normalized.includes('kg')) {
-    return { value: value * 1000, type: 'WEIGHT' };
-  } else if (normalized.includes('g')) {
-    return { value: value, type: 'WEIGHT' };
+  // Weight detection (kg, g, gram)
+  const isWeight = normalized.includes('kg') || 
+                   normalized.includes('g') || 
+                   normalized.includes('gram');
+
+  if (isWeight) {
+    const gValue = (normalized.includes('kg')) ? value * 1000 : value;
+    return { value: gValue, type: 'WEIGHT' };
   }
   
-  return { value: value, type: 'WEIGHT' };
+  // Default to 0 if no clear unit signature is found (so fallback logic can trigger)
+  return { value: 0, type: 'WEIGHT' };
 }
 
 // Helper: Calculate charge from tariffs table
@@ -86,19 +96,41 @@ async function calculateDeliveryCharge(req, res, next) {
     let totalGrams = 0;
     let totalMl = 0;
 
+    console.log(`[DELIVERY] Calculating for state: ${state}, Zone: ${zone}`);
+
     for (const item of items) {
-       const unitStr = item.attributeValue || item.weight || item.size || '';
+       // Check available properties for unit string
+       const unitStr = (item.attributeValue || item.weight || item.size || '').toString();
+       const title = (item.title || item.name || '').toString();
        const quantity = parseInt(item.quantity) || 1;
-       const { value, type } = parseItemUnit(unitStr);
        
-       if (type === 'VOLUME' && value > 0) {
-           totalMl += value * quantity;
-       } else if (type === 'WEIGHT' && value > 0) {
-           totalGrams += value * quantity;
-       } else {
-           // Fallback: Default to weight (250g) if unit is unknown or value is 0
-           totalGrams += 250 * quantity;
+       let { value, type } = parseItemUnit(unitStr);
+       
+       // Special handling for Oil products if unit is ambiguous or missing
+       if (value === 0 && title.toLowerCase().includes('oil')) {
+           console.log(`[DELIVERY] Product "${title}" identified as Oil by keyword. Defaulting to 1000ml volume.`);
+           value = 1000;
+           type = 'VOLUME';
        }
+
+       console.log(`[DELIVERY] Item: "${title}" (${unitStr}) -> Parsed: ${value}${type === 'VOLUME' ? 'ml' : 'g'} x ${quantity}`);
+
+       if (type === 'VOLUME' && value > 0) {
+           totalMl += (value * quantity);
+       } else if (type === 'WEIGHT' && value > 0) {
+           totalGrams += (value * quantity);
+       } else {
+           // Fallback for items with no clear weight/volume
+           // Default to 250g as a safe minimum weight per item
+           console.log(`[DELIVERY] Fallback 250g active for item: "${title}"`);
+           totalGrams += (250 * quantity);
+       }
+    }
+
+    // Ensure we handle case where items exist but totals are still 0
+    if (items.length > 0 && totalGrams === 0 && totalMl === 0) {
+        totalGrams = items.reduce((sum, item) => sum + (250 * (parseInt(item.quantity) || 1)), 0);
+        console.log(`[DELIVERY] Safety valve: forced totalGrams to ${totalGrams}`);
     }
 
     // Calculate Charges independently
@@ -106,7 +138,10 @@ async function calculateDeliveryCharge(req, res, next) {
     const volumeCharge = await calculateFromTariffs(totalMl, zone, 'VOLUME');
 
     // sum both charges for mixed orders
-    const totalDeliveryCharge = weightCharge + volumeCharge;
+    const totalDeliveryCharge = Math.ceil(Number(weightCharge || 0) + Number(volumeCharge || 0));
+
+    console.log(`[DELIVERY] Final Results -> Grams: ${totalGrams}, Ml: ${totalMl}`);
+    console.log(`[DELIVERY] Charges -> Weight: ₹${weightCharge}, Volume: ₹${volumeCharge}, TOTAL: ₹${totalDeliveryCharge}`);
 
     return res.json({ 
         deliveryCharge: totalDeliveryCharge, 
@@ -115,8 +150,8 @@ async function calculateDeliveryCharge(req, res, next) {
         totalWeight: totalGrams,
         totalVolume: totalMl,
         breakdown: {
-            weightCharge,
-            volumeCharge
+            weightCharge: Number(weightCharge),
+            volumeCharge: Number(volumeCharge)
         }
     });
 

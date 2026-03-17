@@ -157,6 +157,7 @@ const Checkout = () => {
                     }
                     
                     return {
+                        title: item.title,
                         weight: weightVal,
                         attributeValue: weightVal, // Backend checks this too
                         quantity: item.quantity || 1
